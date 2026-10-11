@@ -1,0 +1,34 @@
+# Tài liệu học tập môn học
+study_doc/
+"study doc"/
+
+# Môi trường ảo & Dependencies
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Biến môi trường & API Keys (Bảo mật - tuyệt đối không commit)
+.env
+.env.local
+*.key
+*.pem
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Hệ điều hành
+.DS_Store
+Thumbs.db
