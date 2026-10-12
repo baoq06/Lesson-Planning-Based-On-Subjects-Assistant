@@ -2,10 +2,25 @@ import os
 import sys
 import json
 import logging
-from datetime import datetime
+import re
+from datetime import datetime, date
+from dataclasses import asdict
 from typing import Optional
-from zipfile import Path
+from pathlib import Path
 from mcp.server.mcpserver import MCPServer
+from string import Template
+from src.schemas import DraftResult
+
+BASE_DIR = Path(__file__).resolve().parent
+REPO_ROOT = BASE_DIR.parents[1]
+TEMPLATE_PATH = REPO_ROOT / "data" / "prompts" / "extension_request.txt"
+DRAFTS_DIR = REPO_ROOT / "data" / "drafts"
+MAX_EXTENSION_DAYS = 5
+STUDENT_ID_PATTERN = re.compile(r"\d{8}")
+
+MEMORY_PATH = REPO_ROOT / "data" / "mcp_memory.json"
+DATA_DIR = REPO_ROOT / "data"
+AIPR_DIR = DATA_DIR / "AI_Programming_with_Python"
 
 # setup logger để in ra stderr (in ra vào file log để kiểm tra lỗi)
 logging.basicConfig(
@@ -16,11 +31,6 @@ logging.basicConfig(
 logger = logging.getLogger("mcp_server")
 
 mcp = MCPServer("LessonPlanningAssistantServer")
-
-MEMORY_PATH = DATA_DIR / "mcp_memory.json"
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = PROJECT_ROOT / "data"
-AIPR_DIR = DATA_DIR / "AI_Programming_with_Python"
 
 @mcp.tool()
 def remember(key: str, content: str) -> str:
@@ -196,6 +206,53 @@ def check_late_submission_penalty(hours_late: int) -> str:
     except Exception as e:
         logger.error(f"Error occurred while checking late submission penalty: {e}")
         return f"Error occurred while checking late submission penalty: {e}"
+
+@mcp.tool()
+def draft_template_submission(student_id: str, student_name: str, assg: str, days_requested: int, reason: str, proof: bool) -> str:
+    logger.info(f"Executing draft_template_submission for student {student_id}")
+    try:
+        student_id, student_name = student_id.strip(), student_name.strip()
+        assg, reason = assg.strip(), reason.strip()
+
+        if not (student_id and student_name and assg and reason):
+            logger.info(f"[Error] student_id, student_name, assg and reason are required.")
+            return "Error: student_id, student_name, assg and reason are required."
+        if not proof:
+            logger.info(f"[Error] a valid medical certificate is required (policy section 4).")
+            return "Error: a valid medical certificate is required (policy section 4)."
+        if not 1 <= days_requested <= MAX_EXTENSION_DAYS:
+            logger.info(f"[Error] days_requested must be between 1 and {MAX_EXTENSION_DAYS}.")
+            return f"Error: days_requested must be between 1 and {MAX_EXTENSION_DAYS}."
+
+        # Điền tham số vào trong mẫu txt
+        content = Template(TEMPLATE_PATH.read_text(encoding="utf-8")).substitute(
+            student_name=student_name,
+            student_id=student_id,
+            assignment=assg,
+            days_requested=days_requested,
+            reason=reason,
+            today=date.today().strftime("%Y-%m-%d"),
+        )
+
+        # Ghi file
+        DRAFTS_DIR.mkdir(parents=True, exist_ok=True)
+        path = DRAFTS_DIR / f"draft_submission_{student_id}.txt"
+        overwritten = path.exists()
+        path.write_text(content, encoding="utf-8")
+        logger.info("draft saved: %s (overwritten=%s)", path, overwritten)
+
+        return json.dumps(
+            asdict(DraftResult(
+                path=str(path),
+                overwritten=overwritten,
+                chars=len(content),
+                note="This is a draft and has NOT been submitted. Call read_draft with this path to verify.",
+            )),
+            ensure_ascii=False,
+        )
+    except Exception as e:
+        logger.exception("draft_template_submission failed")
+        return f"Error: draft_template_submission failed: {e}"
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")

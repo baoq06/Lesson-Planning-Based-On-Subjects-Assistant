@@ -67,5 +67,11 @@ class AgentResponse:
     sources: list[str] = field(default_factory=list)
     verifired: bool = False
 
-
+#schema DraftResult: kết quả của tool draft_template_submission
+@dataclass
+class DraftResult:
+    path: str
+    overwritten: bool
+    chars: int
+    note: str
 

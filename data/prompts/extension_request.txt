@@ -1,0 +1,16 @@
+APPLICATION FOR DEADLINE EXTENSION
+
+To: The Lecturer, AI Programming with Python (AIPR_24110FIE)
+
+I am $student_name (Student ID: $student_id).
+I am writing to request an extension for: $assg.
+Requested extension: $days_requested day(s).
+Reason: $reason
+Supporting document: Medical certificate (attached).
+
+I confirm that the information above is true and accurate.
+Thank you for your consideration.
+
+Date: $today
+Sincerely,
+$student_name
