@@ -22,7 +22,7 @@ class DocumentChunk:
     doc_id: str = ""
     chunk_index: int = 0
     metadata: dict = field(default_factory=dict)
-    # embedding: Optional[list[float]] = None
+    embedding: Optional[list[float]] = None
 
 # schema RetrievalResult: kết quả trả về khi xong thuật tìm kiếm
 @dataclass

@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from dotenv import load_dotenv
-from src.data_layer.jina_embeddings import jina_embeddings
+from src.rag.jina_embeddings import jina_embeddings
 
 load_dotenv()
 
