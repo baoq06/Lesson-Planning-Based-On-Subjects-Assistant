@@ -2,9 +2,9 @@ import json
 import os
 from datetime import datetime
 from typing import Optional
-from src.data_layer.models import Document, DocumentChunk
-from src.data_layer.chunker import chunk_document
-from src.data_layer.embedding import embed_text, batch_embed_text, cosine_similarity
+from src.schemas import Document, DocumentChunk
+from src.rag.chunker import chunk_document
+from src.rag.embedding import embed_text, batch_embed_text, cosine_similarity
 
 
 class DocumentStore:

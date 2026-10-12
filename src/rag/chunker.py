@@ -1,7 +1,7 @@
 import re
 from typing import Literal
-from src.data_layer.models import Document, DocumentChunk
-from src.data_layer.embedding import batch_embed_text, cosine_similarity
+from src.schemas import Document, DocumentChunk
+from src.rag.embedding import batch_embed_text, cosine_similarity
 
 
 # =====================================================================
