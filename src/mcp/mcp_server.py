@@ -15,6 +15,7 @@ BASE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = BASE_DIR.parents[1]
 TEMPLATE_PATH = REPO_ROOT / "data" / "prompts" / "extension_request.txt"
 DRAFTS_DIR = REPO_ROOT / "data" / "drafts"
+PLANS_DIR = REPO_ROOT / "plans"
 MAX_EXTENSION_DAYS = 5
 STUDENT_ID_PATTERN = re.compile(r"\d{8}")
 
@@ -85,7 +86,7 @@ def get_curriculum_week(week: int) -> str:
         logger.warning(f"Invalid week requested: {week}")
         return f"Error: Week {week} is invalid. The course only includes weeks 1 to 8."
     
-    file_path = AIPR_DIR / f"AIPR_w_{week}.md"
+    file_path = AIPR_DIR / f"AIPR_w{week}.md"
     if not file_path.exists():
         logger.error(f"File not found for week {week}: {file_path}")
         return f"Error: File not found for week {week} at {file_path.name}."
@@ -105,7 +106,7 @@ def get_gotchas_and_best_practices(week: int) -> str:
         logger.warning(f"Invalid week requested: {week}")
         return f"Error: Week {week} is invalid. The course only includes weeks 1 to 8."
     
-    file_path = AIPR_DIR / f"AIPR_w_{week}.md"
+    file_path = AIPR_DIR / f"AIPR_w{week}.md"
     if not file_path.exists():
         logger.error(f"File not found for week {week}: {file_path}")
         return f"Error: File not found for week {week} at {file_path.name}."
@@ -253,6 +254,51 @@ def draft_template_submission(student_id: str, student_name: str, assg: str, day
     except Exception as e:
         logger.exception("draft_template_submission failed")
         return f"Error: draft_template_submission failed: {e}"
+
+@mcp.tool()
+def export_lesson_plan(
+    week: int,
+    title: str,
+    duration_minutes: int,
+    objectives: list[str],
+    timeline: list[dict],
+    homework: str
+) -> str:
+    logger.info(f"Executing 'export_lesson_plan' for week={week}, title={title}")
+    try:
+        if week < 1 or week > 8:
+            logger.warning(f"Invalid week provided: {week}")
+            return f"Error: Week {week} is invalid. The course only includes weeks 1 to 8."
+    
+        title = title.strip()
+        if not title:
+            logger.warning("Empty title provided for lesson plan.")
+            return "Error: Lesson plan title cannot be empty."
+
+        plan_data = {
+            "week": week,
+            "title": title,
+            "duration_minutes": duration_minutes,
+            "created_at": datetime.now().isoformat(),
+            "objectives": objectives,
+            "timeline": timeline,
+            "homework": homework.strip() if homework else ""
+        }
+        json_path = PLANS_DIR / f"lesson_plan_week_{week}.json"
+        json_path.write_text(json.dumps(plan_data, indent=2, ensure_ascii=False), encoding="utf-8")
+        logger.info(f"Saved lesson plan JSON to {json_path}")
+
+        md_lines = [
+
+        ]
+        for obj in objectives:
+            md_lines.append(f"- {obj}")
+
+        md_lines.append()
+
+    except Exception as e:
+        logger.exception(f"Error occurred while exporting lesson plan for week {week}: {e}")
+        return f"Error: Failed to export lesson plan for week {week}: {e}"
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")
