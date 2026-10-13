@@ -1,29 +1,29 @@
-# Week 1: Data Structures and Typing in Python (Data Layer)
+# Tuần 1: Cấu trúc dữ liệu và Typing trong Python (Data Layer)
 
-## 1. General Information & Learning Objectives (A1.1 to A1.4)
-- **A1.1**: Choose the appropriate data type (`list`, `tuple`, `dict`, `set`) for an AI data-processing task and justify the choice.
-- **A1.2**: Read and write JSON data with Python's `json` module, including Custom Object Serialization.
-- **A1.3**: Define a `@dataclass` with full type hints and default values (`field(default_factory=...)`) to model strictly structured AI data.
-- **A1.4**: Convert a list of `@dataclass` instances into dictionaries for two-way serialization (JSON serialization with `asdict`, `to_dict`, `from_dict`).
+## 1. Thông tin chung & Chuẩn đầu ra (Learning Objectives - A1.1 đến A1.4)
+- **A1.1**: Lựa chọn kiểu dữ liệu phù hợp (`list`, `tuple`, `dict`, `set`) cho bài toán xử lý dữ liệu AI và biện luận lý do lựa chọn.
+- **A1.2**: Đọc và ghi dữ liệu JSON bằng module `json` của Python, bao gồm tuần tự hóa đối tượng tùy chỉnh (Custom Object Serialization).
+- **A1.3**: Định nghĩa `@dataclass` với đầy đủ type hints và giá trị mặc định (`field(default_factory=...)`) để mô hình hóa dữ liệu AI có cấu trúc chặt chẽ.
+- **A1.4**: Chuyển đổi danh sách cá thể `@dataclass` thành dictionary để tuần tự hóa hai chiều (JSON serialization với `asdict`, `to_dict`, `from_dict`).
 
-## 2. Foundational Theory & System Architecture
-### 2.1. Comparing the core data structures in an AI pipeline
+## 2. Lý thuyết nền tảng & Kiến trúc hệ thống
+### 2.1. So sánh các cấu trúc dữ liệu cốt lõi trong AI Pipeline
 - **List vs Set**:
-  - A `list` preserves insertion order, allows $O(1)$ access by index and stores duplicate elements; it suits token sequences or message arrays in a conversation context.
-  - A `set` does not preserve order but is optimized for lookup and membership tests `x in s` with $O(1)$ complexity; it is commonly used to filter stop-words, store the vocabulary and perform deduplication.
+  - `list` duy trì thứ tự chèn, cho phép truy cập theo chỉ số $O(1)$ và lưu trữ các phần tử trùng lặp; thích hợp để lưu chuỗi token hoặc mảng tin nhắn trong ngữ cảnh hội thoại.
+  - `set` không duy trì thứ tự nhưng tối ưu hóa tốc độ tìm kiếm và kiểm tra thành viên `x in s` với độ phức tạp $O(1)$; thường được sử dụng để lọc stop-words, lưu từ vựng (vocabulary) và khử trùng lặp (deduplication).
 - **Dict vs Dataclass**:
-  - A raw `dict` is very flexible but has no enforced structure (schema-less), so it easily causes `KeyError` and has no IDE autocomplete.
-  - A `@dataclass` provides Type Safety, automatically generates the special methods (`__init__`, `__repr__`, `__eq__`), supports Static Type Checking and offers the `__post_init__` validation hook.
+  - `dict` thô rất linh hoạt nhưng không kiểm soát cấu trúc (schema-less), dễ phát sinh lỗi `KeyError` và không có tự động hoàn thiện (autocomplete) trong IDE.
+  - `@dataclass` cung cấp Type Safety, tự động sinh các phương thức đặc biệt (`__init__`, `__repr__`, `__eq__`), hỗ trợ kiểm tra kiểu tĩnh (Static Type Checking) và có phương thức xác thực `__post_init__`.
 - **Tuple**:
-  - An immutable data structure; it is safe to use as a dictionary key (for example `(user_id, session_id)`), memory-efficient, and guarantees integrity when storing fixed coordinate vectors.
+  - Cấu trúc dữ liệu bất biến (immutable), an toàn khi dùng làm khóa cho dictionary (ví dụ: `(user_id, session_id)`), tối ưu bộ nhớ và bảo đảm tính toàn vẹn khi lưu trữ vector tọa độ cố định.
 
-### 2.2. Defensive Data Validation
-- The `__post_init__` method is called automatically right after the `@dataclass` initializer. It is an important checkpoint to:
-  - Check that text is not empty (`content.strip()`).
-  - Validate value ranges (for example week number `1 <= week <= 8`, rating `1 <= rating <= 5`).
-  - Raise a `ValueError` immediately to stop bad data from going deeper into the RAG pipeline.
+### 2.2. Kỹ thuật Phòng vệ dữ liệu (Defensive Data Validation)
+- Hàm `__post_init__` được tự động gọi ngay sau hàm khởi tạo của `@dataclass`. Đây là chốt chặn quan trọng để:
+  - Kiểm tra tính rỗng của văn bản (`content.strip()`).
+  - Kiểm định miền giá trị hợp lệ (ví dụ: số tuần học `1 <= week <= 8`, điểm số `1 <= rating <= 5`).
+  - Ném ngoại lệ `ValueError` ngay lập tức để ngăn chặn dữ liệu rác đi sâu vào RAG Pipeline.
 
-## 3. Lab Exercises & Step-by-step Sample Code
+## 3. Các bài tập Lab & Mã nguồn mẫu từng bước (Step-by-step Exercises)
 ### Exercise 1.1 — Code Along 1: Load, Filter & Sort Reviews (ex1_1_filter_sort.py)
 ```python
 import json
@@ -31,11 +31,11 @@ import json
 with open("data/reviews.json", "r", encoding="utf-8") as f:
     reviews = json.load(f)
 
-# Keep only the reviews that have text
+# Lọc các bài đánh giá có nội dung văn bản
 with_text = [r for r in reviews if r.get("text")]
 print(f"Loaded: {len(reviews)}, With text: {len(with_text)}")
 
-# Sort by rating, descending
+# Sắp xếp giảm dần theo rating
 top_rated = sorted(with_text, key=lambda r: r["rating"], reverse=True)
 for r in top_rated[:3]:
     print(f"  {r['product']}: {r['rating']} - {r['text'][:50]}...")
@@ -60,7 +60,7 @@ def safe_extract_nested(data: dict, path: str, default=None):
     return curr if curr is not None else default
 ```
 
-### Exercise 2.2 — Custom JSON Encoder for a Dataclass (ex2_2_dataclass_json.py)
+### Exercise 2.2 — Custom JSON Encoder cho Dataclass (ex2_2_dataclass_json.py)
 ```python
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
@@ -83,10 +83,10 @@ class DataclassEncoder(json.JSONEncoder):
         return super().default(obj)
 ```
 
-## 4. Common Pitfalls & Design Principles (Gotchas & Best Practices)
-- **Default Mutable Arguments pitfall**: Never write `topics: list = []` in a `@dataclass`; use `field(default_factory=list)` so that objects do not share the same list in memory.
-- **Datetime Serialization pitfall**: `json.dumps()` cannot serialize a `datetime` object by default; convert it to an ISO string (`isoformat()`) before dumping.
-- **Missing Dictionary Key pitfall**: When accessing raw JSON data, always prefer `dict.get(key, default)` over `dict[key]` to avoid a `KeyError` crashing the program.
+## 4. Các bẫy thường gặp & Nguyên tắc thiết kế (Gotchas & Best Practices)
+- **Bẫy Default Mutable Arguments**: Tuyệt đối không dùng `topics: list = []` trong `@dataclass`, phải dùng `field(default_factory=list)` để tránh hiện tượng mọi đối tượng chia sẻ chung một danh sách bộ nhớ.
+- **Bẫy Datetime Serialization**: `json.dumps()` mặc định không thể serialize đối tượng `datetime`, cần chuyển thành chuỗi ISO (`isoformat()`) trước khi dump ra đĩa.
+- **Bẫy Khuyết khóa Dictionary**: Khi truy cập dữ liệu JSON thô, luôn ưu tiên sử dụng `dict.get(key, default)` thay vì `dict[key]` để tránh `KeyError` làm sập chương trình.
 
-## 5. Independent Tasks & Competency Assessment (Independent Labs)
-- Write the pipeline `ex1_3_data_pipeline.py` that reads a list of reviews, removes duplicates by `review_id` using `set()`, groups them to compute the average rating per product, and saves the result to `data/top_5_products.json`.
+## 5. Nhiệm vụ tự học & Đánh giá năng lực (Independent Labs)
+- Viết pipeline `ex1_3_data_pipeline.py` đọc danh sách reviews, khử trùng lặp theo `review_id` bằng `set()`, gom nhóm tính rating trung bình theo từng sản phẩm và lưu ra `data/top_5_products.json`.

@@ -1,48 +1,48 @@
-# Week 4: Building the RAG Pipeline & Hybrid Search
+# Tuần 4: Xây dựng RAG Pipeline & Tìm kiếm lai (Hybrid Search)
 
-## 1. General Information & Learning Objectives (A4.1 to A4.4)
-- **A4.1**: Design a Grounding System Prompt: force the LLM to answer ONLY from the context that is provided.
-- **A4.2**: Assemble a complete 5-stage RAG pipeline: Query -> Retrieve -> Build Prompt -> LLM Call -> Return Answer.
-- **A4.3**: Manage and format source citations `[doc_id]` in the answer so that users can verify them.
-- **A4.4**: Handle edge cases thoroughly: empty context, off-topic questions, prompts that exceed the token limit.
+## 1. Thông tin chung & Chuẩn đầu ra (Learning Objectives - A4.1 đến A4.4)
+- **A4.1**: Thiết kế Grounding System Prompt: Ép buộc LLM chỉ trả lời DUY NHẤT dựa trên context được cung cấp.
+- **A4.2**: Lắp ráp pipeline RAG hoàn chỉnh 5 giai đoạn: Query -> Retrieve -> Build Prompt -> LLM Call -> Return Answer.
+- **A4.3**: Quản lý và định dạng nguồn trích dẫn (Citations) `[doc_id]` trong câu trả lời để người dùng kiểm chứng.
+- **A4.4**: Xử lý toàn diện các trường hợp biên (Edge Cases): Ngữ cảnh rỗng, câu hỏi ngoài lề, prompt vượt ngưỡng token.
 
-## 2. Foundational Theory & System Architecture
-### 2.1. Motivation for Hybrid Search (Why Hybrid Search?)
+## 2. Lý thuyết nền tảng & Kiến trúc hệ thống
+### 2.1. Động lực của Tìm kiếm lai (Why Hybrid Search?)
 - **Sparse Retrieval (BM25 Okapi)**:
-  - Based on Term Frequency (TF) and Inverse Document Frequency (IDF).
-  - Extremely strong when searching for exact keywords, identifiers (`DOC001`, `LP_W04`), rare terms and abbreviations.
-  - Weakness: fails when the user uses synonyms or phrases the question differently (Vocabulary Mismatch Problem).
+  - Dựa trên tần suất từ (Term Frequency - TF) và độ nghịch đảo tần suất văn bản (Inverse Document Frequency - IDF).
+  - Cực kỳ mạnh khi tìm kiếm các từ khóa chính xác, mã định danh (`DOC001`, `LP_W04`), thuật ngữ hiếm, từ viết tắt.
+  - Nhược điểm: Bị lỗi khi người dùng dùng từ đồng nghĩa hoặc câu hỏi diễn đạt khác đi (Vocabulary Mismatch Problem).
 - **Dense Retrieval (Vector Embedding)**:
-  - Captures semantic similarity (Semantic meaning) and naturally phrased questions.
-  - Weakness: less accurate with technical codes or very specific terminology.
-- **Score Fusion with Min-Max Normalisation**:
-  Because BM25 scores are unbounded while Vector scores lie in $[0, 1]$, the scores must be normalized before they are combined:
+  - Nắm bắt ngữ nghĩa tương đồng (Semantic meaning), câu hỏi diễn đạt tự nhiên.
+  - Nhược điểm: Kém chính xác với các từ khóa kỹ thuật số hiệu hoặc thuật ngữ quá đặc thù.
+- **Score Fusion với Min-Max Normalisation**:
+  Do điểm BM25 không bị chặn trên trong khi điểm Vector nằm trong $[0, 1]$, cần chuẩn hóa điểm số trước khi hợp nhất:
   $$\text{norm}(S) = \frac{S - S_{\min}}{S_{\max} - S_{\min}}$$
   $$\text{Score}_{\text{hybrid}} = w_{\text{bm25}} \times \text{norm}(BM25) + w_{\text{vector}} \times \text{Vector}$$
-  (The instructor's standard weights: $w_{\text{bm25}} = 0.4$, $w_{\text{vector}} = 0.6$).
+  (Trọng số chuẩn của Thầy: $w_{\text{bm25}} = 0.4$, $w_{\text{vector}} = 0.6$).
 
-### 2.2. Grounding Prompt Architecture & Anti-Hallucination Guardrail
-The prompt acts as the only "firewall" that stops the LLM from making things up:
-- It must contain a clear instruction: *"Answer only from the Context below. If the data is insufficient, you must refuse: 'I could not find enough information in the course materials'."*
-- It must attach a chunk citation tag such as `[LP_W04_chunk_0]` after every statement in the answer.
+### 2.2. Kiến trúc Grounding Prompt & Anti-Hallucination Guardrail
+Prompt đóng vai trò là "bức tường lửa" duy nhất ngăn LLM tự bịa:
+- Phải có chỉ dẫn rõ ràng: *"Chỉ trả lời dựa trên Context dưới đây. Nếu không đủ dữ liệu, bắt buộc từ chối: 'Tôi không tìm thấy đủ thông tin trong tài liệu bài giảng'."*
+- Bắt buộc gắn tag trích dẫn mã đoạn: `[LP_W04_chunk_0]` sau mỗi luận điểm trả lời.
 
-## 3. Lab Exercises & Step-by-step Sample Code
+## 3. Các bài tập Lab & Mã nguồn mẫu từng bước (Step-by-step Exercises)
 ### Exercise 4.1 — Grounding Prompt Template (ex1_1_rag_prompt.py)
 ```python
-RAG_SYSTEM_PROMPT = """You are a study assistant for the AIPR course.
-CORE RULES:
-1. Answer the student's question ONLY from the CONTEXT provided below.
-2. Never speculate or use knowledge from outside the materials.
-3. If the CONTEXT does not contain the information needed to answer, you must say:
-   "This content is not covered in the course materials."
-4. Always cite the lesson source in the format [LP_W...] at the end of the answer.
+RAG_SYSTEM_PROMPT = """Bạn là trợ lý học tập môn AIPR.
+QUY TẮC CỐT LÕI:
+1. Trả lời câu hỏi của sinh viên CHỈ dựa trên phần CONTEXT được cung cấp dưới đây.
+2. Tuyệt đối không tự suy diễn hoặc dùng kiến thức ngoài tài liệu.
+3. Nếu CONTEXT không chứa thông tin để trả lời, bắt buộc nói:
+   "Nội dung này không nằm trong tài liệu bài giảng môn học."
+4. Luôn trích dẫn nguồn bài học theo định dạng [LP_W...] ở cuối câu trả lời.
 
 CONTEXT:
 {context}
 """
 ```
 
-### Exercise 4.2 — BM25 Algorithm & Score Fusion (ex2_1_hybrid_search.py)
+### Exercise 4.2 — Thuật toán BM25 & Score Fusion (ex2_1_hybrid_search.py)
 ```python
 from rank_bm25 import BM25Okapi
 
@@ -62,12 +62,12 @@ def hybrid_search(query: str, chunks: list, bm25: BM25Okapi, vector_scores: list
     return [(chunks[i], score) for i, score in ranked]
 ```
 
-### Exercise 4.3 — Complete RAG Pipeline v2 (ex2_2_rag_pipeline_v2.py)
-- Integrate data loading, run Hybrid Search, insert the Context into the prompt, call the Groq Chat Completion and print the result with citations.
+### Exercise 4.3 — RAG Pipeline v2 Complete (ex2_2_rag_pipeline_v2.py)
+- Tích hợp nạp dữ liệu, thực hiện Hybrid Search, ghép Context vào prompt, gọi Groq Chat Completion và in kết quả kèm citations.
 
-## 4. Common Pitfalls & Design Principles (Gotchas & Best Practices)
-- **Division by zero in Min-Max pitfall**: When all chunks have the same BM25 score ($S_{\max} == S_{\min}$), the normalization formula raises `ZeroDivisionError`; you must check this boundary condition and assign a default score array.
-- **Context Overflow pitfall**: Combining too many chunks (`top_k` too large) overflows the LLM's tokens or triggers the Lost-in-the-Middle effect.
+## 4. Các bẫy thường gặp & Nguyên tắc thiết kế (Gotchas & Best Practices)
+- **Bẫy Chia cho 0 khi Min-Max**: Khi tất cả các chunk có điểm BM25 bằng nhau ($S_{\max} == S_{\min}$), công thức chuẩn hóa sẽ bị lỗi `ZeroDivisionError`; bắt buộc kiểm tra điều kiện biên để gán mảng điểm mặc định.
+- **Bẫy Context Overflow**: Ghép quá nhiều chunk (`top_k` quá lớn) sẽ làm tràn token của LLM hoặc gây ra hiện tượng Lost-in-the-Middle.
 
-## 5. Independent Tasks & Competency Assessment (Independent Labs)
-- Implement a check for empty questions or off-topic questions so that they are refused immediately, before calling the LLM, to save system resources.
+## 5. Nhiệm vụ tự học & Đánh giá năng lực (Independent Labs)
+- Cài đặt cơ chế kiểm tra câu hỏi rỗng hoặc câu hỏi ngoài lề để từ chối ngay trước khi gọi LLM nhằm tiết kiệm tài nguyên hệ thống.

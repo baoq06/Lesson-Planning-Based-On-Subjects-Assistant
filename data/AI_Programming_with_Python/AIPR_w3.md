@@ -1,27 +1,27 @@
-# Week 3: RAG Foundations - Document Model, Chunking & Embeddings
+# Tuần 3: Nền tảng RAG - Document Model, Chunking & Embeddings
 
-## 1. General Information & Learning Objectives (A3.1 to A3.4)
-- **A3.1**: Design the document models: `@dataclass` `Document` and `DocumentChunk` with rich metadata.
-- **A3.2**: Build a `DocumentStore` that supports the basic operations: add, get, delete, list_all.
-- **A3.3**: Apply text segmentation strategies (Fixed-size chunking with Overlap, Recursive splitting).
-- **A3.4**: Generate semantic Vector Embeddings and compute Cosine Similarity to match document similarity.
+## 1. Thông tin chung & Chuẩn đầu ra (Learning Objectives - A3.1 đến A3.4)
+- **A3.1**: Thiết kế các mô hình tài liệu: `@dataclass` `Document` và `DocumentChunk` kèm metadata phong phú.
+- **A3.2**: Xây dựng kho lưu trữ `DocumentStore` hỗ trợ đầy đủ các thao tác cơ bản: add, get, delete, list_all.
+- **A3.3**: Áp dụng các chiến lược phân đoạn văn bản (Fixed-size chunking kèm Overlap, Recursive splitting).
+- **A3.4**: Sinh Vector Embeddings ngữ nghĩa và tính toán Cosine Similarity để so khớp độ tương đồng tài liệu.
 
-## 2. Foundational Theory & System Architecture
-### 2.1. Text Chunking Strategies
+## 2. Lý thuyết nền tảng & Kiến trúc hệ thống
+### 2.1. Chiến lược Chunking văn bản (Text Chunking Strategies)
 - **Fixed-size Chunking with Overlap**:
-  Cut the text at a fixed length $L$ (for example 300 - 500 characters) with an overlap $O$ (for example 50 characters). The overlap ensures that sentences or ideas that fall on the boundary between two chunks do not lose their context.
+  Cắt văn bản theo độ dài cố định $L$ (ví dụ: 300 - 500 ký tự) kèm khoảng gối đầu $O$ (ví dụ: 50 ký tự). Khoảng overlap đảm bảo các câu hoặc ý nghĩa nằm ở biên giữa hai chunk không bị cắt đứt gãy ngữ cảnh.
 - **Recursive Chunking**:
-  Split the text using a hierarchy of separators: paragraph (`\n\n`), line (`\n`), sentence (`. `) and word (` `). Keeps complete paragraphs in the same chunk if the size allows.
+  Tách văn bản dựa trên hệ thống phân cấp dấu phân cách: đoạn văn (`\n\n`), dòng (`\n`), câu (`. `), và từ khóa (` `). Giữ cho các đoạn văn hoàn chỉnh ở cùng một chunk nếu kích thước cho phép.
 
-### 2.2. Vector Embeddings & Cosine Similarity
-- **Vector Embedding**: Maps natural text into a multi-dimensional vector space (for example 768 or 1536 dimensions). Sentences with close semantic meaning have close vectors.
+### 2.2. Vector Embeddings & Độ tương đồng Cosine (Cosine Similarity)
+- **Vector Embedding**: Ánh xạ văn bản tự nhiên thành không gian vector nhiều chiều (ví dụ: 768 hoặc 1536 chiều). Các câu có ý nghĩa ngữ nghĩa gần nhau sẽ có khoảng cách vector gần nhau.
 - **Cosine Similarity Formula**:
   $$\text{sim}(\mathbf{a}, \mathbf{b}) = \frac{\mathbf{a} \cdot \mathbf{b}}{\|\mathbf{a}\| \|\mathbf{b}\|} = \frac{\sum_{i=1}^{n} a_i b_i}{\sqrt{\sum_{i=1}^{n} a_i^2} \sqrt{\sum_{i=1}^{n} b_i^2}}$$
-  - Value $1.0$: the two vectors point in exactly the same direction (highest semantic similarity).
-  - Value $0.0$: the two vectors are orthogonal (semantically unrelated).
-  - Value $-1.0$: the two vectors point in exactly opposite directions.
+  - Giá trị bằng $1.0$: Hai vector chỉ cùng hướng hoàn toàn (đồng nghĩa cao nhất).
+  - Giá trị bằng $0.0$: Hai vector trực giao (không liên quan ngữ nghĩa).
+  - Giá trị bằng $-1.0$: Hai vector ngược hướng hoàn toàn.
 
-## 3. Lab Exercises & Step-by-step Sample Code
+## 3. Các bài tập Lab & Mã nguồn mẫu từng bước (Step-by-step Exercises)
 ### Exercise 3.1 — Document & Chunk Models (doc_model.py)
 ```python
 from dataclasses import dataclass, field
@@ -89,9 +89,9 @@ class VectorStore:
         return sorted(scores, key=lambda x: x[1], reverse=True)[:top_k]
 ```
 
-## 4. Common Pitfalls & Design Principles (Gotchas & Best Practices)
-- **Lost-in-the-Middle pitfall**: A chunk size that is too large distracts the LLM with peripheral information; a chunk size that is too small makes the chunk lose the context of its paragraph.
-- **Non-portable VectorStore path pitfall**: Caching the vector store with an absolute path makes the code fail on another computer; always use a relative path (Portable relative path).
+## 4. Các bẫy thường gặp & Nguyên tắc thiết kế (Gotchas & Best Practices)
+- **Bẫy Lost-in-the-Middle**: Đặt chunk size quá lớn khiến LLM bị phân tâm bởi các thông tin râu ria; đặt quá nhỏ khiến chunk bị mất ngữ cảnh của đoạn văn.
+- **Bẫy Không chuẩn hóa đường dẫn VectorStore**: Lưu cache vector store bằng đường dẫn tuyệt đối sẽ khiến code không chạy được khi đem sang máy tính khác; bắt buộc dùng đường dẫn tương đối (Portable relative path).
 
-## 5. Independent Tasks & Competency Assessment (Independent Labs)
-- Build a Batch Embedding mechanism that groups many chunks into a single API call, which significantly reduces network latency and API cost.
+## 5. Nhiệm vụ tự học & Đánh giá năng lực (Independent Labs)
+- Xây dựng cơ chế Batch Embedding để gom nhiều chunk trong một lời gọi API, giúp giảm thiểu độ trễ mạng và chi phí API đáng kể.
