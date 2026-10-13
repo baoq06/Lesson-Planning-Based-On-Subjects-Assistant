@@ -14,17 +14,9 @@ MODEL = "qwen/qwen3.8-27b"
 MAX_STEPS = 7
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-PROMPT_PATH = REPO_ROOT / "data" / "system_prompt.txt"
+PROMPT_PATH = REPO_ROOT / "data" / "prompts" / "system_prompt.txt"
 
-def load_system_prompt() -> str:
-    if PROMPT_PATH.exists():
-        return PROMPT_PATH.read_text(encoding="utf-8").strip()
-    fallback = REPO_ROOT / "data" / "prompts" / "system_prompt.txt"
-    if fallback.exists():
-        return fallback.read_text(encoding="utf-8").strip()
-    return "Bạn là trợ lý AI thông minh chuyên hỗ trợ môn học AIPR."
-
-SYSTEM_PROMPT = load_system_prompt()
+SYSTEM_PROMPT = PROMPT_PATH.read_text(encoding="utf-8").strip()
 
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
