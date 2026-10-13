@@ -6,16 +6,25 @@ from typing import Any, Optional
 from dotenv import load_dotenv
 from rich import print as rprint
 from groq import Groq
+from pathlib import Path
 from src.mcp.mcp_server import mcp
 from src.schemas import ToolCall, AgentStep, AgentResponse
 
 MODEL = "qwen/qwen3.8-27b"
 MAX_STEPS = 7
 
-SYSTEM_PROMPT = """Bạn là trợ lý AI thông minh chuyên hỗ trợ môn học AIPR.
-- Khi cần tính toán hoặc tra cứu thông tin môn học, hãy gọi các công cụ (tools) thích hợp.
-- Khi đã có kết quả từ công cụ hoặc khi trả lời người dùng, hãy trả lời trực tiếp, rõ ràng và mạch lạc, không cần thêm các nhãn 'Thought:' hay 'Action:'.
-"""
+REPO_ROOT = Path(__file__).resolve().parents[2]
+PROMPT_PATH = REPO_ROOT / "data" / "system_prompt.txt"
+
+def load_system_prompt() -> str:
+    if PROMPT_PATH.exists():
+        return PROMPT_PATH.read_text(encoding="utf-8").strip()
+    fallback = REPO_ROOT / "data" / "prompts" / "system_prompt.txt"
+    if fallback.exists():
+        return fallback.read_text(encoding="utf-8").strip()
+    return "Bạn là trợ lý AI thông minh chuyên hỗ trợ môn học AIPR."
+
+SYSTEM_PROMPT = load_system_prompt()
 
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
@@ -77,18 +86,12 @@ def parse_tool_args(raw_args: Any) -> dict[str, Any]:
             return {}
     return {}
 
-# Cấu hình Sliding Window Memory (A6.4)
-MAX_HISTORY_TURNS = 4  # Lưu tối đa 4 lượt hỏi-đáp gần nhất để tránh Context Blowup
+MAX_HISTORY_TURNS = 4  
 
 def trim_history(history: list[dict[str, Any]], max_turns: int = MAX_HISTORY_TURNS) -> list[dict[str, Any]]:
-    """
-    Sliding Window Memory (Chuẩn A6.4):
-    Giữ lại `max_turns` lượt hội thoại gần nhất (mỗi lượt gồm 1 user + 1 assistant).
-    Giúp Agent nhớ ngữ cảnh vừa trao đổi mà không bị tràn token context.
-    """
     if not history:
         return []
-    # 1 turn = 1 cặp (user + assistant) -> lấy tối đa max_turns * 2 messages
+
     max_messages = max_turns * 2
     return history[-max_messages:]
 
@@ -113,10 +116,8 @@ async def run_agent_loop(
     mcp_tools = await mcp.list_tools()
     tools = get_mcp_tools_schema(mcp_tools)
 
-    # Áp dụng Sliding Window Memory
     trimmed_memory = trim_history(history or [])
 
-    # Khởi tạo ngữ cảnh gồm: System prompt + Lịch sử gần nhất + Câu hỏi hiện tại
     messages: list[dict[str, Any]] = [
         {"role": "system", "content": SYSTEM_PROMPT},
         *trimmed_memory,
@@ -150,7 +151,6 @@ async def run_agent_loop(
             fn_name = tool_call.function.name
             fn_args = parse_tool_args(tool_call.function.arguments)
 
-            # Bóc tách thought nếu có trong schema để không gây lỗi khi truyền vào MCP
             args_for_mcp = dict(fn_args)
             extracted_thought = args_for_mcp.pop("thought", None)
             if extracted_thought:
@@ -192,12 +192,11 @@ if __name__ == "__main__":
     rprint("[bold green]====================================================[/bold green]")
     rprint("[dim]Gõ câu hỏi và nhấn Enter. Gõ 'exit' để thoát. Gõ 'clear' để xóa nhớ.[/dim]\n")
 
-    # Bộ nhớ hội thoại (Session Memory) lưu giữa các vòng lặp while True
     conversation_history: list[dict[str, Any]] = []
 
     while True:
         try:
-            user_question = input("\n👤 Bạn: ").strip()
+            user_question = input("\nBạn: ").strip()
             if not user_question:
                 continue
             if user_question.lower() in ["exit", "quit", "q"]:
@@ -205,13 +204,11 @@ if __name__ == "__main__":
                 break
             if user_question.lower() == "clear":
                 conversation_history.clear()
-                rprint("[yellow]🧹 Đã làm mới bộ nhớ hội thoại.[/yellow]")
+                rprint("[yellow]Đã làm mới bộ nhớ hội thoại.[/yellow]")
                 continue
             
-            # Gửi kèm lịch sử hội thoại vào Agent
             response = ask_agent(user_question, history=conversation_history)
 
-            # Cập nhật lượt hỏi - đáp mới vào bộ nhớ
             if response.answer and not response.answer.startswith("Dừng:"):
                 conversation_history.append({"role": "user", "content": user_question})
                 conversation_history.append({"role": "assistant", "content": response.answer})
