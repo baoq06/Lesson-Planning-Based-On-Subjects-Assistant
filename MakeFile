@@ -1,0 +1,12 @@
+.PHONY: setup demo run clean
+
+# Cài đặt toàn bộ thư viện cần thiết
+setup:
+	python -m pip install --upgrade pip
+	pip install groq python-dotenv rich mcp
+
+# Chạy chương trình tương tác trực tiếp qua terminal
+demo:
+	python -m src.agent.loop
+
+run: demo

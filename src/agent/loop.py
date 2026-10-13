@@ -152,5 +152,22 @@ def ask_agent(question: str, max_steps: int = MAX_STEPS):
     return asyncio.run(run_agent_loop(question=question, max_steps=max_steps))
 
 if __name__ == "__main__":
-    test_q = "Điểm chuyên cần 9, bài lab 8.5, test1 7.5, test2 8, đồ án cuối kỳ 9, vắng 5%. Hãy tính điểm môn AIPR giúp tôi?"
-    ask_agent(test_q)
+    rprint("[bold green]====================================================[/bold green]")
+    rprint("[bold green]   TRỢ LÝ BÀI GIẢNG & QUY CHẾ AIPR (INTERACTIVE CLI)[/bold green]")
+    rprint("[bold green]====================================================[/bold green]")
+    rprint("[dim]Gõ câu hỏi của bạn và nhấn Enter. Gõ 'exit' hoặc 'q' để thoát.[/dim]\n")
+    while True:
+        try:
+            # Nhận câu hỏi trực tiếp từ terminal
+            user_question = input("\n👤 Bạn: ").strip()
+            # Thoát nếu người dùng gõ exit hoặc q
+            if not user_question:
+                continue
+            if user_question.lower() in ["exit", "quit", "q"]:
+                rprint("[yellow]Tạm biệt bạn![/yellow]")
+                break
+            # Gọi Agent xử lý
+            ask_agent(user_question)
+        except KeyboardInterrupt:
+            rprint("\n[yellow]Đã ngắt chương trình. Hẹn gặp lại![/yellow]")
+            break
