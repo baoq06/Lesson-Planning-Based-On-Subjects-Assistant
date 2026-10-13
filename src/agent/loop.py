@@ -12,26 +12,11 @@ from src.schemas import ToolCall, AgentStep, AgentResponse
 MODEL = "qwen/qwen3.8-27b"
 MAX_STEPS = 7
 
-SYSTEM_PROMPT = """You solve problems step by step using the ReAct pattern.
-At each step reply in EXACTLY this format, then stop and wait for my reply:
-
-Thought: <what you are thinking>
-Action: <one action from the list below>
-
-When you know the answer, reply with:
-
-Final Answer: <the answer>
-
-Available actions:
-- population(<country>) : look up the population of a country. Example: population(vietnam)
-- area(<country>) : look up the land area of a country in square kilometers. Example: area(vietnam)
-- calculator(<expression>) : compute arithmetic. Example: calculator(330 * 100)
-
-Rules:
-- One action per step.
-- Always use the available actions to look up facts; do not answer from memory.
-
+SYSTEM_PROMPT = """Bạn là trợ lý AI thông minh chuyên hỗ trợ môn học AIPR.
+- Khi cần tính toán hoặc tra cứu thông tin môn học, hãy gọi các công cụ (tools) thích hợp.
+- Khi đã có kết quả từ công cụ hoặc khi trả lời người dùng, hãy trả lời trực tiếp, rõ ràng và mạch lạc, không cần thêm các nhãn 'Thought:' hay 'Action:'.
 """
+
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     try:
@@ -91,6 +76,7 @@ def parse_tool_args(raw_args: Any) -> dict[str, Any]:
         except Exception:
             return {}
     return {}
+
 async def safe_execute_mcp_tool(tool_name: str, arguments: dict[str, Any]) -> str:
     try:
         result = await mcp.call_tool(tool_name, arguments)
@@ -114,7 +100,7 @@ async def run_agent_loop(question: str, max_steps: int = MAX_STEPS) -> AgentResp
     ]
 
     steps: list[AgentStep] = []
-    rprint(f"\n[bold cyan]🚀 Bắt đầu xử lý câu hỏi:[/bold cyan] {question}")
+    rprint(f"\n[bold cyan]Bắt đầu xử lý câu hỏi:[/bold cyan] {question}")
 
     for step_num in range(1, max_steps + 1):
         rprint(f"\n[bold yellow]── Bước {step_num}/{max_steps} ──[/bold yellow]")
@@ -127,22 +113,23 @@ async def run_agent_loop(question: str, max_steps: int = MAX_STEPS) -> AgentResp
         )
         msg = response.choices[0].message
         messages.append(msg)
-        # 2. KIỂM TRA ĐIỂM DỪNG: Không còn yêu cầu tool -> Đạt Final Answer
+
         if not msg.tool_calls:
             final_answer = msg.content or "Không có câu trả lời."
-            rprint(f"[bold green] Final Answer:[/bold green]\n{final_answer}")
+            rprint(f"[bold green]Final Answer:[/bold green]\n{final_answer}")
             return AgentResponse(answer=final_answer, steps=steps)
+        
         thought = msg.content or f"Cần kích hoạt {len(msg.tool_calls)} công cụ."
-        rprint(f"[bold magenta] Thought:[/bold magenta] {thought}")
-        # 3. EXECUTE & OBSERVE: Duyệt qua từng tool call do LLM yêu cầu
+        rprint(f"[bold magenta]Thought:[/bold magenta] {thought}")
+
         for tool_call in msg.tool_calls:
             fn_name = tool_call.function.name
             fn_args = parse_tool_args(tool_call.function.arguments)
-            rprint(f"[bold blue] Action:[/bold blue] {fn_name}({fn_args})")
-            # Thực thi an toàn qua MCP
+
+            rprint(f"[bold blue]Action:[/bold blue] {fn_name}({fn_args})")
             observation = await safe_execute_mcp_tool(fn_name, fn_args)
-            rprint(f"[bold green] Observation:[/bold green] {observation[:150]}...")
-            # Lưu vết vào cấu trúc AgentStep của schemas.py
+
+            rprint(f"[bold green]Observation:[/bold green] {observation[:150]}...")
             step_record = AgentStep(
                 step_num=step_num,
                 thought=thought,
@@ -150,23 +137,20 @@ async def run_agent_loop(question: str, max_steps: int = MAX_STEPS) -> AgentResp
                 observation=observation
             )
             steps.append(step_record)
-            # 4. REPEAT: Nhét observation vào messages để LLM đọc ở vòng lặp sau
             messages.append({
                 "role": "tool",
                 "tool_call_id": tool_call.id,
                 "name": fn_name,
                 "content": observation
             })
-    # Nếu chạy hết max_steps mà chưa xong:
-    stop_warning = f"⚠️ Dừng: Đã đạt giới hạn tối đa {max_steps} bước suy luận."
+
+    stop_warning = f"Dừng: Đã đạt giới hạn tối đa {max_steps} bước suy luận."
     rprint(f"[bold red]{stop_warning}[/bold red]")
     return AgentResponse(answer=stop_warning, steps=steps)
 
-def ask_agent(question: str, max_steps: int = MAX_STEPS) -> AgentResponse:
-
+def ask_agent(question: str, max_steps: int = MAX_STEPS):
     return asyncio.run(run_agent_loop(question=question, max_steps=max_steps))
+
 if __name__ == "__main__":
     test_q = "Điểm chuyên cần 9, bài lab 8.5, test1 7.5, test2 8, đồ án cuối kỳ 9, vắng 5%. Hãy tính điểm môn AIPR giúp tôi?"
-    
-    result = ask_agent(test_q)
-    print("\nKết quả hoàn chỉnh:", result.answer)
+    ask_agent(test_q)
