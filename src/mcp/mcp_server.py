@@ -229,7 +229,7 @@ def draft_template_submission(student_id: str, student_name: str, assg: str, day
         content = Template(TEMPLATE_PATH.read_text(encoding="utf-8")).substitute(
             student_name=student_name,
             student_id=student_id,
-            assignment=assg,
+            assg=assg,
             days_requested=days_requested,
             reason=reason,
             today=date.today().strftime("%Y-%m-%d"),
