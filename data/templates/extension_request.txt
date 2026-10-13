@@ -1,0 +1,18 @@
+CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+ĐỘC LẬP - TỰ DO - HẠNH PHÚC
+ĐƠN XIN GIA HẠN NỘP BÀI
+
+Kính gửi: Giảng viên môn Lập trình AI với Python (AIPR_24110FIE)
+
+Em tên là: $student_name (MSSV: $student_id).
+Em làm đơn này xin gia hạn nộp: $assg.
+Số ngày xin gia hạn: $days_requested ngày.
+Lý do: $reason
+Minh chứng đính kèm: Giấy xác nhận y tế
+
+Em cam kết thông tin trên là đúng sự thật.
+Em xin chân thành cảm ơn.
+
+Ngày: $today
+Sinh viên ký tên,
+$student_name

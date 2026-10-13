@@ -13,9 +13,9 @@ from src.schemas import DraftResult
 
 BASE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = BASE_DIR.parents[1]
-TEMPLATE_PATH = REPO_ROOT / "data" / "prompts" / "extension_request.txt"
+TEMPLATE_PATH = REPO_ROOT / "data" / "templates" / "extension_request.txt"
 DRAFTS_DIR = REPO_ROOT / "data" / "drafts"
-PLANS_DIR = REPO_ROOT / "plans"
+PLANS_DIR = REPO_ROOT / "data" / "plans"
 MAX_EXTENSION_DAYS = 5
 STUDENT_ID_PATTERN = re.compile(r"\d{8}")
 
@@ -140,7 +140,7 @@ def calculate_course_grade(
         if absence_rate > 20.0:
             logger.info(f"Student failed attendance: absence_rate={absence_rate} exceeds 20%")
             return (
-                f"❌ CẢNH BÁO: Tỷ lệ vắng học là {absence_rate:.1f}% (vượt quá mức cho phép 20%).\n"
+                f"CẢNH BÁO: Tỷ lệ vắng học là {absence_rate:.1f}% (vượt quá mức cho phép 20%).\n"
                 f"- Trạng thái: Sinh viên BỊ CẤM THI / Không đủ điều kiện bảo vệ đồ án cuối kỳ theo Quy chế mục 2.\n"
                 f"- Điểm tổng kết: 0.0 (Không đạt)."
             )
@@ -158,7 +158,7 @@ def calculate_course_grade(
 
         logger.info(f"Calculated final grade: {final_grade}, passed={passed}")
         return (
-            f"📊 KẾT QUẢ ĐÁNH GIÁ MÔN HỌC (AIPR):\n"
+            f"KẾT QUẢ ĐÁNH GIÁ MÔN HỌC (AIPR):\n"
             f"- Chuyên cần (5%): {attendance}\n"
             f"- Bài tập Lab (15%): {labs}\n"
             f"- Kiểm tra 1 - Giữa kỳ (15%): {test1}\n"
@@ -166,8 +166,8 @@ def calculate_course_grade(
             f"- Đồ án & Vấn đáp (50%): {final_project}\n"
             f"- Tỷ lệ vắng mặt: {absence_rate:.1f}% (Hợp lệ)\n"
             f"----------------------------------------\n"
-            f"🎯 ĐIỂM TỔNG KẾT: {final_grade} / 10\n"
-            f"📌 Trạng thái: {'ĐẠT (Passed)' if passed else 'KHÔNG ĐẠT (Failed)'}"
+            f"ĐIỂM TỔNG KẾT: {final_grade} / 10\n"
+            f"Trạng thái: {'ĐẠT (Passed)' if passed else 'KHÔNG ĐẠT (Failed)'}"
         )
     except Exception as e:
         logger.error(f"Error occurred while calculating course grade: {e}")
@@ -178,7 +178,7 @@ def check_late_submission_penalty(hours_late: int) -> str:
     logger.info(f"Executing 'check_late_submission_penalty' for hours_late={hours_late}")
     try:
         if hours_late <= 0:
-            return "✅ Bài nộp đúng hạn. Không bị trừ điểm (Mức phạt: 0%)."
+            return "Bài nộp đúng hạn. Không bị trừ điểm (Mức phạt: 0%)."
         
         if hours_late <= 24:
             penalty = 10
@@ -192,14 +192,14 @@ def check_late_submission_penalty(hours_late: int) -> str:
         else:
             logger.info(f"Late submisssion rejected (>72h): {hours_late} hours")
             return (
-                f"❌ NỘP TRỄ QUÁ 72 GIỜ (Cụ thể: {hours_late} giờ trễ).\n"
+                f"NỘP TRỄ QUÁ 72 GIỜ (Cụ thể: {hours_late} giờ trễ).\n"
                 f"- Căn cứ: Mục 4 Quy chế môn học AIPR.\n"
                 f"- Trạng thái: Cổng nộp bài đã đóng.\n"
                 f"- Mức điểm: NHẬN 0 ĐIỂM cho bài tập này."
             )
         logger.info(f"Late penalty applied: -{penalty}% ({desc})")
         return (
-            f"⚠️ CẢNH BÁO NỘP BÀI TRỄ HẠN:\n"
+            f"CẢNH BÁO NỘP BÀI TRỄ HẠN:\n"
             f"- Thời gian trễ: {hours_late} giờ ({desc}).\n"
             f"- Căn cứ: Mục 4 Quy chế môn học AIPR.\n"
             f"- Mức phạt: TRỪ {penalty}% tổng số điểm của bài nộp."
