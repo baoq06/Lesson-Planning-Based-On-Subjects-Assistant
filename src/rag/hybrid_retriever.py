@@ -1,8 +1,8 @@
 from typing import Optional
 from rank_bm25 import BM25Okapi
-from src.data_layer.models import DocumentChunk, RetrievalResult
-from src.data_layer.embedding import embed_text, cosine_similarity
-from src.rag_engine.vector_store import VectorStore
+from src.schemas import DocumentChunk, RetrievalResult
+from src.rag.embedding import embed_text, cosine_similarity
+from src.rag.vector_store import VectorStore
 
 
 def normalise_scores(scores: list[float]) -> list[float]:

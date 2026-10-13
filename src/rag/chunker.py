@@ -4,9 +4,7 @@ from src.schemas import Document, DocumentChunk
 from src.rag.embedding import batch_embed_text, cosine_similarity
 
 
-# =====================================================================
-# Strategy 1: Fixed-Size Chunking (Cắt theo độ dài cố định + Overlap)
-# =====================================================================
+# fixed size chunking
 def fixed_size_chunking(
     doc: Document, chunk_size: int = 200, overlap: int = 40
 ) -> list[DocumentChunk]:
@@ -40,9 +38,7 @@ def fixed_size_chunking(
     return chunks
 
 
-# =====================================================================
-# Strategy 2: Recursive Chunking (Cắt đệ quy theo cấu trúc văn bản)
-# =====================================================================
+# recursive chunking
 def recursive_chunking(
     doc: Document,
     chunk_size: int = 400,
@@ -103,9 +99,7 @@ def recursive_chunking(
     return chunks
 
 
-# =====================================================================
-# Strategy 3: Semantic Chunking (Cắt theo độ tương đồng ngữ nghĩa)
-# =====================================================================
+# senmatic chunking
 def split_into_sentences(text: str) -> list[str]:
     """Tách đoạn văn thành các câu dựa trên dấu chấm, hỏi, than hoặc ngắt dòng."""
     # Regex bắt ranh giới kết thúc câu: sau dấu . ? ! kèm khoảng trắng hoặc xuống dòng
@@ -119,14 +113,7 @@ def semantic_chunking(
     max_chunk_size: int = 600,
     min_sentences: int = 1,
 ) -> list[DocumentChunk]:
-    """
-    Semantic Chunking:
-    1. Tách văn bản thành các câu.
-    2. Batch embed toàn bộ các câu trong 1 API call duy nhất.
-    3. Tính Cosine Similarity giữa 2 câu liền kề.
-    4. Cắt chunk tại vị trí có bước nhảy ngữ nghĩa (similarity < threshold)
-       hoặc khi độ dài vượt quá max_chunk_size.
-    """
+
     text = doc.content.strip()
     sentences = split_into_sentences(text)
 
