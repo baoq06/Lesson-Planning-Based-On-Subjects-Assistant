@@ -256,6 +256,30 @@ def draft_template_submission(student_id: str, student_name: str, assg: str, day
         return f"Error: draft_template_submission failed: {e}"
 
 @mcp.tool()
+def read_draft(student_id: str) -> str:
+    logger.info(f"Executing 'read_draft' for student {student_id}")
+    try:
+        student_id = student_id.strip()
+        if not STUDENT_ID_PATTERN.fullmatch(student_id):
+            logger.info(f"Error: student_id must be exactly 8 digits, e.g. '24110xxx'.")
+            return "Error: student_id must be exactly 8 digits, e.g. '24110xxx'."
+
+        path = DRAFTS_DIR / f"draft_submission_{student_id}.txt"
+        if not path.exists():
+            logger.info(f"Error: no draft found for student_id {student_id}. Call draft_template_submission first.")
+            return f"Error: no draft found for student_id {student_id}. Call draft_template_submission first."
+
+        content = path.read_text(encoding="utf-8")
+        logger.info("draft read: %s (%d chars)", path, len(content))
+        return json.dumps(
+            {"path": str(path), "chars": len(content), "content": content},
+            ensure_ascii=False,
+        )
+    except Exception as e:
+        logger.exception("read_draft failed")
+        return f"Error: read_draft failed: {e}"
+
+@mcp.tool()
 def export_lesson_plan(
     week: int,
     title: str,
