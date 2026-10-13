@@ -158,15 +158,13 @@ if __name__ == "__main__":
     rprint("[dim]Gõ câu hỏi của bạn và nhấn Enter. Gõ 'exit' hoặc 'q' để thoát.[/dim]\n")
     while True:
         try:
-            # Nhận câu hỏi trực tiếp từ terminal
-            user_question = input("\n👤 Bạn: ").strip()
-            # Thoát nếu người dùng gõ exit hoặc q
+            user_question = input("\nBạn: ").strip()
             if not user_question:
                 continue
             if user_question.lower() in ["exit", "quit", "q"]:
                 rprint("[yellow]Tạm biệt bạn![/yellow]")
                 break
-            # Gọi Agent xử lý
+            
             ask_agent(user_question)
         except KeyboardInterrupt:
             rprint("\n[yellow]Đã ngắt chương trình. Hẹn gặp lại![/yellow]")
