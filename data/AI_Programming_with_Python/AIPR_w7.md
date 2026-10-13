@@ -1,37 +1,37 @@
-# Tuần 7: Model Context Protocol (MCP) & Tích hợp Công cụ Ngoài
+# Week 7: Model Context Protocol (MCP) & External Tool Integration
 
-## 1. Thông tin chung & Chuẩn đầu ra (Learning Objectives - A7.1 đến A7.6)
-- **A7.1**: Giải thích kiến trúc Host / Client / Server, 3 Primitives (Resources, Prompts, Tools), và 2 Transports (stdio, SSE).
-- **A7.2**: Thêm và cấu hình các MCP Server cộng đồng từ file config mà không cần viết lại mã nguồn ứng dụng.
-- **A7.3**: Kiểm tra và kiểm toán (Audit) Tool inventory, JSON schema và ranh giới bảo mật (Trust boundary).
-- **A7.4**: Viết Python MCP Client kết nối qua `stdio`, khám phá công cụ bằng `list_tools()` và gọi bằng `call_tool()`.
-- **A7.5**: Tự viết một MCP Server chuẩn, bọc VectorStore thành công cụ MCP và kiểm thử bằng JSON-RPC probe.
-- **A7.6**: Xây dựng ReAct Agent động với tập công cụ hoàn toàn lấy từ `list_tools()` mà không hardcode trong mã nguồn.
+## 1. General Information & Learning Objectives (A7.1 to A7.6)
+- **A7.1**: Explain the Host / Client / Server architecture, the 3 Primitives (Resources, Prompts, Tools) and the 2 Transports (stdio, SSE).
+- **A7.2**: Add and configure community MCP Servers from a config file without rewriting the application source code.
+- **A7.3**: Inspect and Audit the Tool inventory, the JSON schema and the security boundary (Trust boundary).
+- **A7.4**: Write a Python MCP Client that connects over `stdio`, discovers tools with `list_tools()` and calls them with `call_tool()`.
+- **A7.5**: Write a standard MCP Server yourself, wrap a VectorStore as an MCP tool and test it with a JSON-RPC probe.
+- **A7.6**: Build a dynamic ReAct Agent whose tool set comes entirely from `list_tools()` without hardcoding it in the source code.
 
-## 2. Lý thuyết nền tảng & Kiến trúc hệ thống
-### 2.1. Tại sao Model Context Protocol (MCP) là tất yếu?
-- **Vấn đề $N \times M$**: Trước khi có MCP, nếu có $N$ mô hình AI/Host và $M$ công cụ/nguồn dữ liệu, lập trình viên phải viết $N \times M$ bộ adapter riêng biệt.
-- **Giải pháp MCP**: Chuẩn hóa một giao thức thống nhất (dựa trên JSON-RPC 2.0). Mọi nguồn dữ liệu trở thành MCP Server; mọi ứng dụng AI trở thành MCP Client. Số lượng kết nối giảm về $N + M$.
+## 2. Foundational Theory & System Architecture
+### 2.1. Why is the Model Context Protocol (MCP) inevitable?
+- **The $N \times M$ problem**: Before MCP, with $N$ AI models/Hosts and $M$ tools/data sources, developers had to write $N \times M$ separate adapters.
+- **The MCP solution**: Standardize a single unified protocol (based on JSON-RPC 2.0). Every data source becomes an MCP Server; every AI application becomes an MCP Client. The number of connections drops to $N + M$.
 
-### 2.2. Các thành phần & Khái niệm cốt lõi của MCP
-- **Ba vai trò (Three Roles)**:
-  - **Host**: Ứng dụng điều phối cấp cao (Claude Desktop, IDE, hoặc Python ReAct Agent).
-  - **Client**: Module thiết lập kết nối $1:1$ với một Server cụ thể.
-  - **Server**: Ứng dụng độc lập phơi bày dữ liệu và tính năng thông qua giao thức chuẩn.
-- **Ba Primitive cốt lõi**:
-  - `Tools`: Các hàm hành động mà LLM có thể gọi thực thi (tạo Side Effect hoặc tính toán).
-  - `Resources`: Dữ liệu ngữ cảnh chỉ đọc (tệp tin, nhật ký, schema cơ sở dữ liệu).
-  - `Prompts`: Các mẫu lời nhắc dựng sẵn do server cung cấp.
-- **Hai phương thức truyền tải (Two Transports)**:
-  - `stdio`: Giao tiếp qua luồng nhập/xuất chuẩn của tiến trình cục bộ (Local process stdin/stdout).
-  - `sse` (Server-Sent Events): Giao tiếp qua HTTP dành cho các dịch vụ từ xa.
+### 2.2. Core components & concepts of MCP
+- **Three Roles**:
+  - **Host**: The high-level orchestrating application (Claude Desktop, an IDE, or a Python ReAct Agent).
+  - **Client**: The module that establishes a $1:1$ connection with one specific Server.
+  - **Server**: An independent application that exposes data and features through the standard protocol.
+- **Three core Primitives**:
+  - `Tools`: Action functions the LLM can call to execute (creating a Side Effect or performing a computation).
+  - `Resources`: Read-only context data (files, logs, database schemas).
+  - `Prompts`: Prebuilt prompt templates supplied by the server.
+- **Two Transports**:
+  - `stdio`: Communication through the standard input/output streams of a local process (Local process stdin/stdout).
+  - `sse` (Server-Sent Events): Communication over HTTP for remote services.
 
-### 2.3. Ranh giới tin cậy & Quy tắc Stdio Transport bắt buộc
-- **Ranh giới tin cậy (Trust Boundary)**: Server nằm ngoài tầm kiểm soát trực tiếp của LLM. Client phải audit schema và tham số trước khi thực thi.
-- **Quy tắc vàng Stdio**: Tuyệt đối **KHÔNG ĐƯỢC DÙNG `print()`** bừa bãi trong MCP Server chạy qua `stdio` vì sẽ làm hỏng cấu trúc gói tin JSON-RPC trên luồng stdout. Toàn bộ log phải chuyển sang `sys.stderr`.
+### 2.3. Trust boundary & the mandatory Stdio Transport rule
+- **Trust Boundary**: The Server is outside the direct control of the LLM. The Client must audit the schema and the arguments before executing.
+- **The Stdio golden rule**: Absolutely **DO NOT USE `print()`** carelessly in an MCP Server running over `stdio`, because it corrupts the JSON-RPC packet structure on the stdout stream. All logs must go to `sys.stderr`.
 
-## 3. Các bài tập Lab & Mã nguồn mẫu từng bước (Step-by-step Exercises)
-### Exercise 7.1 — Xây dựng MCP Server cho môn học (src/mcp_service/server.py)
+## 3. Lab Exercises & Step-by-step Sample Code
+### Exercise 7.1 — Building an MCP Server for the course (src/mcp_service/server.py)
 ```python
 from mcp.server import MCPServer
 import sys
@@ -40,18 +40,18 @@ mcp = MCPServer("aipr-study-assistant")
 
 @mcp.tool()
 def register_study_task(task_id: str, week: int, title: str, due_date: str) -> str:
-    """Đăng ký một nhiệm vụ học tập có kiểm chứng (Write Side Effect)."""
-    # Ghi log chuẩn qua stderr, bảo vệ stdout cho JSON-RPC
-    print(f"[MCP-LOG] Đăng ký task {task_id} cho tuần {week}", file=sys.stderr)
-    return f"Đã ghi nhận nhiệm vụ '{title}' vào hệ thống lưu trữ bền vững."
+    """Register a study task that can be verified (Write Side Effect)."""
+    # Write the log through stderr to protect stdout for JSON-RPC
+    print(f"[MCP-LOG] Registering task {task_id} for week {week}", file=sys.stderr)
+    return f"Task '{title}' has been recorded in persistent storage."
 
 @mcp.tool()
 def get_study_tasks(week: int = 0) -> str:
-    """Truy xuất danh sách nhiệm vụ đã đăng ký."""
-    return "Danh sách nhiệm vụ học tập hiện có: [HW_W04, HW_W07]"
+    """Retrieve the list of registered tasks."""
+    return "Current study tasks: [HW_W04, HW_W07]"
 ```
 
-### Exercise 7.2 — Python MCP Client kết nối qua Stdio (ex2_1_mcp_client.py)
+### Exercise 7.2 — Python MCP Client connecting over Stdio (ex2_1_mcp_client.py)
 ```python
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -63,15 +63,15 @@ async def run_client():
             await session.initialize()
             # Dynamic Tool Discovery
             tools = await session.list_tools()
-            print(f"Khám phá được {len(tools.tools)} công cụ từ server.")
-            # Thực thi công cụ
+            print(f"Discovered {len(tools.tools)} tools from the server.")
+            # Execute a tool
             res = await session.call_tool("register_study_task", {"task_id": "T01", "week": 4, "title": "Lab BM25", "due_date": "2026-10-25"})
-            print("Kết quả:", res.content[0].text)
+            print("Result:", res.content[0].text)
 ```
 
-## 4. Các bẫy thường gặp & Nguyên tắc thiết kế (Gotchas & Best Practices)
-- **Bẫy Vỡ luồng JSON-RPC do Print**: Bất kỳ thư viện nào vô tình in ra stdout (ví dụ: cảnh báo nạp mô hình) đều làm crash kết nối MCP stdio.
-- **Bẫy Không có Side Effect**: Đề tài dùng MCP mà chỉ viết tool đọc (Read-only) sẽ bị đánh trượt tiêu chí đồ án; bắt buộc phải có tool Write lưu xuống đĩa hoặc database.
+## 4. Common Pitfalls & Design Principles (Gotchas & Best Practices)
+- **JSON-RPC stream breakage from print pitfall**: Any library that accidentally prints to stdout (for example a model-loading warning) crashes the MCP stdio connection.
+- **No Side Effect pitfall**: A project that uses MCP but only writes read-only tools will fail the project criteria; there must be a Write tool that saves to disk or a database.
 
-## 5. Nhiệm vụ tự học & Đánh giá năng lực (Independent Labs)
-- Xây dựng bài kiểm tra JSON-RPC probe độc lập để xác minh tính ổn định của MCP Server trước khi cho Agent kết nối vào.
+## 5. Independent Tasks & Competency Assessment (Independent Labs)
+- Build an independent JSON-RPC probe test to verify the stability of the MCP Server before letting the Agent connect to it.
