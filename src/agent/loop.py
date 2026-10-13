@@ -6,16 +6,25 @@ from typing import Any, Optional
 from dotenv import load_dotenv
 from rich import print as rprint
 from groq import Groq
+from pathlib import Path
 from src.mcp.mcp_server import mcp
 from src.schemas import ToolCall, AgentStep, AgentResponse
 
 MODEL = "qwen/qwen3.8-27b"
 MAX_STEPS = 7
 
-SYSTEM_PROMPT = """Bạn là trợ lý AI thông minh chuyên hỗ trợ môn học AIPR.
-- Khi cần tính toán hoặc tra cứu thông tin môn học, hãy gọi các công cụ (tools) thích hợp.
-- Khi đã có kết quả từ công cụ hoặc khi trả lời người dùng, hãy trả lời trực tiếp, rõ ràng và mạch lạc, không cần thêm các nhãn 'Thought:' hay 'Action:'.
-"""
+REPO_ROOT = Path(__file__).resolve().parents[2]
+PROMPT_PATH = REPO_ROOT / "data" / "system_prompt.txt"
+
+def load_system_prompt() -> str:
+    if PROMPT_PATH.exists():
+        return PROMPT_PATH.read_text(encoding="utf-8").strip()
+    fallback = REPO_ROOT / "data" / "prompts" / "system_prompt.txt"
+    if fallback.exists():
+        return fallback.read_text(encoding="utf-8").strip()
+    return "Bạn là trợ lý AI thông minh chuyên hỗ trợ môn học AIPR."
+
+SYSTEM_PROMPT = load_system_prompt()
 
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
