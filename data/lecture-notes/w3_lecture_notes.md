@@ -1,3 +1,10 @@
+---
+doc_id: LP_W03
+title: Week 3 — RAG Foundations: Documents & Embeddings
+version: 1.0
+date: 2026-10-12
+owner: AIPR Instructor
+---
 # Week 3 — Lecture Notes (Instructor Guide)
 
 ## RAG Foundations: Documents & Embeddings

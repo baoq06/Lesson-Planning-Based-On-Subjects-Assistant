@@ -39,19 +39,19 @@ vector_store = VectorStore()
 if CACHE_PATH.exists():
     try:
         vector_store.load(str(CACHE_PATH))
-        logger.info(f"Loaded {len(vector_store.chunks)} chunks from cache ({CACHE_PATH.name}).")
+        logger.info(f"Loaded {len(vector_store._chunks)} chunks from cache ({CACHE_PATH.name}).")
     except Exception as e:
         logger.error(f"Failed to load cache, re-indexing: {e}")
         docs = load_all_course_documents(DATA_DIR)
         vector_store.add_documents_batch(docs)
         vector_store.save(str(CACHE_PATH))
-        logger.info(f"Indexed and saved {len(vector_store.chunks)} chunks to cache.")
+        logger.info(f"Indexed and saved {len(vector_store._chunks)} chunks to cache.")
 else:
     logger.info("Cache not found. Indexing course documents from disk...")
     docs = load_all_course_documents(DATA_DIR)
     vector_store.add_documents_batch(docs)
     vector_store.save(str(CACHE_PATH))
-    logger.info(f"Indexed and saved {len(vector_store.chunks)} chunks to cache ({CACHE_PATH.name}).")
+    logger.info(f"Indexed and saved {len(vector_store._chunks)} chunks to cache ({CACHE_PATH.name}).")
 
 retriever = HybridRetriever(vector_store=vector_store)
 

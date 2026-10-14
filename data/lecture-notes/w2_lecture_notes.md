@@ -1,3 +1,10 @@
+---
+doc_id: LP_W02
+title: Week 2 — LLM API Access & Integration
+version: 1.0
+date: 2026-10-12
+owner: AIPR Instructor
+---
 # Week 2 — Lecture Notes (Instructor Guide)
 
 ## LLM API Access & Integration

@@ -58,7 +58,7 @@ class HybridRetriever:
 
     def search_bm25(self, query: str, top_k: int = 3) -> list[RetrievalResult]:
         """Chế độ phụ trợ: Chỉ tìm kiếm từ khóa theo BM25 (Sparse-only)."""
-        chunks = list(self.vector_store.chunks.values())
+        chunks = list(self.vector_store._chunks.values())
         if not chunks:
             return []
 
@@ -90,7 +90,7 @@ class HybridRetriever:
         w_b = w_bm25 if w_bm25 is not None else self.w_bm25
         w_v = w_vector if w_vector is not None else self.w_vector
 
-        chunks = list(self.vector_store.chunks.values())
+        chunks = list(self.vector_store._chunks.values())
         if not chunks:
             return []
 

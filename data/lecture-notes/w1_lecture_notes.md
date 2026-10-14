@@ -1,3 +1,10 @@
+---
+doc_id: LP_W01
+title: Week 1 — Python Data Structures for AI
+version: 1.0
+date: 2026-10-12
+owner: AIPR Instructor
+---
 # Week 1 — Lecture Notes (Instructor Guide)
 
 ## Python Data Structures for AI

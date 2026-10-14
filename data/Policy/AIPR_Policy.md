@@ -1,3 +1,10 @@
+---
+doc_id: POLICY_AIPR
+title: Quy chế môn học AIPR
+version: 1.0
+date: 2026-10-12
+owner: AIPR Instructor
+---
 # Quy chế Môn học: Lập trình AI với Python (AIPR Course Policy)
 
 ## 1. Thông tin môn học & Quy định chung

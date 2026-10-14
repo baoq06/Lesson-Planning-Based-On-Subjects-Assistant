@@ -1,3 +1,10 @@
+---
+doc_id: LP_W05
+title: Week 5 — RAG Evaluation & Groundedness
+version: 1.0
+date: 2026-10-12
+owner: AIPR Instructor
+---
 # Week 5 — Lecture Notes 
 
 ## RAG Evaluation & Groundedness
