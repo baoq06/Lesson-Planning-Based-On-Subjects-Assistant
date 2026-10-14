@@ -36,10 +36,10 @@ mcp = MCPServer("LessonPlanningAssistantServer")
 @mcp.tool()
 def remember(key: str, content: str) -> str:
     #Thay đổi file (MEMORY_PATH.write_text): tạo mới hoặc ghi đè cặp key-value.
-    logger.info(f"Executing 'remember' for key: '{key}'")
+    logger.info(f"Chạy tool 'remember' với key: '{key}'")
     try:
         if not key.strip():
-            return "A non-empty key is required."
+            return "Phải có một key không rỗng."
         
         memory = json.loads(MEMORY_PATH.read_text()) if MEMORY_PATH.exists() else {}
         memory[key] = content
@@ -47,69 +47,68 @@ def remember(key: str, content: str) -> str:
         MEMORY_PATH.parent.mkdir(parents=True, exist_ok=True)
         MEMORY_PATH.write_text(json.dumps(memory, indent=2))
 
-        logger.info(f"Successfully remembered key '{key}'")
-        return f"Stored key '{key}' in memory." 
+        logger.info(f"Nhớ key thành công: '{key}'")
+        return f"Lưu key '{key}' vào memory." 
     except Exception as e:
-        logger.error(f"Error occurred while remembering key '{key}': {e}")
-        return f"Error occurred while remembering key '{key}': {e}"
+        logger.error(f"Có lỗi xảy ra khi nhớ key '{key}': {e}")
+        return f"Có lỗi xảy ra khi nhớ key '{key}': {e}"
 
 @mcp.tool()
 def recall(query: str, top_k: int = 3) -> str:
     #Chỉ đọc (Read-only): không làm thay đổi nội dung file.
-    logger.info(f"Executing 'recall' for query: '{query}' with top_k={top_k}")
+    logger.info(f"Chạy tool 'recall' với query: '{query}' và top_k={top_k}")
     try:
         top_k = max(1, min(top_k, 8))
         memory = json.loads(MEMORY_PATH.read_text()) if MEMORY_PATH.exists() else {}
         hits = [f"{k}: {v}" for k, v in memory.items() if query.lower() in (k + v).lower()]
-        return "\n".join(hits[:top_k]) or "Nothing remembered matches that query."
-
-        logger.info(f"Recall found {len(hits)} matching items.")
-        return "\n".join(hits[:top_k]) or "Nothing remembered matches that query."
+        
+        logger.info(f"Đã tìm thấy {len(hits)} mục phù hợp trong bộ nhớ.")
+        return "\n".join(hits[:top_k]) or "Không tìm thấy thông tin nào trong bộ nhớ khớp với truy vấn."
     except Exception as e:
-        logger.error(f"Error occurred while recalling query '{query}': {e}")
-        return f"Error occurred while recalling query '{query}': {e}"
+        logger.error(f"Có lỗi xảy ra khi truy xuất query '{query}': {e}")
+        return f"Có lỗi xảy ra khi truy xuất query '{query}': {e}"
 
 @mcp.tool()
 def calculator(expression: str) -> str:
-    logger.info(f"Executing 'calculator' for expression: '{expression}'")
+    logger.info(f"Chạy tool 'calculator' với biểu thức: '{expression}'")
     try:
         result = eval(expression)
         return str(result)
     except Exception as e:
-        logger.error(f"Error occurred while evaluating expression '{expression}': {e}")
-        return f"Error occurred while evaluating expression '{expression}': {e}"
+        logger.error(f"Có lỗi xảy ra với biểu thức '{expression}': {e}")
+        return f"Có lỗi xảy ra với biểu thức '{expression}': {e}"
 
 @mcp.tool()
 def get_curriculum_week(week: int) -> str:
-    logger.info(f"Executing 'get_curriculum_week' for week: {week}")
+    logger.info(f"Chạy tool 'get_curriculum_week' với tuần: {week}")
     if week < 1 or week > 8:
-        logger.warning(f"Invalid week requested: {week}")
-        return f"Error: Week {week} is invalid. The course only includes weeks 1 to 8."
+        logger.warning(f"Tuần không hợp lệ: {week}")
+        return f"Lỗi: Tuần {week} không hợp lệ. Khóa học chỉ có từ tuần 1 đến 8."
     
     file_path = AIPR_DIR / f"AIPR_w{week}.md"
     if not file_path.exists():
-        logger.error(f"File not found for week {week}: {file_path}")
-        return f"Error: File not found for week {week} at {file_path.name}."
+        logger.error(f"Không tìm thấy file cho tuần {week}: {file_path}")
+        return f"Lỗi: Không tìm thấy file cho tuần {week} ở {file_path.name}."
 
     try: 
         content = file_path.read_text(encoding="utf-8")
-        logger.info(f"Successfully read curriculum for week {week}")
+        logger.info(f"Thành công đọc chương trình học của tuần {week}")
         return content
     except Exception as e:
-        logger.error(f"Error occurred while reading curriculum file for week {week}: {e}")
-        return f"Error occurred while reading curriculum file for week {week}: {e}"
+        logger.error(f"Có lỗi xảy ra khi đọc file chương trình học của tuần {week}: {e}")
+        return f"Có lỗi xảy ra khi đọc file chương trình học của tuần {week}: {e}"
 
 @mcp.tool()
 def get_gotchas_and_best_practices(week: int) -> str:
-    logger.info(f"Executing 'get_gotchas_and_best_practices' for week: {week}")
+    logger.info(f"Chạy tool 'get_gotchas_and_best_practices' cho tuần: {week}")
     if week < 1 or week > 8:
-        logger.warning(f"Invalid week requested: {week}")
-        return f"Error: Week {week} is invalid. The course only includes weeks 1 to 8."
+        logger.warning(f"Tuần không hợp lệ: {week}")
+        return f"Lỗi: Tuần {week} không hợp lệ. Khóa học chỉ có từ tuần 1 đến 8."
     
     file_path = AIPR_DIR / f"AIPR_w{week}.md"
     if not file_path.exists():
-        logger.error(f"File not found for week {week}: {file_path}")
-        return f"Error: File not found for week {week} at {file_path.name}."
+        logger.error(f"Không tìm thấy file cho tuần {week}: {file_path}")
+        return f"Lỗi: Không tìm thấy file cho tuần {week} ở {file_path.name}."
 
     try: 
         content = file_path.read_text(encoding="utf-8")
@@ -117,14 +116,14 @@ def get_gotchas_and_best_practices(week: int) -> str:
         match = re.search(pattern, content, re.DOTALL)
 
         if match:
-            logger.info(f"Successfully extracted 'Common Pitfalls' section for week {week}")
+            logger.info(f"Trích xuất thành công mục 'Common Pitfalls' cho tuần {week}")
             return f"### Gotchas & Best Practices (Week {week}):\n\n" + match.group(1).strip()
 
-        logger.warning(f"Gotchas section not found in the document for week {week}")
-        return f"Error: Gotchas section not found in the document for week {week}."
+        logger.warning(f"Không tìm thấy mục Gotchas trong tài liệu của tuần {week}")
+        return f"Lỗi: Không tìm thấy mục Gotchas trong tài liệu của tuần {week}."
     except Exception as e:
-        logger.error(f"Error occurred while reading curriculum file for week {week}: {e}")
-        return f"Error occurred while reading curriculum file for week {week}: {e}"
+        logger.error(f"Có lỗi xảy ra khi đọc file chương trình học của tuần {week}: {e}")
+        return f"Có lỗi xảy ra khi đọc file chương trình học của tuần {week}: {e}"
 
 @mcp.tool()
 def calculate_course_grade(
@@ -135,10 +134,10 @@ def calculate_course_grade(
     final_project: float,
     absence_rate: float = 0.0,
 ) -> str:
-    logger.info(f"Executing 'calculate_course_grade' with attendance={attendance}, labs={labs}, test1={test1}, test2={test2}, final_project={final_project}, absence_rate={absence_rate}")
+    logger.info(f"Chạy tool 'calculate_course_grade' với Chuyên cần={attendance}, Bài tập lab={labs}, Kiểm tra 1={test1}, Kiểm tra 2={test2}, Đồ án & Vấn đáp={final_project}, Tỷ lệ vắng mặt={absence_rate}")
     try:
         if absence_rate > 20.0:
-            logger.info(f"Student failed attendance: absence_rate={absence_rate} exceeds 20%")
+            logger.info(f"Điểm chuyên cần của sinh viên không đạt: Tỷ lệ vắng mặt={absence_rate} quá 20%")
             return (
                 f"CẢNH BÁO: Tỷ lệ vắng học là {absence_rate:.1f}% (vượt quá mức cho phép 20%).\n"
                 f"- Trạng thái: Sinh viên BỊ CẤM THI / Không đủ điều kiện bảo vệ đồ án cuối kỳ theo Quy chế mục 2.\n"
@@ -156,7 +155,7 @@ def calculate_course_grade(
         final_grade = round(final_grade, 2)
         passed = final_grade >= 5.0
 
-        logger.info(f"Calculated final grade: {final_grade}, passed={passed}")
+        logger.info(f"Điểm tổng kết: {final_grade}, Trạng thái={passed}")
         return (
             f"KẾT QUẢ ĐÁNH GIÁ MÔN HỌC (AIPR):\n"
             f"- Chuyên cần (5%): {attendance}\n"
@@ -170,12 +169,12 @@ def calculate_course_grade(
             f"Trạng thái: {'ĐẠT (Passed)' if passed else 'KHÔNG ĐẠT (Failed)'}"
         )
     except Exception as e:
-        logger.error(f"Error occurred while calculating course grade: {e}")
-        return f"Error occurred while calculating course grade: {e}"
+        logger.error(f"Có lỗi xảy ra khi tính điểm: {e}")
+        return f"Có lỗi xảy ra khi tính điểm: {e}"
 
 @mcp.tool()
 def check_late_submission_penalty(hours_late: int) -> str:
-    logger.info(f"Executing 'check_late_submission_penalty' for hours_late={hours_late}")
+    logger.info(f"Chạy tool 'check_late_submission_penalty' với số giờ trễ={hours_late}")
     try:
         if hours_late <= 0:
             return "Bài nộp đúng hạn. Không bị trừ điểm (Mức phạt: 0%)."
@@ -190,14 +189,14 @@ def check_late_submission_penalty(hours_late: int) -> str:
             penalty = 30
             desc = "Trễ từ 49 đến 72 giờ (Ngày thứ 3)"
         else:
-            logger.info(f"Late submisssion rejected (>72h): {hours_late} hours")
+            logger.info(f"Bài nộp trễ bị từ chối (>72h): {hours_late} giờ")
             return (
                 f"NỘP TRỄ QUÁ 72 GIỜ (Cụ thể: {hours_late} giờ trễ).\n"
                 f"- Căn cứ: Mục 4 Quy chế môn học AIPR.\n"
                 f"- Trạng thái: Cổng nộp bài đã đóng.\n"
                 f"- Mức điểm: NHẬN 0 ĐIỂM cho bài tập này."
             )
-        logger.info(f"Late penalty applied: -{penalty}% ({desc})")
+        logger.info(f"Mức phạt nộp trễ được áp dụng: -{penalty}% ({desc})")
         return (
             f"CẢNH BÁO NỘP BÀI TRỄ HẠN:\n"
             f"- Thời gian trễ: {hours_late} giờ ({desc}).\n"
@@ -205,25 +204,25 @@ def check_late_submission_penalty(hours_late: int) -> str:
             f"- Mức phạt: TRỪ {penalty}% tổng số điểm của bài nộp."
         )
     except Exception as e:
-        logger.error(f"Error occurred while checking late submission penalty: {e}")
-        return f"Error occurred while checking late submission penalty: {e}"
+        logger.error(f"Có lỗi xảy ra khi kiểm tra mức phạt nộp trễ: {e}")
+        return f"Có lỗi xảy ra khi kiểm tra mức phạt nộp trễ: {e}"
 
 @mcp.tool()
 def draft_template_submission(student_id: str, student_name: str, assg: str, days_requested: int, reason: str, proof: bool) -> str:
-    logger.info(f"Executing draft_template_submission for student {student_id}")
+    logger.info(f"Chạy tool 'draft_template_submission' với sinh viên {student_id}")
     try:
         student_id, student_name = student_id.strip(), student_name.strip()
         assg, reason = assg.strip(), reason.strip()
 
         if not (student_id and student_name and assg and reason):
-            logger.info(f"[Error] student_id, student_name, assg and reason are required.")
-            return "Error: student_id, student_name, assg and reason are required."
+            logger.info(f"Mã số sinh viên, Tên sinh viên, assg và lý do không được bỏ trống.")
+            return "Lỗi: Mã số sinh viên, Tên sinh viên, assg và lý do không được bỏ trống."
         if not proof:
-            logger.info(f"[Error] a valid medical certificate is required (policy section 4).")
-            return "Error: a valid medical certificate is required (policy section 4)."
+            logger.info(f"Chứng nhận y tế không được bỏ trống (policy mục 4).")
+            return "Lỗi: Chứng nhận y tế không được bỏ trống (policy mục 4)."
         if not 1 <= days_requested <= MAX_EXTENSION_DAYS:
-            logger.info(f"[Error] days_requested must be between 1 and {MAX_EXTENSION_DAYS}.")
-            return f"Error: days_requested must be between 1 and {MAX_EXTENSION_DAYS}."
+            logger.info(f"Ngày yêu cầu phải từ 1 đến {MAX_EXTENSION_DAYS}.")
+            return f"Lỗi: Ngày yêu cầu phải từ 1 đến {MAX_EXTENSION_DAYS}."
 
         # Điền tham số vào trong mẫu txt
         content = Template(TEMPLATE_PATH.read_text(encoding="utf-8")).substitute(
@@ -247,27 +246,27 @@ def draft_template_submission(student_id: str, student_name: str, assg: str, day
                 path=str(path),
                 overwritten=overwritten,
                 chars=len(content),
-                note="This is a draft and has NOT been submitted. Call read_draft with this path to verify.",
+                note="Đây là nháp chưa được nộp. Gọi tool 'read_draft' với đường dẫn này để xác thực.",
             )),
             ensure_ascii=False,
         )
     except Exception as e:
-        logger.exception("draft_template_submission failed")
-        return f"Error: draft_template_submission failed: {e}"
+        logger.exception("Nộp bản nháp không thành công")
+        return f"Lỗi: Nộp bản nháp không thành công: {e}"
 
 @mcp.tool()
 def read_draft(student_id: str) -> str:
-    logger.info(f"Executing 'read_draft' for student {student_id}")
+    logger.info(f"Chạy tool 'read_draft' với sinh viên {student_id}")
     try:
         student_id = student_id.strip()
         if not STUDENT_ID_PATTERN.fullmatch(student_id):
-            logger.info(f"Error: student_id must be exactly 8 digits, e.g. '24110xxx'.")
-            return "Error: student_id must be exactly 8 digits, e.g. '24110xxx'."
+            logger.info(f"Mã số sinh viên phải có đúng 8 chữ số, ví dụ: '24110xxx'.")
+            return "Lỗi: Mã số sinh viên phải có đúng 8 chữ số, ví dụ: '24110xxx'."
 
         path = DRAFTS_DIR / f"draft_submission_{student_id}.txt"
         if not path.exists():
-            logger.info(f"Error: no draft found for student_id {student_id}. Call draft_template_submission first.")
-            return f"Error: no draft found for student_id {student_id}. Call draft_template_submission first."
+            logger.info(f"Không tìm thấy bản nháp trùng khớp với mã số sinh viên {student_id}. Vui lòng gọi tool 'draft_template_submission trước.")
+            return f"Lỗi: Không tìm thấy bản nháp trùng khớp với mã số sinh viên {student_id}. Vui lòng gọi tool 'draft_template_submission trước."
 
         content = path.read_text(encoding="utf-8")
         logger.info("draft read: %s (%d chars)", path, len(content))
@@ -276,8 +275,8 @@ def read_draft(student_id: str) -> str:
             ensure_ascii=False,
         )
     except Exception as e:
-        logger.exception("read_draft failed")
-        return f"Error: read_draft failed: {e}"
+        logger.exception("Đọc bản nháp không thành công")
+        return f"Lỗi: Đọc bản nháp không thành công: {e}"
 
 @mcp.tool()
 def export_lesson_plan(
@@ -288,16 +287,16 @@ def export_lesson_plan(
     timeline: list[dict],
     homework: str
 ) -> str:
-    logger.info(f"Executing 'export_lesson_plan' for week={week}, title={title}")
+    logger.info(f"Chạy tool 'export_lesson_plan' với tuần={week}, tiêu đề={title}")
     try:
         if week < 1 or week > 8:
-            logger.warning(f"Invalid week provided: {week}")
-            return f"Error: Week {week} is invalid. The course only includes weeks 1 to 8."
+            logger.warning(f"Tuần không hợp lệ: {week}")
+            return f"Lỗi: Tuần {week} không hợp lệ. Khóa học chỉ có từ tuần 1 đến 8."
     
         title = title.strip()
         if not title:
-            logger.warning("Empty title provided for lesson plan.")
-            return "Error: Lesson plan title cannot be empty."
+            logger.warning("Tiêu đề không được bỏ trống")
+            return "Lỗi: Tiêu đề không được bỏ trống"
 
         plan_data = {
             "week": week,
@@ -310,19 +309,45 @@ def export_lesson_plan(
         }
         json_path = PLANS_DIR / f"lesson_plan_week_{week}.json"
         json_path.write_text(json.dumps(plan_data, indent=2, ensure_ascii=False), encoding="utf-8")
-        logger.info(f"Saved lesson plan JSON to {json_path}")
+        logger.info(f"Lưu JSON kế hoạch bài học vào {json_path}")
 
         md_lines = [
-
+            f"# GIÁO ÁN BÀI GIẢNG: TUẦN {week} - {title.upper()}",
+            f"- **Thời lượng:** {duration_minutes} phút",
+            f"- **Ngày khởi tạo:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            "",
+            "## 1. Chuẩn đầu ra & Mục tiêu (Learning Objectives)",
         ]
         for obj in objectives:
             md_lines.append(f"- {obj}")
 
-        md_lines.append()
+        md_lines.append("\n## 2. Tiến trình bài giảng (Timeline)")
+        for item in timeline:
+            t = item.get("time", "")
+            act = item.get("activity", "")
+            detail = item.get("detail", "")
+            md_lines.append(f"- **[{t}] {act}:** {detail}")
+
+        md_lines.append("\n## 3. Bài tập về nhà & Nhiệm vụ tự học (Homework)")
+        md_lines.append(homework.strip() if homework.strip() else "Không có bài tập về nhà.")
+
+        md_path = PLANS_DIR / f"lesson_plan_week_{week}.md"
+        md_path.write_text("\n".join(md_lines), encoding="utf-8")
+
+        logger.info(f"Saved lesson plan Markdown to {md_path}")
+
+        return json.dumps({
+            "status": "success",
+            "week": week,
+            "title": title,
+            "json_path": str(json_path),
+            "md_path": str(md_path),
+            "note": "Xuất kế hoạch bài học vào ổ đĩa thành công."
+        }, ensure_ascii=False)
 
     except Exception as e:
-        logger.exception(f"Error occurred while exporting lesson plan for week {week}: {e}")
-        return f"Error: Failed to export lesson plan for week {week}: {e}"
+        logger.exception(f"Có lỗi xảy ra khi xuất kế hoạch bài học cho tuần {week}: {e}")
+        return f"Có lỗi xảy ra khi xuất kế hoạch bài học cho tuần {week}: {e}"
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")
