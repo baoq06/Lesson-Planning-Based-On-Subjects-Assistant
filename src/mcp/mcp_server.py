@@ -10,6 +10,7 @@ from pathlib import Path
 from mcp.server.mcpserver import MCPServer
 from string import Template
 from src.schemas import DraftResult
+from src.rag.vector_store import VectorStore
 
 BASE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = BASE_DIR.parents[1]
@@ -151,6 +152,7 @@ def get_gotchas_and_best_practices(week: int) -> str:
         logger.error(f"Error occurred while extracting gotchas for Week {week}: {e}")
         return f"Error occurred while reading lecture notes for Week {week}: {e}"
 
+# Cần sửa
 @mcp.tool()
 def calculate_course_grade(
     attendance: float,
@@ -205,7 +207,7 @@ def check_late_submission_penalty(hours_late: int) -> str:
     logger.info(f"Executing 'check_late_submission_penalty' for hours_late={hours_late}")
     try:
         if hours_late <= 0:
-            return "✅ Submission is on time. No penalty applied (Penalty: 0%)."
+            return "Submission is on time. No penalty applied (Penalty: 0%)."
         
         if hours_late <= 24:
             penalty = 10
@@ -238,6 +240,30 @@ def check_late_submission_penalty(hours_late: int) -> str:
 
 @mcp.tool()
 def draft_template_submission(student_id: str, student_name: str, assignment: str, days_requested: int, reason: str, has_medical_proof: bool) -> str:
+    """Draft a deadline-extension request letter and SAVE it as a .txt file (this is only a DRAFT, not submitted).
+
+    Use when a student cannot submit an assignment on time because of a medical reason
+    (illness, accident, hospitalization...).
+    Per the course policy, the request must be sent BEFORE the deadline; if the student is already
+    past the deadline, warn them that the request may not be accepted.
+    Do NOT call this tool when the reason is not medical (e.g. overslept, forgot, did not notice...).
+    Required information: student ID, student name, assignment name, number of extension days,
+    reason, and a valid medical certificate (mandatory).
+    If any information is missing, ASK the student until everything is provided. NEVER invent information.
+    After a successful call, you MUST call read_draft with the same student_id to verify the draft,
+    and only then tell the student that this is a DRAFT and has NOT been submitted.
+    Calling this tool again with the same student_id OVERWRITES the previous draft.
+    On failure returns a string starting with "Error:".
+
+    Args:
+        student_id: student ID with exactly 8 digits, e.g. "24110001".
+        student_name: full name of the student writing the request.
+        assignment: name of the assignment to extend.
+        days_requested: number of extension days (1-5).
+        reason: short description of the medical reason.
+        has_medical_proof: True ONLY if the student confirms having a valid medical certificate.
+            NEVER assume True.
+    """
     logger.info(f"Executing 'draft_template_submission' for student {student_id}")
     try:
         student_id, student_name = student_id.strip(), student_name.strip()
@@ -261,7 +287,7 @@ def draft_template_submission(student_id: str, student_name: str, assignment: st
 
         if not TEMPLATE_PATH.exists():
             logger.error(f"Template file not found at: {TEMPLATE_PATH}")
-            return "System Error: Extension request template file not found."
+            return "Error: Template file not found."
         content = Template(TEMPLATE_PATH.read_text(encoding="utf-8")).substitute(
             student_name=student_name,
             student_id=student_id,
@@ -293,6 +319,19 @@ def draft_template_submission(student_id: str, student_name: str, assignment: st
 
 @mcp.tool()
 def read_draft(student_id: str) -> str:
+    """Read back the saved extension-request draft of a student (READ-ONLY, changes nothing).
+
+    Use this RIGHT AFTER calling draft_template_submission to verify that the draft file
+    was actually created, and to show the letter content to the student.
+    Compare the returned "chars" with the "chars" reported by draft_template_submission:
+    if they are equal, this is the draft that was just written.
+    A draft does NOT mean the request has been submitted.
+    Returns JSON with path, chars, content. On failure returns a string starting with "Error:"
+    (for example when no draft exists for this student yet).
+
+    Args:
+        student_id: the 8-digit student ID used when drafting the letter, e.g. "24110001".
+    """
     logger.info(f"Executing 'read_draft' for student ID {student_id}")
     try:
         student_id = student_id.strip()
