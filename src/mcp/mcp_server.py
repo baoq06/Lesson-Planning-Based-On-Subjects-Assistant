@@ -237,13 +237,13 @@ def check_late_submission_penalty(hours_late: int) -> str:
         return f"Error occurred while checking late submission penalty: {e}"
 
 @mcp.tool()
-def draft_template_submission(student_id: str, student_name: str, assg: str, days_requested: int, reason: str, proof: bool) -> str:
+def draft_template_submission(student_id: str, student_name: str, assignment: str, days_requested: int, reason: str, has_medical_proof: bool) -> str:
     logger.info(f"Executing 'draft_template_submission' for student {student_id}")
     try:
         student_id, student_name = student_id.strip(), student_name.strip()
         assignment, reason = assignment.strip(), reason.strip()
 
-        if not (student_id and student_name and assg and reason):
+        if not (student_id and student_name and assignment and reason):
             logger.warning("Missing required arguments in extension draft submission.")
             return "Error: Student ID, Student Name, Assignment name, and Reason are required."
         
@@ -251,7 +251,7 @@ def draft_template_submission(student_id: str, student_name: str, assg: str, day
             logger.warning(f"Invalid Student ID format: '{student_id}'")
             return f"Error: Student ID '{student_id}' is invalid. It must contain exactly 8 digits."
 
-        if not proof:
+        if not has_medical_proof:
             logger.warning("Extension request rejected due to missing medical proof.")
             return "Error: A valid medical certificate is strictly required per Course Policy Section 4."
         
