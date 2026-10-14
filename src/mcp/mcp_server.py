@@ -33,46 +33,59 @@ logger = logging.getLogger("mcp_server")
 
 mcp = MCPServer("LessonPlanningAssistantServer")
 
-@mcp.tool()
-def remember(key: str, content: str) -> str:
-    logger.info(f"Executing 'remember' tool for key: '{key}'")
-    try:
-        if not key.strip():
-            return "Error: A non-empty key is required."
+# @mcp.tool()
+# def remember(key: str, content: str) -> str:
+#     logger.info(f"Executing 'remember' tool for key: '{key}'")
+#     try:
+#         if not key.strip():
+#             return "Error: A non-empty key is required."
         
-        memory = json.loads(MEMORY_PATH.read_text(encoding="utf-8")) if MEMORY_PATH.exists() else {}
-        memory[key] = content
+#         memory = json.loads(MEMORY_PATH.read_text(encoding="utf-8")) if MEMORY_PATH.exists() else {}
+#         memory[key] = content
 
-        MEMORY_PATH.parent.mkdir(parents=True, exist_ok=True)
-        MEMORY_PATH.write_text(json.dumps(memory, indent=2, ensure_ascii=False), encoding="utf-8")
+#         MEMORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+#         MEMORY_PATH.write_text(json.dumps(memory, indent=2, ensure_ascii=False), encoding="utf-8")
 
-        logger.info(f"Successfully stored key '{key}' in memory.")
-        return f"Stored key '{key}' in memory."
-    except Exception as e:
-        logger.error(f"Error occurred while storing key '{key}': {e}")
-        return f"Error occurred while storing key '{key}': {e}"
+#         logger.info(f"Successfully stored key '{key}' in memory.")
+#         return f"Stored key '{key}' in memory."
+#     except Exception as e:
+#         logger.error(f"Error occurred while storing key '{key}': {e}")
+#         return f"Error occurred while storing key '{key}': {e}"
 
-@mcp.tool()
-def recall(query: str, top_k: int = 3) -> str:
-    logger.info(f"Executing 'recall' tool with query: '{query}', top_k={top_k}")
-    try:
-        top_k = max(1, min(top_k, 8))
-        if not MEMORY_PATH.exists():
-            return "Nothing remembered matches that query."
+# @mcp.tool()
+# def recall(query: str, top_k: int = 3) -> str:
+#     logger.info(f"Executing 'recall' tool with query: '{query}', top_k={top_k}")
+#     try:
+#         top_k = max(1, min(top_k, 8))
+#         if not MEMORY_PATH.exists():
+#             return "Nothing remembered matches that query."
 
-        memory = json.loads(MEMORY_PATH.read_text(encoding="utf-8"))
-        hits = [f"{k}: {v}" for k, v in memory.items() if query.lower() in (k + v).lower()]
+#         memory = json.loads(MEMORY_PATH.read_text(encoding="utf-8"))
+#         hits = [f"{k}: {v}" for k, v in memory.items() if query.lower() in (k + v).lower()]
         
-        logger.info(f"Found {len(hits)} matching items in memory.")
-        if not hits:
-            return "Nothing remembered matches that query."
-        return "\n".join(hits[:top_k])
-    except Exception as e:
-        logger.error(f"Error occurred while recalling query '{query}': {e}")
-        return f"Error occurred while recalling query '{query}': {e}"
+#         logger.info(f"Found {len(hits)} matching items in memory.")
+#         if not hits:
+#             return "Nothing remembered matches that query."
+#         return "\n".join(hits[:top_k])
+#     except Exception as e:
+#         logger.error(f"Error occurred while recalling query '{query}': {e}")
+#         return f"Error occurred while recalling query '{query}': {e}"
 
 @mcp.tool()
 def calculator(expression: str) -> str:
+    """Evaluate a mathematical expression and return the precise calculated result (READ-ONLY, changes nothing).
+
+    Use when exact numerical computations, grade weighting, percentages, or timeline additions
+    are required to eliminate LLM arithmetic calculation errors.
+    Do NOT call this tool for non-mathematical text or non-trivial Python logic.
+    Required information: a valid mathematical string expression containing numbers and standard operators (+, -, *, /, **, etc.).
+    If the expression is missing or incomplete, ASK the user to provide the exact numbers or formulas to compute.
+    After a successful call, use the returned numerical value directly in your response or subsequent calculations.
+    On failure returns a string starting with "Error:".
+
+    Args:
+        expression: A valid mathematical string to evaluate (e.g. '0.05 * 9 + 0.15 * 8.5', '24 * 3 + 12').
+    """
     logger.info(f"Executing 'calculator' tool with expression: '{expression}'")
     try:
         result = eval(expression)
@@ -83,6 +96,20 @@ def calculator(expression: str) -> str:
 
 @mcp.tool()
 def get_curriculum_week(week: int, full_content: bool = False) -> str:
+    """Read curriculum lecture notes, session structures, and learning objectives for a course week (READ-ONLY, changes nothing).
+
+    Use when planning a lesson, designing exercises, checking topics covered, or drafting slides for a given week.
+    Currently, lecture notes are available ONLY for Weeks 1 to 6.
+    Do NOT call this tool for weeks outside the 1 to 6 range (e.g. Week 7, Week 8, or Week 0).
+    Required information: the week number (1-6). The 'full_content' flag is optional (defaults to False).
+    If the user does not specify the week number, ASK the user which week (1 to 6) they want to inspect.
+    Keep 'full_content=False' for structured summaries; set 'full_content=True' ONLY when full instructor scripts and code walkthroughs are needed.
+    After a successful call, synthesize the learning objectives and session structure to answer the user's request.
+    On failure returns a string starting with "Error:".
+    Args:
+        week: The curriculum week number (must be an integer from 1 to 6).
+        full_content: False to retrieve a structured overview; True to read the entire raw markdown file.
+    """
     logger.info(f"Executing 'get_curriculum_week' for week {week}, full_content={full_content}")
     if week < 1 or week > 6:
         logger.warning(f"Invalid week requested: {week}")
@@ -127,6 +154,19 @@ def get_curriculum_week(week: int, full_content: bool = False) -> str:
 
 @mcp.tool()
 def get_gotchas_and_best_practices(week: int) -> str:
+    """Extract common student mistakes, pitfalls, and pedagogical interventions for a course week (READ-ONLY, changes nothing).
+    
+    Use when preparing interactive Q&A, designing formative assessments, anticipating student bugs,
+    or advising instructors on tricky concepts for a given week.
+    Currently available ONLY for Weeks 1 to 6.
+    Do NOT call this tool for general curriculum overviews or for weeks outside the 1 to 6 range.
+    Required information: the week number (1-6).
+    If the week number is not specified, ASK the user which week they need the gotchas and common mistakes for.
+    After a successful call, use the extracted common mistakes and interventions to give actionable teaching recommendations.
+    On failure returns a string starting with "Error:".
+    Args:
+        week: The curriculum week number (must be an integer from 1 to 6).
+    """
     logger.info(f"Executing 'get_gotchas_and_best_practices' for week {week}")
     if week < 1 or week > 6:
         logger.warning(f"Invalid week requested: {week}")
@@ -162,6 +202,26 @@ def calculate_course_grade(
     final_project: float,
     absence_rate: float = 0.0,
 ) -> str:
+    """Calculate the final AIPR course grade and determine pass/fail standing per course policy (READ-ONLY, changes nothing).
+
+    Use when computing a student's final course score, checking passing status, or verifying policy compliance.
+    Per AIPR Course Policy: Attendance (5%), Practical Labs (15%), Test 1 Midterm (15%), Test 2 (15%), Final Project & Oral Defense (50%).
+    Passing threshold is >= 5.0 out of 10.
+    ATTENDANCE POLICY RULE: If absence_rate exceeds 20.0%, the student is automatically DISQUALIFIED with a final grade of 0.0 (Failed).
+    Do NOT call this tool if component grades have not been provided yet.
+    Required information: attendance, labs, test1, test2, final_project (all on a 0-10 scale), and absence_rate (0-100%).
+    If any grade component is missing, ASK the user until all required components are provided. NEVER invent grades.
+    After a successful call, present the full grade breakdown, final weighted grade, and pass/fail status clearly to the user.
+    On failure returns a string starting with "Error:".
+
+    Args:
+        attendance: Attendance component score on a 0-10 scale.
+        labs: Practical lab assignment score on a 0-10 scale.
+        test1: Midterm Test 1 score on a 0-10 scale.
+        test2: Test 2 score on a 0-10 scale.
+        final_project: Final Project & Oral Defense score on a 0-10 scale.
+        absence_rate: Student absence percentage (0.0 to 100.0). Defaults to 0.0.
+    """
     logger.info(
         f"Executing 'calculate_course_grade' with attendance={attendance}, labs={labs}, "
         f"test1={test1}, test2={test2}, final_project={final_project}, absence_rate={absence_rate}%"
@@ -204,6 +264,23 @@ def calculate_course_grade(
 
 @mcp.tool()
 def check_late_submission_penalty(hours_late: int) -> str:
+    """Calculate the penalty deduction percentage for an assignment submitted past the deadline (READ-ONLY, changes nothing).
+
+    Use when a student or instructor asks about late penalties, deduction rates, or portal closing rules.
+    Per AIPR Course Policy Section 4:
+    - <= 0 hours late: 0% penalty (On time).
+    - 1 to 24 hours late (Day 1): Deduct 10% of total score.
+    - 25 to 48 hours late (Day 2): Deduct 20% of total score.
+    - 49 to 72 hours late (Day 3): Deduct 30% of total score.
+    - > 72 hours late: Submission rejected (0 points awarded, portal closed).
+    Do NOT call this tool when the student is asking for a medical deadline extension (use 'draft_template_submission' instead).
+    Required information: the number of hours late as an integer.
+    If the late duration is missing, ASK the user how many hours past the deadline the submission was made.
+    After a successful call, explain the exact penalty deduction percentage and the policy status to the student or instructor.
+    On failure returns a string starting with "Error:".
+    Args:
+        hours_late: Number of hours elapsed past the official deadline (e.g. 5, 36, 80).
+    """
     logger.info(f"Executing 'check_late_submission_penalty' for hours_late={hours_late}")
     try:
         if hours_late <= 0:
@@ -361,6 +438,25 @@ def export_lesson_plan(
     timeline: list[dict],
     homework: str
 ) -> str:
+    """Export and SAVE a completed lesson plan to both JSON and Markdown files (WRITE / SAVE to disk).
+
+    Use when a lesson plan has been fully generated, structured, and is ready to be saved permanently for the instructor.
+    Valid course weeks are 1 through 8.
+    Do NOT call this tool with incomplete or empty lesson plan sections, or while brainstorming without user consent.
+    Required information: week (1-8), non-empty title, duration_minutes, objectives list, timeline list, and homework string.
+    If any required section is missing, ASK the user to provide or approve the missing details before exporting. NEVER invent details.
+    Calling this tool again for the same week OVERWRITES the existing JSON and Markdown plan files for that week.
+    After a successful call, inform the user of the saved file paths (data/plans/) and present the summarized plan.
+    On failure returns a string starting with "Error:".
+
+    Args:
+        week: The curriculum week number (integer between 1 and 8).
+        title: Title of the lesson plan (cannot be empty).
+        duration_minutes: Total session duration in minutes (e.g. 90, 180).
+        objectives: List of learning objective strings (e.g. ["Understand CNN architecture", "Train ResNet"]).
+        timeline: List of timeline dictionaries, each containing 'time', 'activity', and 'detail'.
+        homework: Description of homework assignments, readings, or preparation for next session.
+    """
     logger.info(f"Executing 'export_lesson_plan' for week={week}, title='{title}'")
     try:
         if week < 1 or week > 8:
