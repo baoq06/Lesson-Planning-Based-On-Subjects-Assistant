@@ -31,6 +31,7 @@ class RetrievalResult:
     score: float
     rank: int = 1
     provenance: str = "" # trích nguồn
+    mode: str = ""
 
 # --- khối mpc server - từ từ viết
 
@@ -49,7 +50,7 @@ class ToolResult:
     call_id:  str
     tool_name: str
     output: str
-    id_error: str = False
+    id_error: bool = False
 
 #schema AgentStep: 1 vòng lặp ReAct
 @dataclass
