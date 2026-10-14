@@ -1,3 +1,10 @@
+---
+doc_id: LP_W06
+title: Week 6 — Agent Loop, ReAct & Agent Memory
+version: 1.0
+date: 2026-10-12
+owner: AIPR Instructor
+---
 # Week 6 — Lecture Notes (Instructor Guide)
 
 ## Agent Loop, ReAct & Agent Memory

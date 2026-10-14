@@ -1,3 +1,10 @@
+---
+doc_id: LP_W04
+title: Week 4 — Building the RAG Pipeline
+version: 1.0
+date: 2026-10-12
+owner: AIPR Instructor
+---
 # Week 4 — Lecture Notes (Instructor Guide)
 
 ## Building the RAG Pipeline
