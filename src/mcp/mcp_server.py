@@ -3,6 +3,7 @@ import sys
 import json
 import logging
 import re
+import ast
 from datetime import datetime, date
 from dataclasses import asdict
 from typing import Optional, Literal
@@ -27,6 +28,17 @@ MEMORY_PATH = REPO_ROOT / "data" / "mcp_memory.json"
 DATA_DIR = REPO_ROOT / "data"
 AIPR_DIR = DATA_DIR / "lecture-notes"
 CACHE_PATH = REPO_ROOT / "data" / "vector_store_cache.json"
+
+OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.Pow: operator.pow,
+    ast.Mod: operator.mod,
+    ast.USub: operator.neg,
+    ast.UAdd: operator.pos,
+}
 
 logging.basicConfig(
     stream=sys.stderr, 
@@ -103,6 +115,22 @@ mcp = MCPServer("LessonPlanningAssistantServer")
 #     except Exception as e:
 #         logger.error(f"Error occurred while recalling query '{query}': {e}")
 #         return f"Error occurred while recalling query '{query}': {e}"
+
+def _eval_ast(node):
+    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+        return node.value
+    elif isinstance(node, ast.BinOp):
+        left = _eval_ast(node.left)
+        right = _eval_ast(node.right)
+        op_type = type(node.op)
+        if op_type in OPERATORS:
+            return OPERATORS[op_type](<left, right>)
+        raise ValueError(f"Unsupported operator: {op_type.__name__}")
+    elif isinstance(node, ast.UnaryOp):
+        operand = _eval_ast(node.operand)
+        if op_type in OPERATORS:
+            return OPERATORS[op_type](operand)
+        raise V
 
 @mcp.tool()
 def calculator(expression: str) -> str:
