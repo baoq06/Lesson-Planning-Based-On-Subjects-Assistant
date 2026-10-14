@@ -7,8 +7,10 @@ from dotenv import load_dotenv
 from rich import print as rprint
 from groq import Groq
 from pathlib import Path
-from src.mcp.mcp_server import mcp
 from src.schemas import ToolCall, AgentStep, AgentResponse
+
+from mcp import Client, StdioServerParameters
+
 
 MODEL = "qwen/qwen3.8-27b"
 MAX_STEPS = 7
@@ -87,9 +89,9 @@ def trim_history(history: list[dict[str, Any]], max_turns: int = MAX_HISTORY_TUR
     max_messages = max_turns * 2
     return history[-max_messages:]
 
-async def safe_execute_mcp_tool(tool_name: str, arguments: dict[str, Any]) -> str:
+async def safe_execute_mcp_tool(client: Client, tool_name: str, arguments: dict[str, Any]) -> str:
     try:
-        result = await mcp.call_tool(tool_name, arguments)
+        result = await client.call_tool(tool_name, arguments)
         
         if result and hasattr(result, "content") and result.content:
             texts = [item.text for item in result.content if hasattr(item, "text")]
@@ -99,77 +101,78 @@ async def safe_execute_mcp_tool(tool_name: str, arguments: dict[str, Any]) -> st
     except Exception as e:
         return f"Error executing tool '{tool_name}': {type(e).__name__} - {str(e)}"
 
-async def run_agent_loop(
-    question: str, 
-    max_steps: int = MAX_STEPS,
-    history: Optional[list[dict[str, Any]]] = None
-) -> AgentResponse:
-    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-    mcp_tools = await mcp.list_tools()
-    tools = get_mcp_tools_schema(mcp_tools)
+async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Optional[list[dict[str, Any]]] = None) -> AgentResponse:
+    groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-    trimmed_memory = trim_history(history or [])
+    server = StdioServerParameters(
+        command=sys.executable,
+        args=["-m", "src.mcp.mcp_server"]
+    )
 
-    messages: list[dict[str, Any]] = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        *trimmed_memory,
-        {"role": "user", "content": question}
-    ]
+    async with Client(server) as client:
+        mcp_tools = (await client.list_tools()).tools
+        tools = get_mcp_tools_schema(mcp_tools)
+        trimmed_memory = trim_history(history or [])
+        messages: list[dict[str, Any]] = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            *trimmed_memory,
+            {"role": "user", "content": question}
+        ]
 
-    steps: list[AgentStep] = []
-    rprint(f"\n[bold cyan]Bắt đầu xử lý câu hỏi:[/bold cyan] {question}")
+        steps: list[AgentStep] = []
+        rprint(f"\n[bold cyan]Bắt đầu xử lý câu hỏi:[/bold cyan] {question}")
 
-    for step_num in range(1, max_steps + 1):
-        rprint(f"\n[bold yellow]── Bước {step_num}/{max_steps} ──[/bold yellow]")
+        for step_num in range(1, max_steps + 1):
+            rprint(f"\n[bold yellow]── Bước {step_num}/{max_steps} ──[/bold yellow]")
 
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=messages,
-            tools=tools,
-            temperature=0.1
-        )
-        msg = response.choices[0].message
-        messages.append(msg)
-
-        if not msg.tool_calls:
-            final_answer = msg.content or "Không có câu trả lời."
-            rprint(f"[bold green]Final Answer:[/bold green]\n{final_answer}")
-            return AgentResponse(answer=final_answer, steps=steps)
-        
-        thought = msg.content or f"Cần kích hoạt {len(msg.tool_calls)} công cụ."
-        rprint(f"[bold magenta]Thought:[/bold magenta] {thought}")
-
-        for tool_call in msg.tool_calls:
-            fn_name = tool_call.function.name
-            fn_args = parse_tool_args(tool_call.function.arguments)
-
-            args_for_mcp = dict(fn_args)
-            extracted_thought = args_for_mcp.pop("thought", None)
-            if extracted_thought:
-                thought = extracted_thought
-                rprint(f"[bold magenta]Extracted Thought:[/bold magenta] {thought}")
-
-            rprint(f"[bold blue]Action:[/bold blue] {fn_name}({args_for_mcp})")
-            observation = await safe_execute_mcp_tool(fn_name, args_for_mcp)
-
-            rprint(f"[bold green]Observation:[/bold green] {observation[:150]}...")
-            step_record = AgentStep(
-                step_num=step_num,
-                thought=str(thought),
-                tool_call=ToolCall(id=tool_call.id, name=fn_name, arguments=args_for_mcp),
-                observation=observation
+            response = groq_client.chat.completions.create(
+                model=MODEL,
+                messages=messages,
+                tools=tools,
+                temperature=0.1
             )
-            steps.append(step_record)
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "name": fn_name,
-                "content": observation
-            })
+            msg = response.choices[0].message
+            messages.append(msg)
 
-    stop_warning = f"Dừng: Đã đạt giới hạn tối đa {max_steps} bước suy luận."
-    rprint(f"[bold red]{stop_warning}[/bold red]")
-    return AgentResponse(answer=stop_warning, steps=steps)
+            if not msg.tool_calls:
+                final_answer = msg.content or "Không có câu trả lời."
+                rprint(f"[bold green]Final Answer:[/bold green]\n{final_answer}")
+                return AgentResponse(answer=final_answer, steps=steps)
+            
+            thought = msg.content or f"Cần kích hoạt {len(msg.tool_calls)} công cụ."
+            rprint(f"[bold magenta]Thought:[/bold magenta] {thought}")
+
+            for tool_call in msg.tool_calls:
+                fn_name = tool_call.function.name
+                fn_args = parse_tool_args(tool_call.function.arguments)
+
+                args_for_mcp = dict(fn_args)
+                extracted_thought = args_for_mcp.pop("thought", None)
+                if extracted_thought:
+                    thought = extracted_thought
+                    rprint(f"[bold magenta]Extracted Thought:[/bold magenta] {thought}")
+
+                rprint(f"[bold blue]Action:[/bold blue] {fn_name}({args_for_mcp})")
+                observation = await safe_execute_mcp_tool(client, fn_name, args_for_mcp)
+
+                rprint(f"[bold green]Observation:[/bold green] {observation[:150]}...")
+                step_record = AgentStep(
+                    step_num=step_num,
+                    thought=str(thought),
+                    tool_call=ToolCall(id=tool_call.id, name=fn_name, arguments=args_for_mcp),
+                    observation=observation
+                )
+                steps.append(step_record)
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "name": fn_name,
+                    "content": observation
+                })
+
+        stop_warning = f"Dừng: Đã đạt giới hạn tối đa {max_steps} bước suy luận."
+        rprint(f"[bold red]{stop_warning}[/bold red]")
+        return AgentResponse(answer=stop_warning, steps=steps)
 
 def ask_agent(
     question: str, 
