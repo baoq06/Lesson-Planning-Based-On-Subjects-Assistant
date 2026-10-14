@@ -8,6 +8,7 @@ from rich import print as rprint
 from groq import Groq
 from pathlib import Path
 from src.schemas import ToolCall, AgentStep, AgentResponse
+from src.agent.call_llm import call_llm
 
 from mcp import Client, StdioServerParameters
 
@@ -133,7 +134,7 @@ async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Opt
         for step_num in range(1, max_steps + 1):
             rprint(f"\n[bold yellow]── Bước {step_num}/{max_steps} ──[/bold yellow]")
 
-            response = groq_client.chat.completions.create(
+            response = call_llm.chat.completions.create(
                 model=MODEL,
                 messages=messages,
                 tools=tools,
