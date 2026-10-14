@@ -241,7 +241,7 @@ def draft_template_submission(student_id: str, student_name: str, assg: str, day
     logger.info(f"Executing 'draft_template_submission' for student {student_id}")
     try:
         student_id, student_name = student_id.strip(), student_name.strip()
-        assg, reason = assg.strip(), reason.strip()
+        assignment, reason = assignment.strip(), reason.strip()
 
         if not (student_id and student_name and assg and reason):
             logger.warning("Missing required arguments in extension draft submission.")
@@ -262,11 +262,10 @@ def draft_template_submission(student_id: str, student_name: str, assg: str, day
         if not TEMPLATE_PATH.exists():
             logger.error(f"Template file not found at: {TEMPLATE_PATH}")
             return "System Error: Extension request template file not found."
-
         content = Template(TEMPLATE_PATH.read_text(encoding="utf-8")).substitute(
             student_name=student_name,
             student_id=student_id,
-            assg=assg,
+            assignment=assignment,
             days_requested=days_requested,
             reason=reason,
             today=date.today().strftime("%Y-%m-%d"),
@@ -284,6 +283,7 @@ def draft_template_submission(student_id: str, student_name: str, assg: str, day
                 overwritten=overwritten,
                 chars=len(content),
                 note="This is an unsubmitted draft. Call 'read_draft' with this student ID to verify the content.",
+
             )),
             ensure_ascii=False,
         )
