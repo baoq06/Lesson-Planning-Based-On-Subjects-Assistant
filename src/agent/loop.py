@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import asyncio
+from datetime import datetime
 from typing import Any, Optional
 from dotenv import load_dotenv
 from rich import print as rprint
@@ -159,22 +160,23 @@ async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Opt
         ]
 
         steps: list[AgentStep] = []
+        usage_stats = {
+            "calls": 0,
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "max_prompt": 0,
+        }
         rprint(f"\n[bold cyan]Bắt đầu xử lý câu hỏi:[/bold cyan] {question}")
 
         for step_num in range(1, max_steps + 1):
             rprint(f"\n[bold yellow]── Bước {step_num}/{max_steps} ──[/bold yellow]")
 
-            usage_stats = {
-            "calls": 0,
-            "prompt_tokens": 0,
-            "completion_tokens": 0,
-            "max_prompt": 0,
-        }
-
-            response = groq_client.chat.completions.create(
-                model=MODEL,
+            response = call_llm(
+                client=groq_client,
                 messages=messages,
                 tools=tools,
+                model=MODEL,
                 temperature=0.1
             )
 
@@ -184,10 +186,9 @@ async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Opt
                 c_tokens = getattr(response.usage, "completion_tokens", 0) or 0
                 usage_stats["prompt_tokens"] += p_tokens
                 usage_stats["completion_tokens"] += c_tokens
+                usage_stats["total_tokens"] += (p_tokens + c_tokens)
                 usage_stats["max_prompt"] = max(usage_stats["max_prompt"], p_tokens)
-            msg = response.choices[0].message
-            messages.append(msg)
-
+            
             msg = response.choices[0].message
             messages.append(msg)
 
@@ -195,7 +196,7 @@ async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Opt
                 final_answer = msg.content or "Không có câu trả lời."
                 rprint(f"[bold green]Final Answer:[/bold green]\n{final_answer}")
                 log_question_run(question, steps, final_answer, usage_stats)
-                return AgentResponse(answer=final_answer, steps=steps)
+                return AgentResponse(answer=final_answer, steps=steps, usage=usage_stats)
             
             thought = msg.content or f"Cần kích hoạt {len(msg.tool_calls)} công cụ."
             rprint(f"[bold magenta]Thought:[/bold magenta] {thought}")
@@ -249,7 +250,7 @@ async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Opt
         stop_warning = f"Dừng: Đã đạt giới hạn tối đa {max_steps} bước suy luận."
         rprint(f"[bold red]{stop_warning}[/bold red]")
         log_question_run(question, steps, stop_warning, usage_stats)
-        return AgentResponse(answer=stop_warning, steps=steps)
+        return AgentResponse(answer=stop_warning, steps=steps, usage=usage_stats)
 
 def ask_agent(
     question: str, 
