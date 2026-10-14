@@ -21,7 +21,7 @@ STUDENT_ID_PATTERN = re.compile(r"\d{8}")
 
 MEMORY_PATH = REPO_ROOT / "data" / "mcp_memory.json"
 DATA_DIR = REPO_ROOT / "data"
-AIPR_DIR = DATA_DIR / "AI_Programming_with_Python"
+AIPR_DIR = DATA_DIR / "lecture-notes"
 
 # setup logger để in ra stderr (in ra vào file log để kiểm tra lỗi)
 logging.basicConfig(
