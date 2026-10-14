@@ -76,3 +76,21 @@ class DraftResult:
     chars: int
     note: str
 
+#schema SearchHit: một đoạn bài giảng tìm được
+@dataclass
+class SearchHit:
+    doc_id: str
+    chunk_id: str
+    week: int
+    score: float
+    text: str
+
+#schema SearchResult: kết quả của tool search_lesson_content
+@dataclass
+class SearchResult:
+    query: str
+    mode: str
+    found: bool
+    best_relevance: float
+    hits: list[SearchHit] = field(default_factory=list)
+

@@ -9,7 +9,7 @@ from typing import Optional, Literal
 from pathlib import Path
 from mcp.server.mcpserver import MCPServer
 from string import Template
-from src.schemas import DraftResult
+from src.schemas import DraftResult, SearchHit, SearchResult
 from src.rag.vector_store import VectorStore
 from src.rag.hybrid_retriever import HybridRetriever
 from src.rag.load_documents import load_all_course_documents
@@ -35,25 +35,33 @@ logging.basicConfig(
 )
 logger = logging.getLogger("mcp_server")
 
-vector_store = VectorStore()
-if CACHE_PATH.exists():
-    try:
-        vector_store.load(str(CACHE_PATH))
-        logger.info(f"Loaded {len(vector_store._chunks)} chunks from cache ({CACHE_PATH.name}).")
-    except Exception as e:
-        logger.error(f"Failed to load cache, re-indexing: {e}")
-        docs = load_all_course_documents(DATA_DIR)
-        vector_store.add_documents_batch(docs)
-        vector_store.save(str(CACHE_PATH))
-        logger.info(f"Indexed and saved {len(vector_store._chunks)} chunks to cache.")
-else:
-    logger.info("Cache not found. Indexing course documents from disk...")
-    docs = load_all_course_documents(DATA_DIR)
-    vector_store.add_documents_batch(docs)
-    vector_store.save(str(CACHE_PATH))
-    logger.info(f"Indexed and saved {len(vector_store._chunks)} chunks to cache ({CACHE_PATH.name}).")
+_retriever: Optional[HybridRetriever] = None
 
-retriever = HybridRetriever(vector_store=vector_store)
+def get_retriever() -> HybridRetriever:
+    """Dựng retriever ở lần gọi đầu tiên: đọc cache nếu có, không thì embed tài liệu rồi lưu cache."""
+    global _retriever
+    if _retriever is not None:
+        return _retriever
+
+    store = VectorStore()
+    if CACHE_PATH.exists():
+        store.load(str(CACHE_PATH))
+        logger.info("Loaded %d chunks from cache.", len(store._chunks))
+    else:
+        logger.info("Cache not found. Indexing course documents...")
+        store.add_documents_batch(load_all_course_documents(DATA_DIR))
+        store.save(str(CACHE_PATH))
+        logger.info("Indexed and cached %d chunks.", len(store._chunks))
+
+    _retriever = HybridRetriever(vector_store=store)
+    return _retriever
+
+MIN_RELEVANCE = 0.35
+def _is_lesson_chunk(chunk, week: int) -> bool:
+    """Chỉ giữ đoạn bài giảng; nếu week > 0 thì chỉ giữ đúng tuần đó."""
+    if chunk.metadata.get("type") != "curriculum":
+        return False
+    return week == 0 or chunk.metadata.get("week") == week
 
 mcp = MCPServer("LessonPlanningAssistantServer")
 
@@ -118,6 +126,74 @@ def calculator(expression: str) -> str:
     except Exception as e:
         logger.error(f"Error occurred while evaluating expression '{expression}': {e}")
         return f"Error occurred while evaluating expression '{expression}': {e}"
+
+@mcp.tool()
+def search_lesson_content(query: str, mode: Literal["dense", "hybrid"] = "hybrid", top_k: int = 4, week: int = 0,) -> str:
+    """Search the AIPR lecture notes (Weeks 1-6) for passages relevant to a question (READ-ONLY, changes nothing).
+
+    Use this FIRST for any question about course content: concepts, code examples, techniques,
+    common mistakes. Answer ONLY from the returned passages and ALWAYS cite their doc_id (and week).
+    If "found" is false, the topic is NOT covered in the course: refuse politely and do NOT answer
+    from your own knowledge. Lecture notes for Weeks 7-8 are not available.
+    Do NOT use this tool for grading, late penalties or extension requests (use the dedicated tools).
+    Returns JSON with query, mode, found, best_relevance and hits (doc_id, chunk_id, week, score, text).
+    On failure returns a string starting with "Error:".
+
+    Args:
+        query: the student's question or key terms.
+        mode: "hybrid" (keywords + meaning, best for exact names like 'safe_substitute')
+            or "dense" (meaning only, best for naturally phrased questions).
+        top_k: number of passages to return (1-8).
+        week: 0 to search all weeks, or 1-6 to search only that week.
+    """
+    logger.info(f"Executing 'search_lesson_content' query='{query}' mode={mode} top_k={top_k} week={week}")
+    try:
+        query = query.strip()
+        if not query:
+            logger.info(f"empty query")
+            return "Error: query must not be empty."
+        if mode not in ("dense", "hybrid"):
+            logger.info(f"invalid mode")
+            return "Error: mode must be 'dense' or 'hybrid'."
+        if not 0 <= week <= 6:
+            logger.info(f"invalid week")
+            return "Error: week must be 0 (all weeks) or between 1 and 6."
+        top_k = max(1, min(top_k, 8))
+
+        retriever = get_retriever()
+        pool = len(retriever.vector_store._chunks)
+
+        ranked = retriever.search(query, top_k=pool, mode=mode)
+        hits = [(c, s) for c, s in ranked if _is_lesson_chunk(c, week)][:top_k]
+
+        if mode == "dense":
+            best = hits[0][1] if hits else 0.0
+        else:
+            dense = [(c, s) for c, s in retriever.search(query, top_k=pool, mode="dense")
+                     if _is_lesson_chunk(c, week)]
+            best = dense[0][1] if dense else 0.0
+
+        result = SearchResult(
+            query=query,
+            mode=mode,
+            found=bool(hits) and best >= MIN_RELEVANCE,
+            best_relevance=round(best, 4),
+            hits=[
+                SearchHit(
+                    doc_id=c.doc_id,
+                    chunk_id=c.chunk_id,
+                    week=c.metadata.get("week", 0),
+                    score=round(s, 4),
+                    text=c.content,
+                )
+                for c, s in hits
+            ],
+        )
+        logger.info(f"Successfully searched for query '{query}' and found {len(hits)} hits.")
+        return json.dumps(asdict(result), ensure_ascii=False)
+    except Exception as e:
+        logger.exception("search_lesson_content failed")
+        return f"Error: search_lesson_content failed: {e}"
 
 @mcp.tool()
 def get_curriculum_week(week: int, full_content: bool = False) -> str:
