@@ -3,6 +3,8 @@ from rank_bm25 import BM25Okapi
 from src.schemas import DocumentChunk, RetrievalResult
 from src.rag.embedding import embed_text, cosine_similarity
 from src.rag.vector_store import VectorStore
+import logging
+logger = logging.getLogger(__name__)
 
 
 def normalise_scores(scores: list[float]) -> list[float]:
@@ -110,8 +112,9 @@ class HybridRetriever:
                     vector_scores.append(cosine_similarity(query_vec, c.embedding))
                 else:
                     vector_scores.append(0.0)
-        except Exception:
+        except Exception as e:
             # Nếu mất mạng hoặc lỗi API embedding -> tự động lùi về chỉ dùng BM25
+            logger.warning(f"Lỗi khi embed query vector: {e}. Tự động lùi về chế độ BM25 thuần.")
             vector_scores = [0.0] * len(chunks)
             w_b = 1.0
             w_v = 0.0

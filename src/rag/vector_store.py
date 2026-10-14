@@ -72,6 +72,28 @@ class VectorStore(DocumentStore):
             chunk.embedding = embed_text(chunk.content)
         return super().add_chunk(chunk)
 
+    def add_documents_batch(self, documents: list[Document], batch_size: int = 16) -> None:
+        all_chunks: list[DocumentChunk] = []
+        for doc in documents:
+            if not doc.doc_id:
+                doc.doc_id = f"doc_{len(self._docs) + 1:04d}"
+            self._docs[doc.doc_id] = doc
+            chunks = chunk_document(doc)
+            all_chunks.extend(chunks)
+        chunks_to_embed = [c for c in all_chunks if c.embedding is None]
+        
+        for i in range(0, len(chunks_to_embed), batch_size):
+            batch = chunks_to_embed[i : i + batch_size]
+            texts = [c.content for c in batch]
+            embeddings = batch_embed_text(texts, task="retrieval.passage")
+            for chunk, emb in zip(batch, embeddings):
+                chunk.embedding = emb
+
+        for chunk in all_chunks:
+            if not chunk.chunk_id:
+                chunk.chunk_id = f"chunk_{len(self._chunks) + 1:04d}"
+            self._chunks[chunk.chunk_id] = chunk
+
     def search(self, query: str, top_k: int = 3) -> list[tuple[DocumentChunk, float]]:
         query_embedding = embed_text(query)
         similarities = []
