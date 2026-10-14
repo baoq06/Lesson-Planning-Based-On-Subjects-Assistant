@@ -1,8 +1,8 @@
 ---
 doc_id: LP_W05
 title: Week 5 — RAG Evaluation & Groundedness
-version: 1.0
-date: 2026-10-12
+version: 1.0-student
+date: 2026-10-15
 owner: AIPR Instructor
 ---
 # Week 5 — Lecture Notes 
@@ -277,8 +277,6 @@ if __name__ == "__main__":
 > (b) The answer is supported by the context
 > (c) The answer is relevant to the question
 
-**Correct answer: (b) The answer is supported by the context**
-
 **Explanation:** Faithfulness measures grounding — whether claims in the answer are supported by the retrieved context. It does NOT measure real-world correctness (the context itself could be outdated or wrong) nor relevance (an answer can be fully grounded in context but not answer the question asked).
 
 ---
@@ -503,8 +501,6 @@ Students create a 5-question test set, run the pipeline, compute the 3 metrics, 
 > (b) The retrieval is returning irrelevant chunks
 > (c) The embedding model is poor
 
-**Correct answer: (b) The retrieval is returning irrelevant chunks**
-
 **Explanation:** Faithfulness is high (answers ARE grounded in context) but relevance is low (answers don't address the question). If the retrieved chunks are topically related but don't contain the actual answer, the LLM produces a grounded-but-irrelevant answer. High faithfulness + low relevance → retrieval problem, not hallucination.
 
 ---
@@ -696,8 +692,6 @@ def run_ragas(test_set, rag_pipeline_fn) -> dict:
 > (a) How many relevant chunks were retrieved
 > (b) How many relevant items from the full corpus were retrieved
 > (c) How fast the retrieval is
-
-**Correct answer: (b) How many relevant items from the full corpus were retrieved**
 
 **Explanation:** Context recall = (relevant chunks retrieved) / (ALL relevant chunks in the corpus). Unlike context precision (which measures the retrieved set), recall measures whether retrieval *missed* any relevant chunks. It requires a reference set (ground truth) of what SHOULD have been retrieved.
 
@@ -902,8 +896,6 @@ Students: (1) run RAGAS on their pipeline, (2) identify weakest metric, (3) make
 > (b) Improve retrieval quality (hybrid search, re-ranking)
 > (c) Change the LLM model
 
-**Correct answer: (b) Improve retrieval quality**
-
 **Explanation:** Faithfulness is already high (answers are grounded), so the prompt and generation are fine. Low context precision means the RETRIEVED chunks aren't relevant — the fix is on the retrieval side (hybrid search, re-ranking, metadata filtering), not chunk size (a) or model (c).
 
 ---
@@ -922,27 +914,6 @@ Students: (1) run RAGAS on their pipeline, (2) identify weakest metric, (3) make
 
 > "What was the most valuable metric for your system? Which failure mode surprised you most — have you seen it in your own labs?"
 
----
-
-## Instructor Preparation Checklist
-
-### Before Session 1
-- [ ] Verify students have working RAG pipeline (Lab 4 `RAGSystem` from Week 4)
-- [ ] Test `decompose_claims` + `judge_claim` with API key (LLM-as-judge calls add up — estimate cost)
-- [ ] Prepare hook demo (confident-wrong answer)
-- [ ] Prepare KC slides
-- [ ] Warn students: evaluation makes MANY LLM calls (5 questions × 3 metrics × N claims) — budget for ~1-2 USD per student
-
-### Before Session 2
-- [ ] `pip install ragas datasets` — test on a 2-question subset first (dependency risk)
-- [ ] Prepare failure-mode table visual
-- [ ] Prepare before/after worked example
-- [ ] Review Session 1 reflections
-
-### Cost Note
-- LLM-as-judge evaluation is token-hungry: a 5-question test set with 3 metrics can use 30–60 LLM calls. gpt-4o-mini keeps this under ~$0.10/student, but warn students not to run 10+ questions repeatedly.
-
----
 
 ## Common Student Mistakes & Interventions
 

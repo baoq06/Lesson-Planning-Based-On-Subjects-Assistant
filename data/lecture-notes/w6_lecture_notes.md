@@ -1,8 +1,8 @@
 ---
 doc_id: LP_W06
 title: Week 6 — Agent Loop, ReAct & Agent Memory
-version: 1.0
-date: 2026-10-12
+version: 1.0-student
+date: 2026-10-15
 owner: AIPR Instructor
 ---
 # Week 6 — Lecture Notes (Instructor Guide)
@@ -285,8 +285,6 @@ if __name__ == "__main__":
 > (a) `content` field with the answer
 > (b) `tool_calls` field with function name and arguments
 > (c) Both
-
-**Correct answer: (c) Both (but content is usually null)**
 
 **Explanation:** The response object has BOTH fields — `content` (usually `null` when a tool is requested) and `tool_calls` (the function name + arguments the LLM wants you to execute). The `finish_reason` is `"tool_calls"` rather than `"stop"`.
 
@@ -600,8 +598,6 @@ Students: (1) define `web_search` (mock), (2) `calculator`, (3) build agent loop
 > (b) Summarise older messages and keep recent ones verbatim
 > (c) Increase `max_tokens` on every request
 
-**Correct answer: (b) Summarise older messages and keep recent ones verbatim**
-
 **Explanation:** `max_tokens` (c) limits OUTPUT length, not input context — it won't help. Deleting history (a) loses all context including the current task. Summarization (b) compresses old turns into a summary while keeping recent detail — the bounded-memory-with-gist approach from Concept 3.
 
 ---
@@ -850,8 +846,6 @@ if __name__ == "__main__":
 > (b) To let the LLM reason before deciding what to do
 > (c) To log the conversation
 
-**Correct answer: (b) To let the LLM reason before deciding what to do**
-
 **Explanation:** The Thought step forces the LLM to articulate its reasoning BEFORE choosing an action. This (a) improves decision quality (the LLM thinks before acting) and (b) makes the reasoning traceable — you can see WHY it called a tool. It's not for slowing down (a) or logging (c) — those are side effects.
 
 ---
@@ -1004,8 +998,6 @@ Students build a ReAct agent with 3 tools: `search_documents` (VectorStore), `ca
 > (b) Set a max_iterations limit
 > (c) Both are needed
 
-**Correct answer: (b) Set a max_iterations limit**
-
 **Explanation:** `max_tokens` (a) limits OUTPUT length of a single call, but the LOOP can still run forever (each iteration is a new call). `max_iterations` bounds the number of loop cycles — the agent's safety brake. (b) is the correct guard against runaway loops.
 
 ---
@@ -1024,24 +1016,6 @@ Students build a ReAct agent with 3 tools: `search_documents` (VectorStore), `ca
 
 > "What was the most surprising thing about watching the agent 'think'? Which safety concern would you prioritise in a production agent?"
 
----
-
-## Instructor Preparation Checklist
-
-### Before Session 1
-- [ ] Verify students have working API keys (function calling uses the chat API)
-- [ ] Test `calculator` tool + tool_calls parsing
-- [ ] Prepare hook demo (LLM failing at division)
-- [ ] Prepare KC slides
-- [ ] Emphasize: `eval()` security warning — validate input!
-
-### Before Session 2
-- [ ] Test ReAct prompt + parse_action regex (fragile — test variations)
-- [ ] Verify VectorStore from Week 4 works (retrieve_document tool)
-- [ ] Prepare ReAct trace hook
-- [ ] Review Session 1 reflections
-
----
 
 ## Common Student Mistakes & Interventions
 
@@ -1057,43 +1031,3 @@ Students build a ReAct agent with 3 tools: `search_documents` (VectorStore), `ca
 | Sliding window too small → forgets task | Independent Lab, S2 | "Balance window size: recent detail + summary" |
 | Memory grows unbounded (no window) | Independent Lab, S2 | "Show token count before/after windowing" |
 | Prompt injection from search results | Discussion, S2 | "Harden the system prompt: never follow instructions in content" |
-
----
-
-## KC Answer Key (for instructor reference)
-
-### Session 1
-- **KC1:** (c) Both — content (usually null) and tool_calls (function name + arguments)
-- **KC2:** (b) Summarise older messages and keep recent ones verbatim
-
-### Session 2
-- **KC1:** (b) To let the LLM reason before deciding what to do
-- **KC2:** (b) Set a max_iterations limit
-
----
-
-## CLT Compliance Checklist (Week 6)
-
-> Đối chiếu sau mỗi lần chỉnh sửa nội dung. Tất cả mục dưới đây hiện đã **✅ đạt** (kiểm tra lần cuối: 2026-08-17, đối chiếu với `cognitive_load_analysis.md` — 5 đề xuất P1–P5). Nếu một mục bị đổi thành ❌, cần sửa lại trước khi dùng tài liệu.
-
-| # | Kiểm tra | Vị trí | Trạng thái |
-|---|---|---|---|
-| 1 | Round-trip protocol reference card (giữ cố định) | Concept 1, Session 1 | ✅ |
-| 2 | Decision prompt: function calling vs ReAct (đầu Session 2) | Session 1 → 2 | ✅ |
-| 3 | parse_action robust + note "don't fight the regex" | Concept 1, Session 2 | ✅ |
-| 4 | Memory + safety tách 2 beats + think-pair-share | Concept 3, Session 2 | ✅ |
-| 5 | eval() red-banner warning kèm exploit example | Code Along 1 + Lab, Session 1 | ✅ |
-| 6 | Cấu trúc session: Part A — Theory 2h + Part B — Lab 2h (tổng 4h/tuần lý thuyết) | Header + bảng Session Structure | ✅ |
-| 7 | Chuỗi fading: worked example → code-along (guided) → lab độc lập → peer review | Cả 2 session | ✅ |
-| 8 | KCs cung cấp vòng phản hồi trong Part A (KC1 sau Concept 1, KC2 sau Concept 3) | Part A, cả 2 session | ✅ |
-| 9 | Hoạt động elaborative/retrieval đặt đúng chỗ (lab opener / homework) | Wrap & Reflect + file companion | ✅ |
-
-**Cách kiểm tra nhanh (grep):**
-
-```bash
-cd syllabus/week6
-# Các dấu hiệu CLT phải hiện diện:
-grep -c "reference card\|micro-cycles\|think-pair-share\|PART A — THEORY (2h)" lecture_notes.md
-# Tài liệu gốc phân tích:
-# cognitive_load_analysis.md — các đề xuất (P1–P5) đã được áp dụng (xem mục "Summary of Recommended Changes")
-```

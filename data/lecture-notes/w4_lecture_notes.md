@@ -1,8 +1,8 @@
 ---
 doc_id: LP_W04
 title: Week 4 — Building the RAG Pipeline
-version: 1.0
-date: 2026-10-12
+version: 1.0-student
+date: 2026-10-15
 owner: AIPR Instructor
 ---
 # Week 4 — Lecture Notes (Instructor Guide)
@@ -256,8 +256,6 @@ What is the remote work policy?
 > (a) To save tokens
 > (b) To prevent hallucination from the LLM's training data
 > (c) To make the answer shorter
-
-**Correct answer: (b) To prevent hallucination**
 
 **Explanation:** The instruction tells the LLM to ignore its internal knowledge and use only the retrieved chunks. Without it, the LLM will answer from training data — which doesn't include the company's private policy — producing a plausible-sounding but wrong answer. (a) and (c) are incidental, not the purpose.
 
@@ -515,8 +513,6 @@ Students build the full pipeline and test 3 question types. Full instructions in
 > (b) Strengthen the prompt instruction
 > (c) Use a different embedding model
 
-**Correct answer: (b) Strengthen the prompt instruction**
-
 **Explanation:** If the LLM is hallucinating from training data, the retrieval and embeddings are fine — the *prompt* is too weak. Strengthening "based ONLY on the following context" (or adding explicit "do not use your own knowledge") re-asserts the grounding contract. (a) would make it worse (more randomness); (c) is irrelevant to generation.
 
 ---
@@ -735,8 +731,6 @@ def hybrid_search(
 > (b) When the query is a long paragraph
 > (c) Vector search always outperforms BM25
 
-**Correct answer: (a) Rare technical term**
-
 **Explanation:** BM25 matches exact terms. A rare technical term like "reimbursement rate" or a model name "BERT-2024" appears exactly in the document — BM25 nails it. Vector search may miss it if the surrounding chunk is noisy or the term's embedding sits far from the query's paraphrase. Long paragraphs (b) favour vector search; (c) is false — neither always wins.
 
 ---
@@ -938,8 +932,6 @@ Students extend the v1 pipeline with metadata filtering, hybrid search, and (opt
 > (b) To improve precision by applying a more accurate (but slower) model
 > (c) To increase recall
 
-**Correct answer: (b) Improve precision**
-
 **Explanation:** Re-ranking takes the top-N from a fast, rough search and re-orders them with a more accurate (but slower) model — improving *precision* (the top results are more likely to be relevant). It doesn't reduce API calls (a) or increase recall (b) — recall is set by the first-stage search width.
 
 **Mid-Course Practical announcement:**
@@ -948,85 +940,6 @@ Students extend the v1 pipeline with metadata filtering, hybrid search, and (opt
 >
 > **Here's your concrete check:** the practical expects the same shape as your **Lab 4 `RAGSystem`** — `answer()` returning `{query, answer, sources, num_chunks, context_tokens}`. If you can complete Lab 4 this week, you can pass the practical. That's your preparation checklist: finish Lab 4."
 
----
-
-## Mid-Course Practical — Instructor Guide
-
-### Practical Overview
-
-| Item | Detail |
-|---|---|
-| **Duration** | 2 hours (dedicated session) |
-| **Weight** | 15% |
-| **Format** | In-lab, open-internet, open-notes, individual |
-| **Dataset** | 5 short documents (2–3 pages each), provided |
-| **Tasks** | Chunk → VectorStore → RAG pipeline → answer 3 questions → assess groundedness |
-| **Prepared** | Instructor creates the dataset + question set beforehand |
-
-### The 3 Questions Design
-
-The three questions must cover the failure-mode spectrum:
-
-| Question | Type | Tests |
-|---|---|---|
-| Q1 | Directly answered by one document | Basic pipeline works |
-| Q2 | Spans two documents (needs synthesis) | Retrieval recall + prompt grounding |
-| Q3 | NOT answered by any document | The "I cannot find..." edge case |
-
-### Marking Criteria (aligned to the grading rubric)
-
-| Criterion | Weight | Check |
-|---|---|---|
-| Data modelling | 15% | @dataclass used, metadata present |
-| RAG pipeline | 30% | 5 stages complete, sources returned |
-| Groundedness assessment | 20% | Student correctly assesses whether Q3's answer is grounded |
-| Edge cases | 15% | No-results handled, context budget respected |
-| Code quality | 20% | Readable, error handling, no hard-coded paths |
-
-### Sample Dataset (instructor creates)
-
-Provide 5 documents covering a fictional company (e.g., "Acme Corp"):
-1. `acme_leave_policy.txt` — leave, vacation, sick days
-2. `acme_remote_policy.txt` — remote work, WFH
-3. `acme_expense_policy.txt` — reimbursement, travel claims
-4. `acme_benefits.txt` — insurance, wellness
-5. `acme_handbook.txt` — culture, hours, dress code
-
-**Q1** (direct): "How many vacation days does an employee get in their first year?" → acme_leave_policy
-**Q2** (synthesis): "Can I work from home and claim home-office expenses?" → acme_remote + acme_expense
-**Q3** (no answer): "What is the stock option vesting schedule?" → nowhere in the documents
-
-### Anti-Cheating Note
-
-Open-internet/open-notes means students may consult docs and code — but the pipeline must be *theirs*. Flag if two students' pipelines are byte-identical. The assessment targets "can you wire it together," not "can you recall code."
-
----
-
-## Instructor Preparation Checklist
-
-### Before Session 1
-- [ ] Verify Lab 3 VectorStore solutions work (or provide reference solution)
-- [ ] Create `data/company_policy.txt` (multi-section)
-- [ ] Test Code Along 1 and 2 with API key
-- [ ] `pip install tiktoken`
-- [ ] Prepare hook demo (RAG with/without citations)
-- [ ] Prepare KC slides
-
-### Before Session 2
-- [ ] `pip install rank_bm25 sentence-transformers`
-- [ ] Test hybrid search (rare-term + paraphrase queries)
-- [ ] Pre-download the cross-encoder model (optional; ~80MB) to avoid classroom network slowdown
-- [ ] Test re-ranking comparison
-- [ ] Prepare Mid-Course Practical dataset + 3 questions + marking sheet
-- [ ] Review Session 1 reflections
-
-### Mid-Course Practical
-- [ ] Dataset files in `data/midcourse/` on all machines
-- [ ] 3 questions provided (not shown beforehand)
-- [ ] Marking sheet printed
-- [ ] Timing enforced (2 hours)
-
----
 
 ## Common Student Mistakes & Interventions
 
@@ -1042,44 +955,3 @@ Open-internet/open-notes means students may consult docs and code — but the pi
 | Re-ranking the whole corpus | Code Along 2, S2 | "Cross-encoder is slow — only run on top-10" |
 | Metadata filter value type mismatch | Concept 3, S2 | "If metadata stores '2024' as int, filter with 2024 not '2024'" |
 | Skipping the comparison (v1 vs enhanced) | Independent Lab, S2 | "The comparison IS the lab — you must document what improved" |
-
----
-
-## KC Answer Key (for instructor reference)
-
-### Session 1
-- **KC1:** (b) To prevent hallucination from the LLM's training data
-- **KC2:** (b) Strengthen the prompt instruction
-
-### Session 2
-- **KC1:** (a) When the query contains a rare technical term
-- **KC2:** (b) To improve precision by applying a more accurate (but slower) model
-
----
-
-## CLT Compliance Checklist (Week 4)
-
-> Đối chiếu sau mỗi lần chỉnh sửa nội dung. Tất cả mục dưới đây hiện đã **✅ đạt** (kiểm tra lần cuối: 2026-08-17, đối chiếu với `cognitive_load_analysis.md` — 5 đề xuất P1–P5). Nếu một mục bị đổi thành ❌, cần sửa lại trước khi dùng tài liệu.
-
-| # | Kiểm tra | Vị trí | Trạng thái |
-|---|---|---|---|
-| 1 | Hybrid search: persistent reference card (fusion pipeline + normalisation bắt buộc) + "predict before run" | Concept 1, Session 2 | ✅ |
-| 2 | Mini-recall sprint (2 phút) giữa Concept 1 và Concept 2 (trước re-ranking) | Session 2 | ✅ |
-| 3 | Note tải model cross-encoder ~80MB (pre-download trước giờ) — có trong prep checklist | Concept 2, Session 2 + lab_sheet Ex 2.2 | ✅ |
-| 4 | Before/after visual: response shape Week 2 (answer) vs Week 4 (answer + sources) | Concept 2, Session 1 | ✅ |
-| 5 | Reassurance Mid-Course Practical: trỏ tới `RAGSystem` của Lab 4 làm "shape" của bài thi | Wrap, Session 2 | ✅ |
-| 6 | Concept 3 Metadata Filtering nén còn 15 phút (1:20–1:35) — dành thời gian cho Independent Lab so sánh | Session 2 | ✅ |
-| 7 | Cấu trúc session: Part A — Theory 2h + Part B — Lab 2h (tổng 4h/tuần lý thuyết) | Header + bảng Session Structure | ✅ |
-| 8 | Chuỗi fading: worked example → code-along (guided) → lab độc lập → peer review | Cả 2 session | ✅ |
-| 9 | KCs cung cấp vòng phản hồi trong Part A (KC1 sau Concept 1, KC2 sau Concept 3) | Part A, cả 2 session | ✅ |
-| 10 | Hoạt động elaborative/retrieval đặt đúng chỗ (lab opener / homework) | Wrap & Reflect + file companion | ✅ |
-
-**Cách kiểm tra nhanh (grep):**
-
-```bash
-cd syllabus/week4
-# Các dấu hiệu CLT phải hiện diện:
-grep -c "reference card\|recall sprint\|80MB\|before/after\|RAGSystem\|PART A — THEORY (2h)" lecture_notes.md
-# Tài liệu gốc phân tích:
-# cognitive_load_analysis.md — 5 đề xuất (P1–P5) đã được áp dụng đầy đủ (xem mục "Summary of Recommended Changes")
-```

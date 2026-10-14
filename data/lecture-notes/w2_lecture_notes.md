@@ -1,8 +1,8 @@
 ---
 doc_id: LP_W02
 title: Week 2 — LLM API Access & Integration
-version: 1.0
-date: 2026-10-12
+version: 1.0-student
+date: 2026-10-15
 owner: AIPR Instructor
 ---
 # Week 2 — Lecture Notes (Instructor Guide)
@@ -315,8 +315,6 @@ print(f"Total tokens: {response.usage.total_tokens}")
 > (b) To set the assistant's behaviour and persona
 > (c) To authenticate the user making the request
 
-**Correct answer: (b) Set the assistant's behaviour**
-
 **Explanation:** The system message is a prompt-level instruction that sets the context, behaviour, and persona of the assistant. It's not a log, not authentication — it's the "system prompt" or "meta-instruction" that guides how the LLM should respond.
 
 **Further discussion:** "What would happen if you set the system message to 'You are a pirate who only speaks in rhymes'?" (The assistant would respond as a rhyming pirate.)
@@ -597,8 +595,6 @@ Students build a CLI tool. See `lab_sheet.md` for full instructions.
 > (b) `response_format={"type": "json_object"}`
 > (c) `max_tokens=100`
 
-**Correct answer: (b) `response_format={"type": "json_object"}`**
-
 **Explanation:** The `response_format` parameter explicitly tells the model to output valid JSON. While `temperature=0.0` helps with consistency, it doesn't guarantee JSON. Without `response_format`, the model may output text with JSON embedded in it, which is harder to parse.
 
 ---
@@ -848,8 +844,6 @@ response = stream_response(messages)
 > (a) The model has finished generating the response naturally.
 > (b) The response was cut off by `max_tokens`.
 > (c) An error occurred during generation.
-
-**Correct answer: (a) Natural completion**
 
 **Explanation:** `finish_reason = 'stop'` means the model decided to stop (it generated an end-of-turn token). `'length'` means max_tokens was hit. `'content_filter'` means the response was flagged by the content moderation filter. `'null'` means the generation is still in progress.
 
@@ -1190,8 +1184,6 @@ Students build a complete chat assistant. See `lab_sheet.md` for full instructio
 > (b) Parameterised template with validation (f-string or Template)
 > (c) Hard-code all prompts
 
-**Correct answer: (b) Parameterised template with validation**
-
 **Explanation:** Parameterised templates (f-strings with validation, `string.Template`) are testable, versionable, and safe. String concatenation is error-prone (missing spaces, type errors). Hard-coded prompts break whenever the content changes.
 
 ---
@@ -1212,37 +1204,6 @@ Students build a complete chat assistant. See `lab_sheet.md` for full instructio
 
 > "What was the most technically challenging part of this week? What do you feel confident about?"
 
----
-
-## Instructor Preparation Checklist
-
-### Before Session 1
-
-- [ ] Verify all students have API keys (email reminder 48h before)
-- [ ] Prepare mock module for students without keys
-- [ ] Test live demo with your API key
-- [ ] Create `data/` directory
-- [ ] Test all Code Along scripts
-- [ ] Test the Independent Lab solution
-- [ ] Prepare KC slides (3-option MCQs)
-- [ ] Ensure `pip install openai python-dotenv` is run on all machines
-
-### Before Session 2
-
-- [ ] Test streaming demo (bandwidth may affect latency — test beforehand)
-- [ ] Test rate limit simulation (or just show the error handling code)
-- [ ] Test all Code Along scripts
-- [ ] Test the Independent Lab solution
-- [ ] Review Session 1 reflections to adjust pace
-
-### API Key Management
-
-- **Never commit API keys to Git.** Add `.env` to `.gitignore`.
-- **Cost control:** gpt-4o-mini is very cheap (~$0.000001 per call). Even 100 calls per student per session costs < $0.01 per student.
-- **Rate limits:** gpt-4o-mini has 500,000 tokens/minute on Tier 1. For a class of 30 students, that's fine.
-- **If OpenAI is blocked:** Use Groq (free, no API key required for small usage), or set up a class proxy.
-
----
 
 ## Common Student Mistakes & Interventions
 
@@ -1258,46 +1219,3 @@ Students build a complete chat assistant. See `lab_sheet.md` for full instructio
 | No error handling → script crashes on rate limit | Lab, S2 | "Wrap the API call in `try/except`" |
 | Message history grows unbounded | Lab, S2 | "Show token count, then add sliding window" |
 | Prompt template has KeyError for missing variable | Concept 3, S2 | "Use `.safe_substitute()` instead of `.substitute()`" |
-
----
-
-## KC Answer Key (for instructor reference)
-
-### Session 1
-- **KC1:** (b) Set the assistant's behaviour — the system message configures persona and constraints
-- **KC2:** (b) `response_format={"type": "json_object"}` — guarantees valid JSON output
-
-### Session 2
-- **KC1:** (a) Natural completion — model finished generating on its own
-- **KC2:** (b) Parameterised template with validation — testable, versionable, safe
-
----
-
-## CLT Compliance Checklist (Week 2)
-
-> Đối chiếu sau mỗi lần chỉnh sửa nội dung. Tất cả mục dưới đây hiện đã **✅ đạt** (kiểm tra lần cuối: 2026-08-17, đối chiếu với `cognitive_load_analysis.md`). Nếu một mục bị đổi thành ❌, cần sửa lại trước khi dùng tài liệu.
-
-| # | Kiểm tra | Vị trí | Trạng thái |
-|---|---|---|---|
-| 1 | Exponential backoff tách 2 giai đoạn (Stage A: 2 lỗi retryable → Stage B: full taxonomy) | Concept 2, Session 2 + `lab_sheet.md` Ex 2.2 | ✅ |
-| 2 | Streaming: bảng so sánh before/after + prompt "predict the output" (think-pair-share) | Concept 1, Session 2 | ✅ |
-| 3 | Cost/logging tách Step 1 (core: parse) / Step 2 (optional: production feature) | Code Along 2, Session 1 + `lab_sheet.md` Ex 1.2 | ✅ |
-| 4 | ASCII visual phân phối xác suất cho temperature (0.0 vs 1.5) | Concept 3, Session 1 | ✅ |
-| 5 | Reference card RETRY / DON'T RETRY (giữ cố định trong suốt session) | Concept 2, Session 2 | ✅ |
-| 6 | API key: dẫn bằng `.env` khuyến nghị; hard-coding chỉ còn là cảnh báo 1 dòng | Concept 1, Session 1 | ✅ |
-| 7 | Cấu trúc session: Part A — Theory 2h + Part B — Lab 2h (tổng 4h/tuần lý thuyết) | Header + bảng Session Structure | ✅ |
-| 8 | Chuỗi fading: worked example → code-along (guided) → lab độc lập → peer review | Cả 2 session | ✅ |
-| 9 | Mock module dự phòng cho SV thiếu API key (không tạo blocking dependency) | Before Class, Session 1 | ✅ |
-| 10 | Bảng "Common mistakes" xử lý trước các lỗi dự đoán | Cuối file | ✅ |
-| 11 | KCs cung cấp vòng phản hồi trong Part A (KC1 sau Concept 1, KC2 sau Concept 3) | Part A, cả 2 session | ✅ |
-| 12 | Hoạt động elaborative/retrieval đặt đúng chỗ (lab opener / homework) | Wrap & Reflect + file companion | ✅ |
-
-**Cách kiểm tra nhanh (grep):**
-
-```bash
-cd syllabus/week2
-# Các dấu hiệu CLT phải hiện diện:
-grep -c "Stage A\|Stage B\|Predict-the-output\|Persistent reference card\|Step 1 (primary\|temperature = 0.0\|PART A — THEORY (2h)" lecture_notes.md
-# Tài liệu gốc phân tích:
-# cognitive_load_analysis.md — 6 đề xuất (P1–P6) đã được áp dụng đầy đủ (xem mục "Summary of Recommended Changes")
-```

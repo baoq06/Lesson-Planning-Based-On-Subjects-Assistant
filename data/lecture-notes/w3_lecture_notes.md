@@ -1,8 +1,8 @@
 ---
 doc_id: LP_W03
 title: Week 3 — RAG Foundations: Documents & Embeddings
-version: 1.0
-date: 2026-10-12
+version: 1.0-student
+date: 2026-10-15
 owner: AIPR Instructor
 ---
 # Week 3 — Lecture Notes (Instructor Guide)
@@ -282,8 +282,6 @@ Created 4 chunks:
 > (a) To increase the number of chunks (more chunks = more retrieval)
 > (b) To avoid cutting a sentence or thought in half at the boundary
 > (c) To reduce storage space
-
-**Correct answer: (b) To avoid cutting a sentence or thought in half at the boundary**
 
 **Explanation:** Overlap ensures continuity. If a sentence spans from character 148 to 155 in a 150-char chunk, part of it appears in chunk 0 (chars 148–150) and part in chunk 1 (chars 120–155 due to overlap). Without overlap, the sentence would be cut — the LLM would only see half of it.
 
@@ -683,8 +681,6 @@ Full instructions in `lab_sheet.md`.
 > (b) Speed vs. accuracy
 > (c) Both precision/recall AND speed/accuracy
 
-**Correct answer: (c) Both**
-
 **Explanation:** Small chunks = high precision (each chunk is specific) but lower recall (may miss relevant context). Large chunks = higher recall (more context captured) but lower precision (more noise). Also, more small chunks = more embeddings to search (slower), while fewer large chunks = faster search but worse quality.
 
 ---
@@ -971,8 +967,6 @@ Vector norm: 1.0000  <-- note: OpenAI embeddings are normalised!
 > (a) 1536 keywords extracted from the text
 > (b) 1536 numerical coordinates in a semantic vector space
 > (c) 1536 tokens from the text
-
-**Correct answer: (b) 1536 numerical coordinates in a semantic vector space**
 
 **Explanation:** Each embedding is a point in a 1536-dimensional semantic space. The position of the point captures the *meaning* of the text. Similar texts are located near each other in this space. It's not a bag of keywords (a) nor a list of tokens (c).
 
@@ -1295,8 +1289,6 @@ Full instructions in `lab_sheet.md`.
 > (b) No — set a threshold > 0.7 and exclude low-quality results
 > (c) It depends on the application — sometimes more context helps, sometimes it adds noise
 
-**Correct answer: (c) It depends**
-
 **Explanation:** Including low-scoring chunks can be helpful (more context, might contain useful info) or harmful (noise that confuses the LLM, wastes tokens). The right approach depends on your application's precision/recall requirements. A configurable `min_score` parameter lets you tune this.
 
 ---
@@ -1321,41 +1313,6 @@ Full instructions in `lab_sheet.md`.
 
 > "What surprised you most about how embeddings work? Did any search results surprise you?"
 
----
-
-## Instructor Preparation Checklist
-
-### Before Session 1
-
-- [ ] Create `data/sample_doc.txt` (see lab_sheet.md)
-- [ ] Create `data/company_policy.txt` (longer text for extension)
-- [ ] Test all Code Along scripts
-- [ ] Test the Independent Lab solution
-- [ ] Prepare KC slides
-
-### Before Session 2
-
-- [ ] Prepare 2D embedding plot (pre-computed PNG) for the hook
-- [ ] Ensure `pip install numpy scikit-learn matplotlib` for hook demo (or just use pre-computed)
-- [ ] Verify all students have API keys (embedding API uses a different endpoint)
-- [ ] Test all Code Along scripts
-- [ ] Test the Independent Lab solution
-- [ ] Embedding costs: text-embedding-3-small is $0.02/1M tokens — 100 chunks per student ≈ 2K tokens ≈ $0.00004 per student — negligible
-
-### Session 2 API Note
-
-The embedding API does NOT use the chat completions interface. Make sure students understand:
-
-```python
-# This is the embedding API — different endpoint!
-response = client.embeddings.create(
-    model="text-embedding-3-small",
-    input="text to embed"
-)
-# NOT: client.chat.completions.create()
-```
-
----
 
 ## Common Student Mistakes & Interventions
 
@@ -1371,44 +1328,3 @@ response = client.embeddings.create(
 | `numpy.linalg.norm` → zero vector → division by zero | Code Along 2, S2 | Add `if norm == 0: return 0.0` check |
 | Search returns chunks with score 0.12 — "it's broken!" | Code Along 2, S2 | "No, 0.12 means unrelated. That's working correctly!" |
 | Forgetting to embed chunks before searching | Independent Lab, S2 | "Call `embed_text()` in `add_chunk()`, not in `search()`" |
-
----
-
-## KC Answer Key (for instructor reference)
-
-### Session 1
-- **KC1:** (b) To avoid cutting a sentence or thought in half at the boundary
-- **KC2:** (c) Both precision/recall AND speed/accuracy trade-offs
-
-### Session 2
-- **KC1:** (b) 1536 numerical coordinates in a semantic vector space
-- **KC2:** (c) It depends on the application — configurable threshold is best
-
----
-
-## CLT Compliance Checklist (Week 3)
-
-> Đối chiếu sau mỗi lần chỉnh sửa nội dung. Tất cả mục dưới đây hiện đã **✅ đạt** (kiểm tra lần cuối: 2026-08-17, đối chiếu với `cognitive_load_analysis.md` — 6 đề xuất P1–P6). Nếu một mục bị đổi thành ❌, cần sửa lại trước khi dùng tài liệu.
-
-| # | Kiểm tra | Vị trí | Trạng thái |
-|---|---|---|---|
-| 1 | Chunking strategies tách micro-cycles (Micro-Cycle A/B) — không dồn 3 chiến lược cùng lúc | Concept 3, Session 1 | ✅ |
-| 2 | Cosine similarity: annotation tích hợp formula → code (math primer 2 phút) | Concept 2, Session 2 | ✅ |
-| 3 | Persistent reference card cho 2 cấu trúc API response (giữ cố định cả session) | Concept 1, Session 2 | ✅ |
-| 4 | Recall sprint (2 phút, pair activity) trước VectorStore | Concept 3, Session 2 | ✅ |
-| 5 | Type alias cho nested type hint (`Embedding` thay `list[float]` lồng nhau) | Code Along 2, Session 2 | ✅ |
-| 6 | Không định nghĩa lại `Document`/`DocumentChunk` — Code Along 1 chỉ tham chiếu Concept 1 (expertise reversal) | Code Along 1, Session 1 | ✅ |
-| 7 | Cấu trúc session: Part A — Theory 2h + Part B — Lab 2h (tổng 4h/tuần lý thuyết) | Header + bảng Session Structure | ✅ |
-| 8 | Chuỗi fading: worked example → code-along (guided) → lab độc lập → peer review | Cả 2 session | ✅ |
-| 9 | KCs cung cấp vòng phản hồi trong Part A (KC1 sau Concept 1, KC2 sau Concept 3) | Part A, cả 2 session | ✅ |
-| 10 | Hoạt động elaborative/retrieval đặt đúng chỗ (lab opener / homework) | Wrap & Reflect + file companion | ✅ |
-
-**Cách kiểm tra nhanh (grep):**
-
-```bash
-cd syllabus/week3
-# Các dấu hiệu CLT phải hiện diện:
-grep -c "Micro-Cycle\|math primer\|Persistent Reference Card\|Recall Sprint\|type alias\|PART A — THEORY (2h)" lecture_notes.md
-# Tài liệu gốc phân tích:
-# cognitive_load_analysis.md — 6 đề xuất (P1–P6) đã được áp dụng đầy đủ (xem mục "Summary of Recommended Changes")
-```
