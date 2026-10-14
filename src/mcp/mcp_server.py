@@ -173,9 +173,10 @@ def get_curriculum_week(week: int, full_content: bool = False) -> str:
             )
 
         return content[:3000] + "\n...(content truncated)"
+    
     except Exception as e:
         logger.error(f"Error occurred while reading curriculum for Week {week}: {e}")
-        return f"Error occurred while reading curriculum file for Week {week}: {e}"
+        return f"Error: Failed to read curriculum file for Week {week}: {e}"
 
 @mcp.tool()
 def get_gotchas_and_best_practices(week: int) -> str:
@@ -213,9 +214,10 @@ def get_gotchas_and_best_practices(week: int) -> str:
 
         logger.warning(f"Common Student Mistakes section not found for Week {week}.")
         return f"Error: 'Common Student Mistakes & Interventions' section not found in Week {week} lecture notes."
+    
     except Exception as e:
         logger.error(f"Error occurred while extracting gotchas for Week {week}: {e}")
-        return f"Error occurred while reading lecture notes for Week {week}: {e}"
+        return f"Error: Failed to read lecture notes for Week {week}: {e}"
 
 # Cần sửa
 @mcp.tool()
@@ -336,9 +338,10 @@ def check_late_submission_penalty(hours_late: int) -> str:
             f"- Policy: AIPR Course Policy Section 4.\n"
             f"- Penalty: DEDUCT {penalty}% of the assignment's total score."
         )
+    
     except Exception as e:
         logger.error(f"Error occurred while checking late submission penalty: {e}")
-        return f"Error occurred while checking late submission penalty: {e}"
+        return f"Error: Failed to check late submission penalty: {e}"
 
 @mcp.tool()
 def draft_template_submission(student_id: str, student_name: str, assignment: str, days_requested: int, reason: str, has_medical_proof: bool) -> str:
@@ -543,7 +546,7 @@ def export_lesson_plan(
 
     except Exception as e:
         logger.exception(f"Error occurred while exporting lesson plan for Week {week}: {e}")
-        return f"Error occurred while exporting lesson plan for Week {week}: {e}"
+        return f"Error: Failed to export lesson plan for Week {week}: {e}"
 
 if __name__ == "__main__":
     logger.info("Starting LessonPlanningAssistantServer on stdio transport...")

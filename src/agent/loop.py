@@ -70,15 +70,23 @@ def get_mcp_tools_schema(mcp_tools: list[Any], require_thought: bool = True) -> 
         
     return formatted_tools
 
-def parse_tool_args(raw_args: Any) -> dict[str, Any]:
+def parse_tool_args(raw_args: Any) -> Optional[dict[str, Any]]:
     if isinstance(raw_args, dict):
         return raw_args
     if isinstance(raw_args, str):
-        try:
-            return json.loads(raw_args)
-        except Exception:
+        stripped = raw_args.strip()
+        if not stripped:
             return {}
-    return {}
+        try:
+            parsed = json.loads(stripped)
+            if isinstance(parsed, dict):
+                return parsed
+            return None
+        except Exception:
+            return None
+    if raw_args is None:
+        return {}
+    return None
 
 MAX_HISTORY_TURNS = 4  
 
@@ -95,8 +103,8 @@ async def safe_execute_mcp_tool(client: Client, tool_name: str, arguments: dict[
         
         if result and hasattr(result, "content") and result.content:
             texts = [item.text for item in result.content if hasattr(item, "text")]
-            return "\n".join(texts) if texts else "Không có kết quả trả về."
-        return "Công cụ đã chạy nhưng không có dữ liệu trả về."
+            return "\n".join(texts) if texts else "Error: No output returned by tool."
+        return "Error: Tool executed but returned no data."
         
     except Exception as e:
         return f"Error executing tool '{tool_name}': {type(e).__name__} - {str(e)}"
@@ -145,6 +153,24 @@ async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Opt
             for tool_call in msg.tool_calls:
                 fn_name = tool_call.function.name
                 fn_args = parse_tool_args(tool_call.function.arguments)
+
+                if fn_args is None:
+                    observation = "Error: invalid JSON arguments"
+                    rprint(f"[bold red]Observation:[/bold red] {observation}")
+                    step_record = AgentStep(
+                        step_num=step_num,
+                        thought=str(thought),
+                        tool_call=ToolCall(id=tool_call.id, name=fn_name, arguments={}),
+                        observation=observation
+                    )
+                    steps.append(step_record)
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "name": fn_name,
+                        "content": observation
+                    })
+                    continue
 
                 args_for_mcp = dict(fn_args)
                 extracted_thought = args_for_mcp.pop("thought", None)
