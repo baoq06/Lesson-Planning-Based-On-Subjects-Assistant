@@ -32,3 +32,9 @@ htmlcov/
 # Hệ điều hành
 .DS_Store
 Thumbs.db
+
+# Dữ liệu sinh ra khi chạy (không commit)
+data/vector_store_cache.json
+data/drafts/
+data/plans/
+
