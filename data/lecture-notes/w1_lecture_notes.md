@@ -1,8 +1,8 @@
 ---
 doc_id: LP_W01
 title: Week 1 — Python Data Structures for AI
-version: 1.0
-date: 2026-10-12
+version: 1.0-student
+date: 2026-10-15
 owner: AIPR Instructor
 ---
 # Week 1 — Lecture Notes (Instructor Guide)
@@ -215,8 +215,6 @@ with open("data/top_reviews.json", "w") as f:
 > (a) `list` — [0.023, -0.045, 0.112, ...]
 > (b) `tuple` — (0.023, -0.045, 0.112, ...)
 > (c) `set` — {0.023, -0.045, 0.112, ...}
-
-**Correct answer: (b) tuple**
 
 **Justification:** The vector is *fixed-length* and *immutable* — it never changes. `tuple` guarantees immutability, which prevents accidental modification and allows the vector to be used as a dict key or stored in a `set`. A `list` would work but signals "this might change" to other developers. A `set` discards duplicates and has no ordering, which is wrong for a vector.
 
@@ -697,8 +695,6 @@ print(f"Verified: {len(verified)} messages saved")
 > (b) TypeError — `datetime` is not JSON serialisable by default.
 > (c) It auto-converts to a Unix timestamp.
 
-**Correct answer: (b) TypeError**
-
 **Explanation:** Python's `datetime` has no default JSON representation. You must provide a custom encoder (or convert to string first). This is a common gotcha that students will encounter repeatedly when logging AI API calls with timestamps.
 
 ---
@@ -1019,8 +1015,6 @@ See `lab_sheet.md` for full instructions.
 > (b) `@dataclass`
 > (c) `@property`
 
-**Correct answer: (b) @dataclass**
-
 **Explanation:** `@dataclass` generates the boilerplate for data-holding classes. `@staticmethod` defines a static method. `@property` creates a getter/setter for an attribute.
 
 ---
@@ -1045,87 +1039,6 @@ See `lab_sheet.md` for full instructions.
 
 **Optional — elaborative interrogation:** Run prompts P5–P8 and connection prompts C1–C3 from `elaborative_prompts.md` as the opener of the Part B lab session or as homework before Lab 1 (15–20 min, individual → pairs → class share).
 
----
-
-## Instructor Preparation Checklist
-
-### Before Session 1
-
-- [ ] Prepare demo: show LLM movie recommendations (in Hook)
-- [ ] Create `data/reviews.json` with 20+ mock reviews
-- [ ] Test all Code Along scripts
-- [ ] Test the Independent Lab solution
-- [ ] Prepare KC slides (3-option MCQs)
-- [ ] Ensure Python 3.11+ is installed on all machines
-- [ ] Ensure `pip install` is working (no extra packages needed for Week 1)
-
-### Before Session 2
-
-- [ ] Create `data/chat_messages.json` with 10+ mock messages
-- [ ] Create `data/document_chunks.json` with 5+ mock chunks
-- [ ] Test all Code Along scripts
-- [ ] Test the Independent Lab solution
-- [ ] Review Session 1 reflections to adjust pace
-
-### Sample Data Files
-
-#### `data/reviews.json` (for Session 1 Lab)
-
-```json
-[
-  {"review_id": "R001", "product": "Laptop", "rating": 5, "text": "Excellent performance"},
-  {"review_id": "R002", "product": "Mouse", "rating": 3, "text": "Works but noisy"},
-  {"review_id": "R003", "product": "Keyboard", "rating": 4, "text": "Good feel"},
-  {"review_id": "R004", "product": "Laptop", "rating": 4, "text": "Good battery life"},
-  {"review_id": "R005", "product": "Monitor", "rating": 5, "text": "Crystal clear display"},
-  {"review_id": "R001", "product": "Laptop", "rating": 5, "text": "Excellent performance"},
-  {"review_id": "R006", "product": "Mouse", "rating": 2, "text": "Stopped after 1 month"},
-  {"review_id": "R007", "product": "Keyboard", "rating": 5, "text": "Love the mechanical switches"},
-  {"review_id": "R008", "product": "Monitor", "rating": 4, "text": "Good value for money"},
-  {"review_id": "R009", "product": "Laptop", "rating": 3, "text": ""},
-  {"review_id": "R010", "product": "Mouse", "rating": 4, "text": "Comfortable grip"},
-  {"review_id": "R011", "product": "Headphones", "rating": 5, "text": "Amazing sound quality"},
-  {"review_id": "R012", "product": "Headphones", "rating": 3, "text": "Average noise cancelling"},
-  {"review_id": "R013", "product": "Laptop", "rating": 2, "text": "Overheats quickly"},
-  {"review_id": "R014", "product": "Keyboard", "rating": 4, "text": "Nice RGB lighting"},
-  {"review_id": "R015", "product": "Monitor", "rating": 3, "text": ""},
-  {"review_id": "R016", "product": "Mouse", "rating": 5, "text": "Best mouse I've ever used"},
-  {"review_id": "R017", "product": "Headphones", "rating": 4, "text": "Comfortable for long sessions"},
-  {"review_id": "R018", "product": "Laptop", "rating": 4, "text": "Fast and reliable"},
-  {"review_id": "R019", "product": "Keyboard", "rating": 3, "text": "Keys are a bit stiff"},
-  {"review_id": "R020", "product": "Monitor", "rating": 5, "text": "Perfect for programming"}
-]
-```
-
-#### `data/chat_messages.json` (for Session 2 Code Along 1)
-
-```json
-[
-  {"role": "system", "content": "You are a helpful assistant.", "timestamp": "2026-08-04T09:00:00"},
-  {"role": "user", "content": "What is Python?", "timestamp": "2026-08-04T09:00:05"},
-  {"role": "assistant", "content": "Python is a high-level, interpreted programming language known for its readability.", "timestamp": "2026-08-04T09:00:07"},
-  {"role": "user", "content": "What is RAG?", "timestamp": "2026-08-04T09:01:00"},
-  {"role": "assistant", "content": "RAG stands for Retrieval-Augmented Generation. It combines retrieval from a knowledge base with text generation.", "timestamp": "2026-08-04T09:01:03"},
-  {"role": "user", "content": "Give me an example", "timestamp": "2026-08-04T09:01:30"},
-  {"role": "assistant", "content": "A user asks about a company policy. The system retrieves relevant policy documents, then generates an answer based on them.", "timestamp": "2026-08-04T09:01:35"},
-  {"role": "user", "content": "Thanks!", "timestamp": "2026-08-04T09:02:00"}
-]
-```
-
-#### `data/document_chunks.json` (for Session 2 Independent Lab)
-
-```json
-[
-  {"chunk_id": "C001", "doc_id": "DOC001", "content": "Python is a high-level programming language.", "chunk_index": 0, "embedding": null},
-  {"chunk_id": "C002", "doc_id": "DOC001", "content": "It was created by Guido van Rossum in 1991.", "chunk_index": 1, "embedding": null},
-  {"chunk_id": "C003", "doc_id": "DOC002", "content": "Lists are mutable sequences in Python.", "chunk_index": 0, "embedding": [0.023, -0.045, 0.112]},
-  {"chunk_id": "C004", "doc_id": "DOC002", "content": "Tuples are immutable sequences.", "chunk_index": 1, "embedding": [0.067, 0.001, -0.089]},
-  {"chunk_id": "C005", "doc_id": "DOC003", "content": "RAG combines retrieval and generation.", "chunk_index": 0, "embedding": null},
-  {"chunk_id": "C006", "doc_id": "DOC003", "content": "The retriever finds relevant documents.", "chunk_index": 1, "embedding": null}
-]
-```
-
----
 
 ## Common Student Mistakes & Interventions
 
@@ -1139,15 +1052,3 @@ See `lab_sheet.md` for full instructions.
 | Assuming `@dataclass` fields are type-checked at runtime | Concept 3, S2 | "Type hints are for humans and tools, not Python runtime" |
 | Using `list` as a variable name (shadowing) | Any lab | "`list` is a built-in — don't use it as a variable name" |
 | Not handling the `embedding: None` case | Lab 2 | "Check for `None` before processing the vector" |
-
----
-
-## KC Answer Key (for instructor reference)
-
-### Session 1
-- **KC1:** (b) `tuple` — fixed-length, immutable, hashable
-- **KC2:** (b) `tuple` — immutable and hashable; `list` is unhashable
-
-### Session 2
-- **KC1:** (b) TypeError — datetime is not JSON-serialisable by default
-- **KC2:** (b) `@dataclass` — auto-generates `__init__`, `__repr__`, `__eq__`
