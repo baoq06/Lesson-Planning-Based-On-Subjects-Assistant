@@ -8,6 +8,7 @@ from rich import print as rprint
 from groq import Groq
 from pathlib import Path
 from src.schemas import ToolCall, AgentStep, AgentResponse
+from src.agent.call_llm import call_llm
 
 from mcp import Client, StdioServerParameters
 
