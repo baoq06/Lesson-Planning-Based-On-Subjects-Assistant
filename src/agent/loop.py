@@ -8,6 +8,7 @@ from rich import print as rprint
 from groq import Groq
 from pathlib import Path
 from src.schemas import ToolCall, AgentStep, AgentResponse
+from src.agent.call_llm import call_llm
 
 from mcp import Client, StdioServerParameters
 
@@ -17,6 +18,11 @@ MAX_STEPS = 7
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 PROMPT_PATH = REPO_ROOT / "data" / "prompts" / "system_prompt.txt"
+
+LOGS_DIR = REPO_ROOT / "logs"
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+SESSION_TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
+RUN_LOG_PATH = LOGS_DIR / f"run_{SESSION_TIMESTAMP}.jsonl"
 
 SYSTEM_PROMPT = PROMPT_PATH.read_text(encoding="utf-8").strip()
 
@@ -109,6 +115,31 @@ async def safe_execute_mcp_tool(client: Client, tool_name: str, arguments: dict[
     except Exception as e:
         return f"Error executing tool '{tool_name}': {type(e).__name__} - {str(e)}"
 
+def log_question_run(
+    question: str,
+    steps: list[AgentStep],
+    answer: str,
+    usage: dict[str, Any]
+) -> None:
+    record = {
+        "timestamp": datetime.now().isoformat(),
+        "question": question,
+        "steps": [
+            {
+                "step_num": s.step_num,
+                "thought": s.thought,
+                "tool": s.tool_call.name if s.tool_call else None,
+                "args": s.tool_call.arguments if s.tool_call else {},
+                "observation": s.observation,
+            }
+            for s in steps
+        ],
+        "answer": answer,
+        "usage": usage,
+    }
+    with open(RUN_LOG_PATH, "a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
 async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Optional[list[dict[str, Any]]] = None) -> AgentResponse:
     groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
@@ -133,18 +164,37 @@ async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Opt
         for step_num in range(1, max_steps + 1):
             rprint(f"\n[bold yellow]── Bước {step_num}/{max_steps} ──[/bold yellow]")
 
+            usage_stats = {
+            "calls": 0,
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "max_prompt": 0,
+        }
+
             response = groq_client.chat.completions.create(
                 model=MODEL,
                 messages=messages,
                 tools=tools,
                 temperature=0.1
             )
+
+            usage_stats["calls"] += 1
+            if response.usage:
+                p_tokens = getattr(response.usage, "prompt_tokens", 0) or 0
+                c_tokens = getattr(response.usage, "completion_tokens", 0) or 0
+                usage_stats["prompt_tokens"] += p_tokens
+                usage_stats["completion_tokens"] += c_tokens
+                usage_stats["max_prompt"] = max(usage_stats["max_prompt"], p_tokens)
+            msg = response.choices[0].message
+            messages.append(msg)
+
             msg = response.choices[0].message
             messages.append(msg)
 
             if not msg.tool_calls:
                 final_answer = msg.content or "Không có câu trả lời."
                 rprint(f"[bold green]Final Answer:[/bold green]\n{final_answer}")
+                log_question_run(question, steps, final_answer, usage_stats)
                 return AgentResponse(answer=final_answer, steps=steps)
             
             thought = msg.content or f"Cần kích hoạt {len(msg.tool_calls)} công cụ."
@@ -198,6 +248,7 @@ async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Opt
 
         stop_warning = f"Dừng: Đã đạt giới hạn tối đa {max_steps} bước suy luận."
         rprint(f"[bold red]{stop_warning}[/bold red]")
+        log_question_run(question, steps, stop_warning, usage_stats)
         return AgentResponse(answer=stop_warning, steps=steps)
 
 def ask_agent(
