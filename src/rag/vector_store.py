@@ -85,7 +85,7 @@ class VectorStore(DocumentStore):
         for i in range(0, len(chunks_to_embed), batch_size):
             batch = chunks_to_embed[i : i + batch_size]
             texts = [c.content for c in batch]
-            embeddings = batch_embed_text(texts, task="retrieval.passage")
+            embeddings = batch_embed_text(texts)
             for chunk, emb in zip(batch, embeddings):
                 chunk.embedding = emb
 

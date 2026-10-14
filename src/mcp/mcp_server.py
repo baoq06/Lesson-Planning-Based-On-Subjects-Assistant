@@ -5,12 +5,14 @@ import logging
 import re
 from datetime import datetime, date
 from dataclasses import asdict
-from typing import Optional
+from typing import Optional, Literal
 from pathlib import Path
 from mcp.server.mcpserver import MCPServer
 from string import Template
 from src.schemas import DraftResult
 from src.rag.vector_store import VectorStore
+from src.rag.hybrid_retriever import HybridRetriever
+from src.rag.load_documents import load_all_course_documents
 
 BASE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = BASE_DIR.parents[1]
@@ -24,6 +26,7 @@ STUDENT_ID_PATTERN = re.compile(r"^\d{8}$")
 MEMORY_PATH = REPO_ROOT / "data" / "mcp_memory.json"
 DATA_DIR = REPO_ROOT / "data"
 AIPR_DIR = DATA_DIR / "lecture-notes"
+CACHE_PATH = REPO_ROOT / "data" / "vector_store_cache.json"
 
 logging.basicConfig(
     stream=sys.stderr, 
@@ -32,7 +35,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger("mcp_server")
 
+vector_store = VectorStore()
+if CACHE_PATH.exists():
+    try:
+        vector_store.load(str(CACHE_PATH))
+        logger.info(f"Loaded {len(vector_store.chunks)} chunks from cache ({CACHE_PATH.name}).")
+    except Exception as e:
+        logger.error(f"Failed to load cache, re-indexing: {e}")
+        docs = load_all_course_documents(DATA_DIR)
+        vector_store.add_documents_batch(docs)
+        vector_store.save(str(CACHE_PATH))
+        logger.info(f"Indexed and saved {len(vector_store.chunks)} chunks to cache.")
+else:
+    logger.info("Cache not found. Indexing course documents from disk...")
+    docs = load_all_course_documents(DATA_DIR)
+    vector_store.add_documents_batch(docs)
+    vector_store.save(str(CACHE_PATH))
+    logger.info(f"Indexed and saved {len(vector_store.chunks)} chunks to cache ({CACHE_PATH.name}).")
+
+retriever = HybridRetriever(vector_store=vector_store)
+
 mcp = MCPServer("LessonPlanningAssistantServer")
+
 
 # @mcp.tool()
 # def remember(key: str, content: str) -> str:

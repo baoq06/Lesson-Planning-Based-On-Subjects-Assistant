@@ -105,7 +105,7 @@ class HybridRetriever:
 
         # 2. Điểm Vector (bảo vệ an toàn nếu embedding is None)
         try:
-            query_vec = embed_text(query, task="retrieval.query")
+            query_vec = embed_text(query)
             vector_scores = []
             for c in chunks:
                 if c.embedding is not None:
