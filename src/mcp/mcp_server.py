@@ -208,27 +208,30 @@ def check_late_submission_penalty(hours_late: int) -> str:
         return f"Có lỗi xảy ra khi kiểm tra mức phạt nộp trễ: {e}"
 
 @mcp.tool()
-def draft_template_submission(student_id: str, student_name: str, assg: str, days_requested: int, reason: str, proof: bool) -> str:
+def draft_template_submission(student_id: str, student_name: str, assignment: str, days_requested: int, reason: str, has_medical_proof: bool) -> str:
     logger.info(f"Chạy tool 'draft_template_submission' với sinh viên {student_id}")
     try:
         student_id, student_name = student_id.strip(), student_name.strip()
-        assg, reason = assg.strip(), reason.strip()
+        assignment, reason = assignment.strip(), reason.strip()
 
-        if not (student_id and student_name and assg and reason):
-            logger.info(f"Mã số sinh viên, Tên sinh viên, assg và lý do không được bỏ trống.")
-            return "Lỗi: Mã số sinh viên, Tên sinh viên, assg và lý do không được bỏ trống."
-        if not proof:
+        if not (student_id and student_name and assignment and reason):
+            logger.info(f"Mã số sinh viên, Tên sinh viên, tên bài tập và lý do không được bỏ trống.")
+            return "Error: Mã số sinh viên, Tên sinh viên, tên bài tập và lý do không được bỏ trống."
+        if not STUDENT_ID_PATTERN.fullmatch(student_id):
+            logger.info(f"Mã số sinh viên phải đúng 8 chữ số, ví dụ: '24110xxx'.")
+            return "Error: Mã số sinh viên phải có đúng 8 chữ số, ví dụ: '24110xxx'."
+        if not has_medical_proof:
             logger.info(f"Chứng nhận y tế không được bỏ trống (policy mục 4).")
-            return "Lỗi: Chứng nhận y tế không được bỏ trống (policy mục 4)."
+            return "Error: Chứng nhận y tế không được bỏ trống (policy mục 4)."
         if not 1 <= days_requested <= MAX_EXTENSION_DAYS:
             logger.info(f"Ngày yêu cầu phải từ 1 đến {MAX_EXTENSION_DAYS}.")
-            return f"Lỗi: Ngày yêu cầu phải từ 1 đến {MAX_EXTENSION_DAYS}."
+            return f"Error: Ngày yêu cầu phải từ 1 đến {MAX_EXTENSION_DAYS}."
 
         # Điền tham số vào trong mẫu txt
         content = Template(TEMPLATE_PATH.read_text(encoding="utf-8")).substitute(
             student_name=student_name,
             student_id=student_id,
-            assg=assg,
+            assignment=assignment,
             days_requested=days_requested,
             reason=reason,
             today=date.today().strftime("%Y-%m-%d"),
@@ -246,13 +249,13 @@ def draft_template_submission(student_id: str, student_name: str, assg: str, day
                 path=str(path),
                 overwritten=overwritten,
                 chars=len(content),
-                note="Đây là nháp chưa được nộp. Gọi tool 'read_draft' với đường dẫn này để xác thực.",
+                note="Đây là bản nháp, CHƯA được nộp. Gọi tool 'read_draft' với student_id này để xác thực.",
             )),
             ensure_ascii=False,
         )
     except Exception as e:
         logger.exception("Nộp bản nháp không thành công")
-        return f"Lỗi: Nộp bản nháp không thành công: {e}"
+        return f"Error: Nộp bản nháp không thành công: {e}"
 
 @mcp.tool()
 def read_draft(student_id: str) -> str:
