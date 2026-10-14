@@ -17,6 +17,7 @@ REPO_ROOT = BASE_DIR.parents[1]
 TEMPLATE_PATH = REPO_ROOT / "data" / "templates" / "extension_request.txt"
 DRAFTS_DIR = REPO_ROOT / "data" / "drafts"
 PLANS_DIR = REPO_ROOT / "data" / "plans"
+POLICY_PATH = REPO_ROOT / "data" / "Policy" / "AIPR_Policy.md"
 MAX_EXTENSION_DAYS = 5
 STUDENT_ID_PATTERN = re.compile(r"^\d{8}$")
 
@@ -198,20 +199,18 @@ def calculate_course_grade(
     attendance: float,
     labs: float,
     test1: float,
-    test2: float,
+    test2: float,   
     final_project: float,
     absence_rate: float = 0.0,
 ) -> str:
-    """Calculate the final AIPR course grade and determine pass/fail standing per course policy (READ-ONLY, changes nothing).
+    """Read grading rules from the official course policy and return them alongside student scores for grade evaluation (READ-ONLY, changes nothing).
 
-    Use when computing a student's final course score, checking passing status, or verifying policy compliance.
-    Per AIPR Course Policy: Attendance (5%), Practical Labs (15%), Test 1 Midterm (15%), Test 2 (15%), Final Project & Oral Defense (50%).
-    Passing threshold is >= 5.0 out of 10.
-    ATTENDANCE POLICY RULE: If absence_rate exceeds 20.0%, the student is automatically DISQUALIFIED with a final grade of 0.0 (Failed).
-    Do NOT call this tool if component grades have not been provided yet.
+    Use when evaluating a student's course performance, determining pass/fail status, or checking attendance eligibility.
+    This tool extracts the exact grading weights and attendance policy directly from 'AIPR_Policy.md'.
+    Do NOT call this tool if component scores have not been provided yet by the user.
     Required information: attendance, labs, test1, test2, final_project (all on a 0-10 scale), and absence_rate (0-100%).
     If any grade component is missing, ASK the user until all required components are provided. NEVER invent grades.
-    After a successful call, present the full grade breakdown, final weighted grade, and pass/fail status clearly to the user.
+    After a successful call, review the extracted policy section, check attendance limits, use the 'calculator' tool to compute the weighted grade, and explain the result clearly.
     On failure returns a string starting with "Error:".
 
     Args:
@@ -227,40 +226,42 @@ def calculate_course_grade(
         f"test1={test1}, test2={test2}, final_project={final_project}, absence_rate={absence_rate}%"
     )
     try:
-        if absence_rate > 20.0:
-            logger.info(f"Student failed attendance requirement: absence_rate={absence_rate}% > 20%")
-            return (
-                f"WARNING: Absence rate is {absence_rate:.1f}% (exceeds the 20% policy limit).\n"
-                f"- Status: Student is DISQUALIFIED from the final exam/defense per Course Policy Section 2.\n"
-                f"- Final Grade: 0.0 (Failed)."
-            )
+        if not POLICY_PATH.exists():
+            logger.error(f"Policy file not found at: {POLICY_PATH}")
+            return f"Error: Policy file not found at {POLICY_PATH.name}."
 
-        final_grade = (
-            (attendance * 0.05)
-            + (labs * 0.15)
-            + (test1 * 0.15)
-            + (test2 * 0.15)
-            + (final_project * 0.50)
-        )
-        final_grade = round(final_grade, 2)
-        passed = final_grade >= 5.0
+        policy_text = POLICY_PATH.read_text(encoding="utf-8")
 
-        logger.info(f"Calculated final grade: {final_grade}, passed={passed}")
-        return (
-            f"COURSE EVALUATION RESULT (AIPR):\n"
-            f"- Attendance (5%): {attendance}\n"
-            f"- Practical Labs (15%): {labs}\n"
-            f"- Test 1 - Midterm (15%): {test1}\n"
-            f"- Test 2 (15%): {test2}\n"
-            f"- Final Project & Oral Defense (50%): {final_project}\n"
-            f"- Absence Rate: {absence_rate:.1f}% (Compliant)\n"
-            f"----------------------------------------\n"
-            f"FINAL GRADE: {final_grade} / 10\n"
-            f"Status: {'PASSED' if passed else 'FAILED'}"
+        match = re.search(
+            r"(## 2\. Cơ cấu Đánh giá & Thang điểm. *?)(?=## 3\.|\Z)",
+            policy_text,
+            re.DOTALL
         )
+        grading_policy = match.group(1).strip() if match else policy_text[:2000]
+
+        student_scores = (
+            f"STUDENT INPUT SCORES:\n"
+            f"- Attendance: {attendance}/10\n"
+            f"- Practical Labs: {labs}/10\n"
+            f"- Midterm Test 1: {test1}/10\n"
+            f"- Test 2: {test2}/10\n"
+            f"- Final Project & Oral Defense: {final_project}/10\n"
+            f"- Absence Rate: {absence_rate:.1f}%\n"
+        )
+
+        instructions = (
+            "INSTRUCTIONS FOR LLM:\n"
+            "1. Read the official grading policy section above to identify component weights and absence rules.\n"
+            "2. If absence_rate exceeds the policy limit (e.g. > 20%), the student is disqualified (Final Grade: 0.0).\n"
+            "3. Otherwise, use the 'calculator' tool to compute the exact weighted final grade based on the policy weights.\n"
+            "4. Compare the result with the passing threshold (>= 5.0) and report final status to the user."
+        )
+
+        return f"{grading_policy}\n\n---\n\n{student_scores}\n\n---\n\n{instructions}"
+
     except Exception as e:
-        logger.error(f"Error occurred while calculating course grade: {e}")
-        return f"Error occurred while calculating course grade: {e}"
+        logger.error(f"Error occurred while retrieving course policy: {e}")
+        return f"Error: Failed to process course grade evaluation: {e}"
 
 @mcp.tool()
 def check_late_submission_penalty(hours_late: int) -> str:
