@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field, asdict
 from typing import Optional, Any
 from datetime import datetime
+from typing import TypedDict
 
 # --- khối dữ liệu rag và chunking
 
@@ -94,4 +95,11 @@ class SearchResult:
     found: bool
     best_relevance: float
     hits: list[SearchHit] = field(default_factory=list)
+
+#schema TimelineItem: cấu trúc cho từng mốc hoạt động trong buổi học
+@dataclass
+class TimelineItem(TypedDict):
+    time: str
+    activity: str
+    detail: str
 
