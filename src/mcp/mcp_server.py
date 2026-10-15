@@ -41,6 +41,7 @@ OPERATORS = {
     ast.USub: operator.neg,
     ast.UAdd: operator.pos,
 }
+MAX_EXPONENT = 100
 
 logging.basicConfig(
     stream=sys.stderr, 
@@ -86,6 +87,13 @@ def _eval_ast(node):
         left = _eval_ast(node.left)
         right = _eval_ast(node.right)
         op_type = type(node.op)
+        
+        if op_type is ast.Pow:
+            if abs(right) > MAX_EXPONENT:
+                raise ValueError(
+                     f"Exponent too large ({right}). Exponent must not exceed {MAX_EXPONENT}."
+                )
+            
         if op_type in OPERATORS:
             return OPERATORS[op_type](left, right)
         raise ValueError(f"Unsupported operator: {op_type.__name__}")
