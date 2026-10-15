@@ -97,7 +97,7 @@ def _eval_ast(node):
         if op_type in OPERATORS:
             return OPERATORS[op_type](left, right)
         raise ValueError(f"Unsupported operator: {op_type.__name__}")
-    elif isinstance(node, ast.UnaryOp):
+    elif isinstance(node, ast.UnaryOp): 
         operand = _eval_ast(node.operand)
         op_type = type(node.op)
         if op_type in OPERATORS:
@@ -205,14 +205,15 @@ def search_lesson_content(query: str, mode: Literal["dense", "hybrid"] = "hybrid
 def get_curriculum_week(week: int, full_content: bool = False) -> str:
     """Read curriculum lecture notes, session structures, and learning objectives for a course week (READ-ONLY, changes nothing).
 
-    Use when planning a lesson, designing exercises, checking topics covered, or drafting slides for a given week.
+    Use when a student asks what topics, concepts, or schedule are covered in Week X (Weeks 1 to 6).
     Currently, lecture notes are available ONLY for Weeks 1 to 6.
     Do NOT call this tool for weeks outside the 1 to 6 range (e.g. Week 7, Week 8, or Week 0).
     Required information: the week number (1-6). The 'full_content' flag is optional (defaults to False).
-    If the user does not specify the week number, ASK the user which week (1 to 6) they want to inspect.
-    Keep 'full_content=False' for structured summaries; set 'full_content=True' ONLY when full instructor scripts and code walkthroughs are needed.
-    After a successful call, synthesize the learning objectives and session structure to answer the user's request.
+    If the student does not specify the week number, ASK them which week (1 to 6) they are asking about.
+    Keep 'full_content=False' for concise topic summaries; set 'full_content=True' ONLY when the student requests full code walkthroughs or deep notes.
+    After a successful call, answer the student's question clearly and ALWAYS cite the source document tag [LP_W0{week}].
     On failure returns a string starting with "Error:".
+
     Args:
         week: The curriculum week number (must be an integer from 1 to 6).
         full_content: False to retrieve a structured overview; True to read the entire raw markdown file.
@@ -227,6 +228,7 @@ def get_curriculum_week(week: int, full_content: bool = False) -> str:
         logger.error(f"Lecture note file not found: {file_path}")
         return f"Error: Lecture note file not found for Week {week} at {file_path.name}."
 
+    doc_tag = f"[LP_W0{week}]"
     try: 
         content = file_path.read_text(encoding="utf-8")
         logger.info(f"Successfully read lecture notes for Week {week} ({len(content)} characters).")
@@ -246,12 +248,11 @@ def get_curriculum_week(week: int, full_content: bool = False) -> str:
             summary_sections.append(s2_match.group(1).strip())
 
         if summary_sections:
-                result = "\n\n---\n\n".join(summary_sections)
-                if len(result) > 2500:
-                    result = result[:2500] + "\n\n...(truncated. Use 'search_lesson_content' for specific sections)."
-                return result
-
-        return content[:1500] + "\n\n...(truncated. Use 'search_lesson_content' to query specific topics)."
+            result = f"Source: {doc_tag}\n\n" + "\n\n---\n\n".join(summary_sections)
+            if len(result) > 2500:
+                result = result[:2500] + f"\n\n...(truncated. Use 'search_lesson_content' for specific sections) {doc_tag}."
+            return result
+        return f"Source: {doc_tag}\n\n" + content[:1500] + f"\n\n...(truncated. Use 'search_lesson_content' to query specific topics) {doc_tag}."
     
     except Exception as e:
         logger.error(f"Error occurred while reading curriculum for Week {week}: {e}")
@@ -259,16 +260,17 @@ def get_curriculum_week(week: int, full_content: bool = False) -> str:
 
 @mcp.tool()
 def get_gotchas_and_best_practices(week: int) -> str:
-    """Extract common student mistakes, pitfalls, and pedagogical interventions for a course week (READ-ONLY, changes nothing).
+    """Extract common student mistakes, pitfalls, and best practices for a course week (READ-ONLY, changes nothing).
     
-    Use when preparing interactive Q&A, designing formative assessments, anticipating student bugs,
-    or advising instructors on tricky concepts for a given week.
+    Use when a student asks about common mistakes to avoid, tricky bugs, gotchas, or best practices
+    for assignments and labs in a specific week (Weeks 1 to 6).
     Currently available ONLY for Weeks 1 to 6.
     Do NOT call this tool for general curriculum overviews or for weeks outside the 1 to 6 range.
     Required information: the week number (1-6).
-    If the week number is not specified, ASK the user which week they need the gotchas and common mistakes for.
-    After a successful call, use the extracted common mistakes and interventions to give actionable teaching recommendations.
+    If the week number is not specified, ASK the student which week they need common mistakes and gotchas for.
+    After a successful call, explain the mistakes and preventive solutions clearly to the student, and ALWAYS cite [LP_W0{week}].
     On failure returns a string starting with "Error:".
+
     Args:
         week: The curriculum week number (must be an integer from 1 to 6).
     """
@@ -282,6 +284,7 @@ def get_gotchas_and_best_practices(week: int) -> str:
         logger.error(f"Lecture note file not found: {file_path}")
         return f"Error: Lecture note file not found for Week {week} at {file_path.name}."
 
+    doc_tag = f"[LP_W0{week}]"
     try: 
         content = file_path.read_text(encoding="utf-8")
         pattern = r"(## Common Student Mistakes & Interventions.*?)(?=## KC Answer Key|## \S|\Z)"
@@ -289,7 +292,7 @@ def get_gotchas_and_best_practices(week: int) -> str:
 
         if match:
             logger.info(f"Successfully extracted 'Common Student Mistakes & Interventions' for Week {week}.")
-            return f"### Gotchas & Common Student Mistakes (Week {week}):\n\n" + match.group(1).strip()
+            return f"### Gotchas & Common Mistakes (Week {week}) {doc_tag}:\n\nSource: {doc_tag}\n" + match.group(1).strip()
 
         logger.warning(f"Common Student Mistakes section not found for Week {week}.")
         return f"Error: 'Common Student Mistakes & Interventions' section not found in Week {week} lecture notes."
@@ -354,9 +357,9 @@ def calculate_course_grade(
         if absence_rate > 20.0:
             logger.info(f"Student exceeded absence limit: absence_rate={absence_rate}% > 20%")
             return (
-                f" Attendance warning:\n"
+                f" Attendance warning [POLICY_AIPR]:\n"
                 f"- Absence rate: {absence_rate:.1f}% (exceeds the limit 20%).\n"
-                f"- Current status: Banned from taking the final test / protecting the final project.\n"
+                f"- Current status: Banned from taking the final test / protecting the final project based on section 2 [POLICY_AIPR].\n"
             )
 
         final_grade = (
@@ -370,7 +373,7 @@ def calculate_course_grade(
         
         logger.info(f"Calculated final grade: {final_grade}")
         return (
-            f"COURSE EVALUATION RESULT (AIPR):\n"
+            f"COURSE EVALUATION RESULT [POLICY_AIPR]:\n"
             f"- Attendance (5%): {attendance}\n"
             f"- Practical Labs (15%): {labs}\n"
             f"- Test 1 - Midterm (15%): {test1}\n"
@@ -378,7 +381,7 @@ def calculate_course_grade(
             f"- Final Project & Oral Defense (50%): {final_project}\n"
             f"- Absence Rate: {absence_rate:.1f}% (Compliant)\n"
             f"----------------------------------------\n"
-            f"FINAL GRADE: {final_grade} / 10\n"
+            f"FINAL GRADE: {final_grade} / 10 [POLICY_AIPR]\n"
             #f"Status: {'PASSED' if passed else 'FAILED'}"
         )
     except Exception as e:
@@ -421,18 +424,18 @@ def check_late_submission_penalty(hours_late: int) -> str:
         else:
             logger.info(f"Late submission rejected (>72h): {hours_late} hours")
             return (
-                f"SUBMISSION REJECTED: Over 72 hours late ({hours_late} hours late).\n"
-                f"- Policy: AIPR Course Policy Section 4.\n"
+                f"SUBMISSION REJECTED: Over 72 hours late ({hours_late} hours late) [POLICY_AIPR].\n"
+                f"- Policy: AIPR Course Policy Section 4 [POLICY_AIPR].\n"
                 f"- Status: Submission portal is closed.\n"
-                f"- Grade: 0 points awarded for this assignment."
+                f"- Grade: 0 points awarded for this assignment [POLICY_AIPR]."
             )
 
         logger.info(f"Late penalty applied: -{penalty}% ({desc})")
         return (
-            f"LATE SUBMISSION PENALTY APPLIED:\n"
+            f"LATE SUBMISSION PENALTY APPLIED [POLICY_AIPR]:\n"
             f"- Late Duration: {hours_late} hours ({desc}).\n"
-            f"- Policy: AIPR Course Policy Section 4.\n"
-            f"- Penalty: DEDUCT {penalty}% of the assignment's total score."
+            f"- Policy: AIPR Course Policy Section 4 [POLICY_AIPR].\n"
+            f"- Penalty: DEDUCT {penalty}% of the assignment's total score [POLICY_AIPR]."
         )
     
     except Exception as e:
@@ -553,95 +556,6 @@ def read_draft(student_id: str) -> str:
         logger.exception("Failed to read draft file.")
         return f"Error: Failed to read draft: {e}"
 
-@mcp.tool()
-def export_lesson_plan(
-    week: int,
-    title: str,
-    duration_minutes: int,
-    objectives: list[str],
-    timeline: list[dict],
-    homework: str
-) -> str:
-    """Export and SAVE a completed lesson plan to disk (WRITE / SAVE to disk).
-
-    Use when a lesson plan has been fully generated, structured, and is ready to be saved permanently for the instructor. Valid course weeks are 1 through 8.
-    Do NOT call this tool with incomplete or empty lesson plan sections, or while still brainstorming without the user's explicit consent.
-    Required information: week (1 to 8), non-empty title, duration_minutes, objectives list, timeline list (each item having 'time', 'activity', and 'detail'), and homework string.
-    If any information or section is missing, ASK the user to provide or approve the missing details before exporting. NEVER invent details.
-    After a successful call, inform the user of the saved file paths (data/plans/) and present a brief summary of the exported plan.
-    On failure returns a string starting with "Error:".
-    
-    Args:
-        week: The curriculum week number (must be an integer from 1 to 8).
-        title: Title of the lesson plan (cannot be empty).
-        duration_minutes: Total session duration in minutes (e.g. 90, 180).
-        objectives: List of learning objective strings (e.g. ["Understand CNN architecture", "Train ResNet"]).
-        timeline: List of timeline items, each containing 'time', 'activity', and 'detail'.
-        homework: Description of homework assignments, readings, or preparation for the next session.
-    """
-    logger.info(f"Executing 'export_lesson_plan' for week={week}, title='{title}'")
-    try:
-        if week < 1 or week > 6:
-            logger.warning(f"Invalid week requested: {week}")
-            return f"Error: Week {week} is invalid. The course covers weeks 1 to 6."
-    
-        title = title.strip()
-        if not title:
-            logger.warning("Empty lesson plan title provided.")
-            return "Error: Lesson plan title cannot be empty."
-
-        PLANS_DIR.mkdir(parents=True, exist_ok=True)
-
-        plan_data = {
-            "week": week,
-            "title": title,
-            "duration_minutes": duration_minutes,
-            "created_at": datetime.now().isoformat(),
-            "objectives": objectives,
-            "timeline": timeline,
-            "homework": homework.strip() if homework else ""
-        }
-        json_path = PLANS_DIR / f"lesson_plan_week_{week}.json"
-        json_path.write_text(json.dumps(plan_data, indent=2, ensure_ascii=False), encoding="utf-8")
-        logger.info(f"Saved lesson plan JSON to {json_path}")
-
-        md_lines = [
-            f"# LESSON PLAN: WEEK {week} - {title.upper()}",
-            f"- **Duration:** {duration_minutes} minutes",
-            f"- **Created At:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            "",
-            "## 1. Learning Objectives",
-        ]
-        for obj in objectives:
-            md_lines.append(f"- {obj}")
-
-        md_lines.append("\n## 2. Session Timeline")
-        for item in timeline:
-            t = item.get("time", "")
-            act = item.get("activity", "")
-            detail = item.get("detail", "")
-            md_lines.append(f"- **[{t}] {act}:** {detail}")
-
-        md_lines.append("\n## 3. Homework & Independent Study")
-        md_lines.append(homework.strip() if homework.strip() else "No homework assigned.")
-
-        md_path = PLANS_DIR / f"lesson_plan_week_{week}.md"
-        md_path.write_text("\n".join(md_lines), encoding="utf-8")
-        logger.info(f"Saved lesson plan Markdown to {md_path}")
-
-        return json.dumps({
-            "status": "success",
-            "week": week,
-            "title": title,
-            "json_path": str(json_path),
-            "md_path": str(md_path),
-            "note": "Lesson plan successfully exported to disk."
-        }, ensure_ascii=False)
-
-    except Exception as e:
-        logger.exception(f"Error occurred while exporting lesson plan for Week {week}: {e}")
-        return f"Error: Failed to export lesson plan for Week {week}: {e}"
-
 if __name__ == "__main__":
     logger.info("Starting LessonPlanningAssistantServer on stdio transport...")
-    mcp.run(transport="stdio")
+    mcp.run(transport="stdio")  
