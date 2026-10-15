@@ -259,9 +259,6 @@ def get_curriculum_week(week: int, full_content: bool = False) -> str:
         content = file_path.read_text(encoding="utf-8")
         logger.info(f"Successfully read lecture notes for Week {week} ({len(content)} characters).")
 
-        if full_content:
-            return content
-
         summary_sections = []
         
         header_match = re.search(r"(# Week \d+.*?)(?=## Session 1|\Z)", content, re.DOTALL)
@@ -277,12 +274,12 @@ def get_curriculum_week(week: int, full_content: bool = False) -> str:
             summary_sections.append(s2_match.group(1).strip())
 
         if summary_sections:
-            return (
-                "\n\n---\n\n".join(summary_sections)
-                + "\n\n*(Note: This is a structured summary of Learning Objectives & Session Structures. Pass 'full_content=True' if you need the full instructor script and code alongs).*"
-            )
+                result = "\n\n---\n\n".join(summary_sections)
+                if len(result) > 2500:
+                    result = result[:2500] + "\n\n...(truncated. Use 'search_lesson_content' for specific sections)."
+                return result
 
-        return content[:3000] + "\n...(content truncated)"
+        return content[:1500] + "\n\n...(truncated. Use 'search_lesson_content' to query specific topics)."
     
     except Exception as e:
         logger.error(f"Error occurred while reading curriculum for Week {week}: {e}")
@@ -540,8 +537,8 @@ def read_draft(student_id: str) -> str:
     Compare the returned "chars" with the "chars" reported by draft_template_submission:
     if they are equal, this is the draft that was just written.
     A draft does NOT mean the request has been submitted.
-    Returns JSON with path, chars, content. On failure returns a string starting with "Error:"
-    (for example when no draft exists for this student yet).
+    Returns JSON with path, chars, content. 
+    On failure returns a string starting with "Error:" (for example when no draft exists for this student yet).
 
     Args:
         student_id: the 8-digit student ID used when drafting the letter, e.g. "24110001".
@@ -581,7 +578,7 @@ def export_lesson_plan(
     Do NOT call this tool with incomplete or empty lesson plan sections, or while still brainstorming without the user's explicit consent.
     Required information: week (1 to 8), non-empty title, duration_minutes, objectives list, timeline list (each item having 'time', 'activity', and 'detail'), and homework string.
     If any information or section is missing, ASK the user to provide or approve the missing details before exporting. NEVER invent details.
-    After a successful call, you MUST call 'read_lesson_plan' with the same week to verify that the files were actually created and intact, and only then inform the user of the saved file paths (data/plans/).
+    After a successful call, inform the user of the saved file paths (data/plans/) and present a brief summary of the exported plan.
     On failure returns a string starting with "Error:".
     
     Args:
@@ -594,9 +591,9 @@ def export_lesson_plan(
     """
     logger.info(f"Executing 'export_lesson_plan' for week={week}, title='{title}'")
     try:
-        if week < 1 or week > 8:
+        if week < 1 or week > 6:
             logger.warning(f"Invalid week requested: {week}")
-            return f"Error: Week {week} is invalid. The course covers weeks 1 to 8."
+            return f"Error: Week {week} is invalid. The course covers weeks 1 to 6."
     
         title = title.strip()
         if not title:
