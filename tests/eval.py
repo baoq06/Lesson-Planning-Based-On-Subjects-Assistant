@@ -69,10 +69,10 @@ Chỉ trả về DUY NHẤT một số thập phân (1.0, 0.5, hoặc 0.0), khô
         match = re.search(r"(1\.0|0\.5|0\.0|1|0)", score_text)
         if match:
             return float(match.group(1))
-        return 1.0
+        return None
     except Exception as e:
         console.print(f"[dim red]Lỗi khi gọi LLM-as-judge faithfulness: {e}[/dim red]")
-        return 1.0
+        return None
 
 def evaluate_answer_relevance_llm(groq_client: Groq, question: str, answer: str) -> float:
     """Đánh giá Answer Relevance (Độ phù hợp): câu trả lời có đi thẳng vào trọng tâm câu hỏi không?"""
@@ -310,9 +310,12 @@ def run_evaluation(testset_file: Path = TESTSET_PATH, limit: Optional[int] = Non
     refusal_rate = (no_answer_correct / no_answer_total * 100) if no_answer_total > 0 else 100.0
     action_rate = (action_verified / action_total * 100) if action_total > 0 else 100.0
     citation_rate = (citation_matches / citation_expected_total * 100) if citation_expected_total > 0 else 100.0
-    avg_faithfulness = (sum(faithfulness_scores) / len(faithfulness_scores)) if faithfulness_scores else 1.0
-    avg_relevance = (sum(relevance_scores) / len(relevance_scores)) if relevance_scores else 1.0
-    avg_precision = (sum(precision_scores) / len(precision_scores)) if precision_scores else 1.0
+    valid_faith = [s for s in faithfulness_scores if s is not None]
+    avg_faithfulness = (sum(valid_faith) / len(valid_faith)) if valid_faith else 0.0
+    valid_rel = [s for s in relevance_scores if s is not None]
+    avg_relevance = (sum(valid_rel) / len(valid_rel)) if valid_rel else 0.0
+    valid_prec = [s for s in precision_scores if s is not None]
+    avg_precision = (sum(valid_prec) / len(valid_prec)) if valid_prec else 0.0
     avg_latency = (total_latency / len(cases)) if cases else 0.0
 
     summary_data = {

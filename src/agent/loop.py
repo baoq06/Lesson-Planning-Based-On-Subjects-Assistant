@@ -146,7 +146,7 @@ def log_question_run(
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Optional[list[dict[str, Any]]] = None) -> AgentResponse:
-    groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"), max_retries=0)
 
     server = StdioServerParameters(
         command=sys.executable,

@@ -11,7 +11,7 @@ from typing import Optional, Literal
 from pathlib import Path
 from mcp.server.mcpserver import MCPServer
 from string import Template
-from src.schemas import DraftResult, SearchHit, SearchResult
+from src.schemas import DraftResult, SearchHit, SearchResult, ReadDraftResult, ExportPlanResult, TimelineItem
 from src.rag.vector_store import VectorStore
 from src.rag.hybrid_retriever import HybridRetriever
 from src.rag.load_documents import load_all_course_documents
@@ -548,10 +548,12 @@ def read_draft(student_id: str) -> str:
 
         content = path.read_text(encoding="utf-8")
         logger.info(f"Draft read successfully: {path} ({len(content)} characters)")
-        return json.dumps(
-            {"path": str(path), "chars": len(content), "content": content},
-            ensure_ascii=False,
+        result = ReadDraftResult(
+            path=str(path),
+            chars=len(content),
+            content=content
         )
+        return json.dumps(asdict(result), ensure_ascii=False)
     except Exception as e:
         logger.exception("Failed to read draft file.")
         return f"Error: Failed to read draft: {e}"
