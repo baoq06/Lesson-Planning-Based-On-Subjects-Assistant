@@ -62,16 +62,20 @@ def get_mcp_tools_schema(mcp_tools: list[Any], require_thought: bool = True) -> 
             if "thought" not in required:
                 required.insert(0, "thought")
 
+        parameters = {
+            "type": "object",
+            "properties": properties,
+            "required": required,
+        }
+        if "$defs" in schema:
+            parameters["$defs"] = schema["$defs"]
+
         formatted_tools.append({
             "type": "function",
             "function": {
                 "name": tool.name,
                 "description": tool.description,
-                "parameters": {
-                    "type": "object",
-                    "properties": properties,
-                    "required": required,
-                },
+                "parameters": parameters,
             },
         })
         
