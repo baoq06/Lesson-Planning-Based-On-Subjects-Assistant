@@ -299,37 +299,56 @@ def calculate_course_grade(
     final_project: float,
     absence_rate: float = 0.0,
 ) -> str:
-    """Calculate the final AIPR course grade and determine pass/fail standing per course policy (READ-ONLY, changes nothing).
-
-    Use when computing a student's final course score, checking passing status, or verifying policy compliance.
-    Per AIPR Course Policy: Attendance (5%), Practical Labs (15%), Test 1 Midterm (15%), Test 2 (15%), Final Project & Oral Defense (50%).
-    Passing threshold is >= 5.0 out of 10.
-    ATTENDANCE POLICY RULE: If absence_rate exceeds 20.0%, the student is automatically DISQUALIFIED with a final grade of 0.0 (Failed).
-    Do NOT call this tool if component grades have not been provided yet.
-    Required information: attendance, labs, test1, test2, final_project (all on a 0-10 scale), and absence_rate (0-100%).
-    If any grade component is missing, ASK the user until all required components are provided. NEVER invent grades.
-    After a successful call, present the full grade breakdown, final weighted grade, and pass/fail status clearly to the user.
-    On failure returns a string starting with "Error:".
-
+    """Calculate the final AIPR course grade per course policy [POLICY_AIPR] (READ-ONLY, changes nothing).
+    Use when computing a student's final weighted course score or verifying policy compliance.
+    Per AIPR Course Policy Section 2 [POLICY_AIPR]: 
+    - Attendance (5%), Practical Labs (15%), Test 1 Midterm (15%), Test 2 (15%), Final Project & Oral Defense (50%).
+    - Note on passing threshold: The course policy does NOT specify a pass/fail threshold (e.g. >= 5.0).
+    - ATTENDANCE POLICY RULE [POLICY_AIPR]: Students with absence_rate > 20% are barred from the final exam / not eligible to defend the final project. The policy does NOT specify setting final grade to 0.0.
+    
+    CRITICAL INSTRUCTION FOR MISSING INPUTS:
+    - Required information: attendance, labs, test1, test2, final_project (all on a 0-10 scale), and absence_rate (0-100%).
+    - absence_rate does NOT have a default value. If the user does not provide absence_rate or any component grade, DO NOT call this tool and NEVER assume/invent values (such as assuming absence_rate is 0%). ASK the user to clarify first.
+    - On failure returns a string starting with "Error:".
     Args:
         attendance: Attendance component score on a 0-10 scale.
         labs: Practical lab assignment score on a 0-10 scale.
         test1: Midterm Test 1 score on a 0-10 scale.
         test2: Test 2 score on a 0-10 scale.
         final_project: Final Project & Oral Defense score on a 0-10 scale.
-        absence_rate: Student absence percentage (0.0 to 100.0). Defaults to 0.0.
+        absence_rate: Student absence percentage (0.0 to 100.0). Required, no default.
     """
     logger.info(
         f"Executing 'calculate_course_grade' with attendance={attendance}, labs={labs}, "
         f"test1={test1}, test2={test2}, final_project={final_project}, absence_rate={absence_rate}%"
     )
     try:
-        if absence_rate > 20.0:
-            logger.info(f"Student failed attendance requirement: absence_rate={absence_rate}% > 20%")
+        grade_components = {
+            "Attendacne": attendance,
+            "Labs": labs,
+            "Test 1": test1,
+            "Test 2": test2,
+            "Final project": final_project,
+        }
+        for name, score in grade_components.items():
+            if not (0.0 <= score <= 10.0):
+                return (
+                    f"Error: Score {name} is invalid ({score}). "
+                    f"All scores must be from 0.0 to 10.0."
+                )
+
+        if not (0.0 <= absence_rate <= 100.0):
             return (
-                f"WARNING: Absence rate is {absence_rate:.1f}% (exceeds the 20% policy limit).\n"
-                f"- Status: Student is DISQUALIFIED from the final exam/defense per Course Policy Section 2.\n"
-                f"- Final Grade: 0.0 (Failed)."
+                f"Error: Invalid absence rate ({absence_rate}%). "
+                f"Absence rate must be form 0.0% to 100.0% [POLICY_AIPR]."
+            )
+
+        if absence_rate > 20.0:
+            logger.info(f"Student exceeded absence limit: absence_rate={absence_rate}% > 20%")
+            return (
+                f" Attendance warning:\n"
+                f"- Absence rate: {absence_rate:.1f}% (exceeds the limit 20%).\n"
+                f"- Current status: Banned from taking the final test / protecting the final project.\n"
             )
 
         final_grade = (
@@ -340,9 +359,8 @@ def calculate_course_grade(
             + (final_project * 0.50)
         )
         final_grade = round(final_grade, 2)
-        passed = final_grade >= 5.0
-
-        logger.info(f"Calculated final grade: {final_grade}, passed={passed}")
+        
+        logger.info(f"Calculated final grade: {final_grade}")
         return (
             f"COURSE EVALUATION RESULT (AIPR):\n"
             f"- Attendance (5%): {attendance}\n"
@@ -353,7 +371,7 @@ def calculate_course_grade(
             f"- Absence Rate: {absence_rate:.1f}% (Compliant)\n"
             f"----------------------------------------\n"
             f"FINAL GRADE: {final_grade} / 10\n"
-            f"Status: {'PASSED' if passed else 'FAILED'}"
+            #f"Status: {'PASSED' if passed else 'FAILED'}"
         )
     except Exception as e:
         logger.error(f"Error: Failed to calculate course grade: {e}")
