@@ -66,8 +66,8 @@ class AgentStep:
 class AgentResponse: 
     answer: str
     steps: list[AgentStep] = field(default_factory=list)
-    sources: list[str] = field(default_factory=list)
-    verifired: bool = False
+    # sources: list[str] = field(default_factory=list)
+    # verified: bool = False
     usage: dict[str, Any] = field(default_factory=dict)
 
 #schema DraftResult: kết quả của tool draft_template_submission
