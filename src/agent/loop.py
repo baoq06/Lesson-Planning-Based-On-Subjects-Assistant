@@ -114,7 +114,7 @@ async def safe_execute_mcp_tool(client: Client, tool_name: str, arguments: dict[
         return "Error: Tool executed but returned no data."
         
     except Exception as e:
-        return f"Error executing tool '{tool_name}': {type(e).__name__} - {str(e)}"
+        return f"Error: Failed to execute tool '{tool_name}': {type(e).__name__} - {e}"
 
 def log_question_run(
     question: str,

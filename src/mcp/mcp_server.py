@@ -79,45 +79,6 @@ def _is_lesson_chunk(chunk, week: int) -> bool:
 
 mcp = MCPServer("LessonPlanningAssistantServer")
 
-
-# @mcp.tool()
-# def remember(key: str, content: str) -> str:
-#     logger.info(f"Executing 'remember' tool for key: '{key}'")
-#     try:
-#         if not key.strip():
-#             return "Error: A non-empty key is required."
-        
-#         memory = json.loads(MEMORY_PATH.read_text(encoding="utf-8")) if MEMORY_PATH.exists() else {}
-#         memory[key] = content
-
-#         MEMORY_PATH.parent.mkdir(parents=True, exist_ok=True)
-#         MEMORY_PATH.write_text(json.dumps(memory, indent=2, ensure_ascii=False), encoding="utf-8")
-
-#         logger.info(f"Successfully stored key '{key}' in memory.")
-#         return f"Stored key '{key}' in memory."
-#     except Exception as e:
-#         logger.error(f"Error occurred while storing key '{key}': {e}")
-#         return f"Error occurred while storing key '{key}': {e}"
-
-# @mcp.tool()
-# def recall(query: str, top_k: int = 3) -> str:
-#     logger.info(f"Executing 'recall' tool with query: '{query}', top_k={top_k}")
-#     try:
-#         top_k = max(1, min(top_k, 8))
-#         if not MEMORY_PATH.exists():
-#             return "Nothing remembered matches that query."
-
-#         memory = json.loads(MEMORY_PATH.read_text(encoding="utf-8"))
-#         hits = [f"{k}: {v}" for k, v in memory.items() if query.lower() in (k + v).lower()]
-        
-#         logger.info(f"Found {len(hits)} matching items in memory.")
-#         if not hits:
-#             return "Nothing remembered matches that query."
-#         return "\n".join(hits[:top_k])
-#     except Exception as e:
-#         logger.error(f"Error occurred while recalling query '{query}': {e}")
-#         return f"Error occurred while recalling query '{query}': {e}"
-
 def _eval_ast(node):
     if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
         return node.value
@@ -161,8 +122,8 @@ def calculator(expression: str) -> str:
     except ZeroDivisionError:
         return "Error: Division by zero."
     except Exception as e:
-        logger.error(f"Error occurred while evaluating expression '{expression}': {e}")
-        return f"Error occurred while evaluating expression '{expression}': {e}"
+        logger.error(f"Error: Failed to evaluate expression '{expression}': {e}")
+        return f"Error: Failed to evaluate expression '{expression}': {e}"
 
 @mcp.tool()
 def search_lesson_content(query: str, mode: Literal["dense", "hybrid"] = "hybrid", top_k: int = 4, week: int = 0,) -> str:
@@ -395,8 +356,8 @@ def calculate_course_grade(
             f"Status: {'PASSED' if passed else 'FAILED'}"
         )
     except Exception as e:
-        logger.error(f"Error occurred while calculating course grade: {e}")
-        return f"Error occurred while calculating course grade: {e}"
+        logger.error(f"Error: Failed to calculate course grade: {e}")
+        return f"Error: Failed to calculate course grade: {e}"
     
 @mcp.tool()
 def check_late_submission_penalty(hours_late: int) -> str:
