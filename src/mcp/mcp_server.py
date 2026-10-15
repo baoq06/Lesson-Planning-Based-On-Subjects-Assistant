@@ -11,7 +11,7 @@ from typing import Optional, Literal
 from pathlib import Path
 from mcp.server.mcpserver import MCPServer
 from string import Template
-from src.schemas import DraftResult, SearchHit, SearchResult, TimelineItem
+from src.schemas import DraftResult, SearchHit, SearchResult
 from src.rag.vector_store import VectorStore
 from src.rag.hybrid_retriever import HybridRetriever
 from src.rag.load_documents import load_all_course_documents
@@ -551,7 +551,7 @@ def export_lesson_plan(
     title: str,
     duration_minutes: int,
     objectives: list[str],
-    timeline: list[TimelineItem],
+    timeline: list[dict],
     homework: str
 ) -> str:
     """Export and SAVE a completed lesson plan to disk (WRITE / SAVE to disk).
