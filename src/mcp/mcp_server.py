@@ -4,6 +4,7 @@ import json
 import logging
 import re
 import ast
+import operator 
 from datetime import datetime, date
 from dataclasses import asdict
 from typing import Optional, Literal
@@ -14,6 +15,7 @@ from src.schemas import DraftResult, SearchHit, SearchResult, TimelineItem
 from src.rag.vector_store import VectorStore
 from src.rag.hybrid_retriever import HybridRetriever
 from src.rag.load_documents import load_all_course_documents
+
 
 BASE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = BASE_DIR.parents[1]
@@ -124,10 +126,11 @@ def _eval_ast(node):
         right = _eval_ast(node.right)
         op_type = type(node.op)
         if op_type in OPERATORS:
-            return OPERATORS[op_type](<left, right>)
+            return OPERATORS[op_type](left, right)
         raise ValueError(f"Unsupported operator: {op_type.__name__}")
     elif isinstance(node, ast.UnaryOp):
         operand = _eval_ast(node.operand)
+        op_type = type(node.op)
         if op_type in OPERATORS:
             return OPERATORS[op_type](operand)
         raise ValueError(f"Unsupported operator: {op_type.__name__}")
