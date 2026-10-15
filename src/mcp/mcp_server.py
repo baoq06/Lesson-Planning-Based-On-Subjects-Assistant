@@ -308,7 +308,7 @@ def calculate_course_grade(
     test1: float,
     test2: float,   
     final_project: float,
-    absence_rate: float = 0.0,
+    absence_rate: float,
 ) -> str:
     """Calculate the final AIPR course grade per course policy [POLICY_AIPR] (READ-ONLY, changes nothing).
     Use when computing a student's final weighted course score or verifying policy compliance.

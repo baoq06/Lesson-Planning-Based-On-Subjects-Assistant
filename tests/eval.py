@@ -74,7 +74,7 @@ Chỉ trả về DUY NHẤT một số thập phân (1.0, 0.5, hoặc 0.0), khô
         console.print(f"[dim red]Lỗi khi gọi LLM-as-judge faithfulness: {e}[/dim red]")
         return None
 
-def evaluate_answer_relevance_llm(groq_client: Groq, question: str, answer: str) -> float:
+def evaluate_answer_relevance_llm(groq_client: Groq, question: str, answer: str) -> Optional[float]:
     """Đánh giá Answer Relevance (Độ phù hợp): câu trả lời có đi thẳng vào trọng tâm câu hỏi không?"""
     if not answer.strip():
         return 0.0
@@ -110,12 +110,12 @@ Chỉ trả về DUY NHẤT một số thập phân (1.0, 0.5, hoặc 0.0), khô
         match = re.search(r"(1\.0|0\.5|0\.0|1|0)", score_text)
         if match:
             return float(match.group(1))
-        return 1.0
+        return None
     except Exception as e:
         console.print(f"[dim red]Lỗi khi gọi LLM-as-judge relevance: {e}[/dim red]")
-        return 1.0
+        return None
 
-def evaluate_context_precision_llm(groq_client: Groq, question: str, context: str, expected_answer: str = "") -> float:
+def evaluate_context_precision_llm(groq_client: Groq, question: str, context: str, expected_answer: str = "") -> Optional[float]:
     """Đánh giá Context Precision (Độ chính xác ngữ cảnh): ngữ cảnh tra cứu từ tools có thực sự hữu ích và trúng câu hỏi không?"""
     if not context.strip():
         return 1.0
@@ -148,10 +148,10 @@ Chỉ trả về DUY NHẤT một số thập phân (1.0, 0.5, hoặc 0.0), khô
         match = re.search(r"(1\.0|0\.5|0\.0|1|0)", score_text)
         if match:
             return float(match.group(1))
-        return 1.0
+        return None
     except Exception as e:
         console.print(f"[dim red]Lỗi khi gọi LLM-as-judge context precision: {e}[/dim red]")
-        return 1.0
+        return None
 
 def run_evaluation(testset_file: Path = TESTSET_PATH, limit: Optional[int] = None) -> dict[str, Any]:
     """Chạy toàn bộ pipeline kiểm thử và xuất báo cáo đo lường định lượng."""
@@ -373,14 +373,18 @@ def run_evaluation(testset_file: Path = TESTSET_PATH, limit: Optional[int] = Non
         cited_str = ", ".join(r["cited_doc_ids"]) if r["cited_doc_ids"] else "[dim]none[/dim]"
         tok_val = r["usage"].get("total_tokens", 0)
 
+        faith_str = f"{r['faithfulness']:.2f}" if r["faithfulness"] is not None else "[dim]N/A[/dim]"
+        rel_str = f"{r['answer_relevance']:.2f}" if r["answer_relevance"] is not None else "[dim]N/A[/dim]"
+        prec_str = f"{r['context_precision']:.2f}" if r["context_precision"] is not None else "[dim]N/A[/dim]"
+
         table.add_row(
             r["id"],
             r["type"],
             cited_str,
             ref_str,
-            f"{r['faithfulness']:.2f}",
-            f"{r['answer_relevance']:.2f}",
-            f"{r['context_precision']:.2f}",
+            faith_str,
+            rel_str,
+            prec_str,
             str(tok_val),
             f"{r['latency_sec']}s",
         )
