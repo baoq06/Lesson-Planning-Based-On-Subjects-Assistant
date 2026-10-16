@@ -125,7 +125,10 @@ def log_question_run(
     question: str,
     steps: list[AgentStep],
     answer: str,
-    usage: dict[str, Any]
+    usage: dict[str, Any],
+    rag_triad: Optional[dict[str, float]] = None,
+    latency_sec: Optional[float] = None,
+    cited_docs: Optional[list[str]] = None,
 ) -> None:
     record = {
         "timestamp": datetime.now().isoformat(),
@@ -142,11 +145,19 @@ def log_question_run(
         ],
         "answer": answer,
         "usage": usage,
+        "rag_triad": rag_triad or {},
+        "latency_sec": latency_sec,
+        "cited_doc_ids": cited_docs or [],
     }
     with open(RUN_LOG_PATH, "a", encoding="utf-8") as f:
         f.write(json.dumps(record, indent=2, ensure_ascii=False) + "\n\n")
 
-async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Optional[list[dict[str, Any]]] = None) -> AgentResponse:
+async def run_agent_loop(
+    question: str, 
+    max_steps: int = MAX_STEPS, 
+    history: Optional[list[dict[str, Any]]] = None,
+    auto_log: bool = True
+) -> AgentResponse:
     groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"), max_retries=0)
 
     server = StdioServerParameters(
@@ -200,7 +211,8 @@ async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Opt
             if not msg.tool_calls:
                 final_answer = msg.content or "Không có câu trả lời."
                 rprint(f"[bold green]Final Answer:[/bold green]\n{final_answer}")
-                log_question_run(question, steps, final_answer, usage_stats)
+                if auto_log:
+                    log_question_run(question, steps, final_answer, usage_stats)
                 return AgentResponse(answer=final_answer, steps=steps, usage=usage_stats)
             
             thought = msg.content or f"Cần kích hoạt {len(msg.tool_calls)} công cụ."
@@ -254,15 +266,17 @@ async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Opt
 
         stop_warning = f"Dừng: Đã đạt giới hạn tối đa {max_steps} bước suy luận."
         rprint(f"[bold red]{stop_warning}[/bold red]")
-        log_question_run(question, steps, stop_warning, usage_stats)
+        if auto_log:
+            log_question_run(question, steps, stop_warning, usage_stats)
         return AgentResponse(answer=stop_warning, steps=steps, usage=usage_stats)
 
 def ask_agent(
     question: str, 
     max_steps: int = MAX_STEPS,
-    history: Optional[list[dict[str, Any]]] = None
+    history: Optional[list[dict[str, Any]]] = None,
+    auto_log: bool = True
 ) -> AgentResponse:
-    return asyncio.run(run_agent_loop(question=question, max_steps=max_steps, history=history))
+    return asyncio.run(run_agent_loop(question=question, max_steps=max_steps, history=history, auto_log=auto_log))
 
 if __name__ == "__main__":
     from src.rag.eval_metrics import evaluate_rag_triad, export_evaluation_csv, generate_evaluation_chart
@@ -291,7 +305,7 @@ if __name__ == "__main__":
                 continue
 
             t0 = time.time()
-            response = ask_agent(user_question, history=conversation_history)
+            response = ask_agent(user_question, history=conversation_history, auto_log=False)
             elapsed = time.time() - t0
 
             if response.answer and not response.answer.startswith("Dừng:"):
@@ -315,15 +329,16 @@ if __name__ == "__main__":
                 answer=response.answer or "",
             )
 
-            # In bảng chỉ số RAG Triad trực tiếp lên terminal
-            rprint(Panel(
-                f"[bold green]1. Faithfulness (Trung thực):[/bold green] [bold white]{triad['faithfulness']:.2f} / 1.00[/bold white]    "
-                f"[bold cyan]2. Answer Relevance (Phù hợp):[/bold cyan] [bold white]{triad['answer_relevance']:.2f} / 1.00[/bold white]    "
-                f"[bold magenta]3. Context Precision (Ngữ cảnh):[/bold magenta] [bold white]{triad['context_precision']:.2f} / 1.00[/bold white]\n"
-                f"[dim]Độ trễ: {elapsed:.2f}s | Tokens: {response.usage.get('total_tokens', 0) if isinstance(response.usage, dict) else 0} | Nguồn: {', '.join(cited_docs) or 'Không có'}[/dim]",
-                title="[bold yellow]CHỈ SỐ RAG TRIAD (ĐÁNH GIÁ LIÊN TỤC)[/bold yellow]",
-                border_style="yellow"
-            ))
+            # Xuất trực tiếp 3 chỉ số RAG Triad vào file log run_*.jsonl (không in ra terminal)
+            log_question_run(
+                question=user_question,
+                steps=response.steps,
+                answer=response.answer or "",
+                usage=response.usage if isinstance(response.usage, dict) else {},
+                rag_triad=triad,
+                latency_sec=round(elapsed, 2),
+                cited_docs=cited_docs,
+            )
 
             session_records.append({
                 "id": f"Demo_Q{len(session_records)+1:02d}",
