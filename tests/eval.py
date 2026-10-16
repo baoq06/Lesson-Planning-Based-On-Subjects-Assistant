@@ -3,9 +3,14 @@ import sys
 import json
 import time
 import re
+import csv
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 from rich import print as rprint
 from rich.console import Console
@@ -32,7 +37,7 @@ REFUSAL_EXACT = "Xin lỗi, thông tin này không có trong tài liệu bài gi
 
 console = Console()
 
-def evaluate_faithfulness_llm(groq_client: Groq, question: str, context: str, answer: str) -> float:
+def evaluate_faithfulness_llm(groq_client: Groq, question: str, context: str, answer: str) -> Optional[float]:
     """Đánh giá Faithfulness (Tính trung thực): câu trả lời có hoàn toàn dựa trên dữ liệu tra cứu không?"""
     if not context.strip():
         if REFUSAL_EXACT.lower() in answer.lower():
@@ -79,7 +84,6 @@ def evaluate_answer_relevance_llm(groq_client: Groq, question: str, answer: str)
     if not answer.strip():
         return 0.0
 
-    # Nếu là câu từ chối chuẩn khi câu hỏi nằm ngoài phạm vi thì tính là phù hợp tuyệt đối
     if REFUSAL_EXACT.lower() in answer.lower():
         return 1.0
 
@@ -153,7 +157,160 @@ Chỉ trả về DUY NHẤT một số thập phân (1.0, 0.5, hoặc 0.0), khô
         console.print(f"[dim red]Lỗi khi gọi LLM-as-judge context precision: {e}[/dim red]")
         return None
 
-def run_evaluation(testset_file: Path = TESTSET_PATH, limit: Optional[int] = None) -> dict[str, Any]:
+
+def save_eval_artifacts(
+    out_json: Path,
+    out_csv: Path,
+    run_id: str,
+    run_timestamp: str,
+    total_target: int,
+    results: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Cập nhật tức thì kết quả đánh giá vào file JSON và CSV sau mỗi test case."""
+    no_answer_total = sum(1 for r in results if r.get("type") == "no_answer")
+    no_answer_correct = sum(1 for r in results if r.get("type") == "no_answer" and r.get("refusal_correct") is True)
+
+    action_total = sum(1 for r in results if r.get("type") == "action" or r.get("expected_tools"))
+    action_verified = sum(1 for r in results if (r.get("type") == "action" or r.get("expected_tools")) and r.get("action_verified") is True)
+
+    citation_expected_total = sum(len(r.get("expected_doc_ids", [])) for r in results if r.get("expected_doc_ids"))
+    citation_matches = sum(
+        sum(1 for doc in r.get("expected_doc_ids", []) if doc in r.get("cited_doc_ids", []))
+        for r in results if r.get("expected_doc_ids")
+    )
+
+    faith_scores = [r["faithfulness"] for r in results if r.get("faithfulness") is not None]
+    avg_faith = (sum(faith_scores) / len(faith_scores)) if faith_scores else 0.0
+
+    rel_scores = [r["answer_relevance"] for r in results if r.get("answer_relevance") is not None]
+    avg_rel = (sum(rel_scores) / len(rel_scores)) if rel_scores else 0.0
+
+    prec_scores = [r["context_precision"] for r in results if r.get("context_precision") is not None]
+    avg_prec = (sum(prec_scores) / len(prec_scores)) if prec_scores else 0.0
+
+    refusal_rate = (no_answer_correct / no_answer_total * 100) if no_answer_total > 0 else 100.0
+    action_rate = (action_verified / action_total * 100) if action_total > 0 else 100.0
+    citation_rate = (citation_matches / citation_expected_total * 100) if citation_expected_total > 0 else 100.0
+
+    total_latency = sum(r.get("latency_sec", 0.0) for r in results)
+    avg_latency = (total_latency / len(results)) if results else 0.0
+
+    p_tokens = sum(r.get("usage", {}).get("prompt_tokens", 0) for r in results)
+    c_tokens = sum(r.get("usage", {}).get("completion_tokens", 0) for r in results)
+    tot_tokens = sum(r.get("usage", {}).get("total_tokens", 0) for r in results)
+
+    summary_data = {
+        "run_id": run_id,
+        "timestamp": run_timestamp,
+        "total_testcases": total_target,
+        "completed_testcases": len(results),
+        "is_completed": len(results) >= total_target,
+        "metrics": {
+            "average_faithfulness": round(avg_faith, 4),
+            "average_answer_relevance": round(avg_rel, 4),
+            "average_context_precision": round(avg_prec, 4),
+            "no_answer_refusal_rate_pct": round(refusal_rate, 2),
+            "no_answer_correct": no_answer_correct,
+            "no_answer_total": no_answer_total,
+            "action_verification_rate_pct": round(action_rate, 2),
+            "action_verified": action_verified,
+            "action_total": action_total,
+            "citation_hit_rate_pct": round(citation_rate, 2),
+            "citation_matches": citation_matches,
+            "citation_expected": citation_expected_total,
+            "average_latency_sec": round(avg_latency, 2),
+            "total_prompt_tokens": p_tokens,
+            "total_completion_tokens": c_tokens,
+            "total_tokens": tot_tokens,
+        },
+        "details": results
+    }
+
+    # 1. Ghi file JSON
+    with open(out_json, "w", encoding="utf-8") as f:
+        json.dump(summary_data, f, indent=2, ensure_ascii=False)
+
+    # 2. Ghi file CSV
+    with open(out_csv, "w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            "ID", "Type", "Question", "Tools_Called", "Refusal_Correct",
+            "Faithfulness", "Answer_Relevance", "Context_Precision",
+            "Latency_Sec", "Total_Tokens", "Cited_Doc_IDs"
+        ])
+        for r in results:
+            writer.writerow([
+                r["id"],
+                r["type"],
+                r["question"].replace("\n", " "),
+                "; ".join(r.get("tools_called", [])),
+                r["refusal_correct"] if r.get("refusal_correct") is not None else "N/A",
+                r["faithfulness"] if r.get("faithfulness") is not None else "N/A",
+                r["answer_relevance"] if r.get("answer_relevance") is not None else "N/A",
+                r["context_precision"] if r.get("context_precision") is not None else "N/A",
+                r.get("latency_sec", 0.0),
+                r.get("usage", {}).get("total_tokens", 0),
+                "; ".join(r.get("cited_doc_ids", [])),
+            ])
+
+    return summary_data
+
+
+def generate_eval_charts(out_chart: Path, summary_data: dict[str, Any]) -> None:
+    """Vẽ đồ thị trực quan hóa kết quả đánh giá (RAG Triad + Latency)."""
+    details = summary_data.get("details", [])
+    if not details:
+        return
+
+    try:
+        case_ids = [r["id"] for r in details]
+        faiths = [r["faithfulness"] if r.get("faithfulness") is not None else 0.0 for r in details]
+        rels = [r["answer_relevance"] if r.get("answer_relevance") is not None else 0.0 for r in details]
+        precs = [r["context_precision"] if r.get("context_precision") is not None else 0.0 for r in details]
+        latencies = [r.get("latency_sec", 0.0) for r in details]
+
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
+        fig.suptitle(f"AIPR Evaluation Benchmark Report ({summary_data.get('run_id', 'run')})", fontsize=14, fontweight="bold")
+
+        x = list(range(len(case_ids)))
+        width = 0.25
+
+        # Subplot 1: RAG Triad scores
+        ax1.bar([p - width for p in x], faiths, width=width, label="Faithfulness", color="#2ecc71")
+        ax1.bar(x, rels, width=width, label="Answer Relevance", color="#3498db")
+        ax1.bar([p + width for p in x], precs, width=width, label="Context Precision", color="#9b59b6")
+        ax1.axhline(0.85, color="#e74c3c", linestyle="--", linewidth=1.2, label="Rubric Target (≥0.85 / ≥0.80)")
+        ax1.set_ylabel("Score (0.0 - 1.0)", fontweight="bold")
+        ax1.set_ylim(0, 1.15)
+        ax1.set_title("RAG Triad Metrics per Test Case", fontsize=11)
+        ax1.legend(loc="upper right")
+        ax1.grid(axis="y", linestyle=":", alpha=0.6)
+
+        # Subplot 2: Latency
+        ax2.plot(case_ids, latencies, marker="o", color="#e67e22", linewidth=2, label="Latency (seconds)")
+        ax2.axhline(15.0, color="#c0392b", linestyle=":", linewidth=1, label="Target (<15s)")
+        ax2.set_ylabel("Latency (sec)", fontweight="bold")
+        ax2.set_xlabel("Test Case ID", fontweight="bold")
+        ax2.set_title("Response Latency per Test Case", fontsize=11)
+        ax2.set_xticks(x)
+        ax2.set_xticklabels(case_ids, rotation=45)
+        ax2.legend(loc="upper right")
+        ax2.grid(True, linestyle=":", alpha=0.6)
+
+        plt.tight_layout()
+        plt.savefig(out_chart, dpi=200)
+        plt.close()
+        console.print(f"[bold green]✓ Đã vẽ biểu đồ đánh giá:[/bold green] [cyan]{out_chart.name}[/cyan]")
+    except Exception as e:
+        console.print(f"[dim red]Không thể vẽ đồ thị: {e}[/dim red]")
+
+
+def run_evaluation(
+    testset_file: Path = TESTSET_PATH,
+    limit: Optional[int] = None,
+    resume: bool = False,
+    force_new: bool = False,
+) -> dict[str, Any]:
     """Chạy toàn bộ pipeline kiểm thử và xuất báo cáo đo lường định lượng."""
     if not testset_file.exists():
         console.print(f"[bold red]Lỗi: Không tìm thấy file {testset_file}[/bold red]")
@@ -166,38 +323,57 @@ def run_evaluation(testset_file: Path = TESTSET_PATH, limit: Optional[int] = Non
         cases = cases[:limit]
 
     groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-    run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    # Đếm số lần chạy trước đó để xác định run_index
-    existing_runs = list(LOGS_DIR.glob("eval_run_*.json"))
-    run_index = len(existing_runs) + 1
 
-    console.print(Panel(
-        f"[bold green]KHỞI ĐỘNG ĐÁNH GIÁ ĐỊNH LƯỢNG — RUN #{run_index}[/bold green]\n"
-        f"File test: [cyan]{testset_file}[/cyan] | Số lượng câu hỏi: [yellow]{len(cases)}[/yellow]\n"
-        f"Thời gian: [dim]{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}[/dim]",
-        border_style="green"
-    ))
+    # Tự động phát hiện run chưa hoàn thành gần nhất để resume (rất tiện khi chạy make eval)
+    resumed_file = None
+    if not force_new:
+        existing_json_files = sorted(LOGS_DIR.glob("eval_run_*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+        for jf in existing_json_files:
+            try:
+                data = json.loads(jf.read_text(encoding="utf-8"))
+                if not data.get("is_completed", False):
+                    resumed_file = jf
+                    break
+            except Exception:
+                continue
 
-    results = []
-    
-    total_prompt_tokens = 0
-    total_completion_tokens = 0
-    total_tokens = 0
-    total_latency = 0.0
+    if resumed_file:
+        data = json.loads(resumed_file.read_text(encoding="utf-8"))
+        run_id = data.get("run_id", "run_1")
+        run_timestamp = data.get("timestamp", datetime.now().strftime("%Y%m%d_%H%M%S"))
+        out_file = resumed_file
+        out_csv = out_file.with_suffix(".csv")
+        results = data.get("details", [])
+        completed_ids = {r["id"] for r in results}
+        idx_match = re.search(r"eval_run_(\d+)", out_file.name)
+        run_index = int(idx_match.group(1)) if idx_match else 1
 
-    no_answer_total = 0
-    no_answer_correct = 0
+        console.print(Panel(
+            f"[bold yellow]TIẾP TỤC ĐÁNH GIÁ (RESUME) — {run_id.upper()}[/bold yellow]\n"
+            f"File log đang cập nhật: [cyan]{out_file.name}[/cyan]\n"
+            f"Đã hoàn thành trước đó: [green]{len(completed_ids)}/{len(cases)} câu[/green]\n"
+            f"Sẽ chạy tiếp các câu còn lại...",
+            border_style="yellow"
+        ))
+    else:
+        existing_runs = list(LOGS_DIR.glob("eval_run_*.json"))
+        run_index = len(existing_runs) + 1
+        run_id = f"run_{run_index}"
+        run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        out_file = LOGS_DIR / f"eval_run_{run_index}_{run_timestamp}.json"
+        out_csv = LOGS_DIR / f"eval_run_{run_index}_{run_timestamp}.csv"
+        results = []
+        completed_ids = set()
 
-    action_total = 0
-    action_verified = 0
+        console.print(Panel(
+            f"[bold green]KHỞI ĐỘNG ĐÁNH GIÁ ĐỊNH LƯỢNG — {run_id.upper()}[/bold green]\n"
+            f"File test: [cyan]{testset_file.name}[/cyan] | Số lượng câu hỏi: [yellow]{len(cases)}[/yellow]\n"
+            f"File lưu kết quả: [cyan]{out_file.name}[/cyan] & [cyan]{out_csv.name}[/cyan]\n"
+            f"Thời gian: [dim]{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}[/dim]",
+            border_style="green"
+        ))
 
-    citation_matches = 0
-    citation_expected_total = 0
-
-    faithfulness_scores = []
-    relevance_scores = []
-    precision_scores = []
+    summary_data = {}
 
     for idx, case in enumerate(cases, 1):
         q_id = case.get("id", f"TC{idx:02d}")
@@ -207,25 +383,21 @@ def run_evaluation(testset_file: Path = TESTSET_PATH, limit: Optional[int] = Non
         expected_tools = case.get("expected_tools", [])
         expected_ans = case.get("expected_answer", "")
 
+        # Nếu câu này đã chạy xong ở lần trước thì bỏ qua
+        if q_id in completed_ids:
+            console.print(f"[dim yellow]── [{idx}/{len(cases)}] {q_id} ({q_type}): Đã chạy xong trước đó, bỏ qua.[/dim yellow]")
+            continue
+
         console.print(f"\n[bold cyan]── [{idx}/{len(cases)}] {q_id} ({q_type}) ──[/bold cyan]")
         console.print(f"[white]{question}[/white]")
 
         start_time = time.time()
         agent_res = ask_agent(question)
         elapsed = time.time() - start_time
-        total_latency += elapsed
 
         answer = agent_res.answer or ""
         steps = agent_res.steps or []
         usage = agent_res.usage or {}
-
-        # 1. Đo lường Token
-        p_tok = usage.get("prompt_tokens", 0)
-        c_tok = usage.get("completion_tokens", 0)
-        tot_tok = usage.get("total_tokens", p_tok + c_tok)
-        total_prompt_tokens += p_tok
-        total_completion_tokens += c_tok
-        total_tokens += tot_tok
 
         # Thu thập toàn bộ context/observations từ các bước tool
         context_parts = []
@@ -240,26 +412,20 @@ def run_evaluation(testset_file: Path = TESTSET_PATH, limit: Optional[int] = Non
         # 2. Đánh giá nhóm no_answer: Đo tỉ lệ từ chối đúng
         refusal_ok = None
         if q_type == "no_answer":
-            no_answer_total += 1
             if REFUSAL_EXACT.lower() in answer.lower():
                 refusal_ok = True
-                no_answer_correct += 1
             else:
                 refusal_ok = False
 
         # 3. Đánh giá nhóm action: Write-then-Read Verification
         action_ok = None
         if q_type == "action" or expected_tools:
-            action_total += 1
             if "draft_template_submission" in tools_called and "read_draft" in tools_called:
                 write_idx = tools_called.index("draft_template_submission")
                 read_idx = tools_called.index("read_draft")
                 action_ok = (read_idx > write_idx)
             else:
                 action_ok = False
-            
-            if action_ok:
-                action_verified += 1
 
         # 4. Đánh giá Citation (Trích nguồn doc_id)
         cited_in_answer = []
@@ -269,21 +435,24 @@ def run_evaluation(testset_file: Path = TESTSET_PATH, limit: Optional[int] = Non
 
         citation_ok = True
         if expected_docs:
-            citation_expected_total += len(expected_docs)
             for doc in expected_docs:
-                if doc in answer:
-                    citation_matches += 1
-                else:
+                if doc not in cited_in_answer:
                     citation_ok = False
+                    break
 
-        # 5. Đánh giá bộ ba RAG Triad: Faithfulness, Answer Relevance, Context Precision
-        faith_score = evaluate_faithfulness_llm(groq_client, question, full_context, answer)
-        relevance_score = evaluate_answer_relevance_llm(groq_client, question, answer)
-        precision_score = evaluate_context_precision_llm(groq_client, question, full_context, expected_ans)
+        # 5. Đánh giá LLM-as-judge (RAG Triad)
+        faith_score = None
+        relevance_score = None
+        precision_score = None
 
-        faithfulness_scores.append(faith_score)
-        relevance_scores.append(relevance_score)
-        precision_scores.append(precision_score)
+        if q_type != "no_answer":
+            faith_score = evaluate_faithfulness_llm(groq_client, question, full_context, answer)
+            relevance_score = evaluate_answer_relevance_llm(groq_client, question, answer)
+            precision_score = evaluate_context_precision_llm(groq_client, question, full_context, expected_ans)
+        else:
+            faith_score = 1.0 if refusal_ok else 0.0
+            relevance_score = 1.0 if refusal_ok else 0.0
+            precision_score = 1.0
 
         record = {
             "id": q_id,
@@ -305,51 +474,14 @@ def run_evaluation(testset_file: Path = TESTSET_PATH, limit: Optional[int] = Non
             "usage": usage,
         }
         results.append(record)
+        completed_ids.add(q_id)
+
+        # CẬP NHẬT TỨC THÌ VÀO CẢ FILE JSON VÀ CSV SAU MỖI CÂU
+        summary_data = save_eval_artifacts(out_file, out_csv, run_id, run_timestamp, len(cases), results)
+        console.print(f"[dim green]✓ Đã cập nhật kết quả {q_id} vào {out_file.name} và {out_csv.name}[/dim green]")
 
         if idx < len(cases):
             time.sleep(2.0)
-
-    # Tổng kết số liệu định lượng
-    refusal_rate = (no_answer_correct / no_answer_total * 100) if no_answer_total > 0 else 100.0
-    action_rate = (action_verified / action_total * 100) if action_total > 0 else 100.0
-    citation_rate = (citation_matches / citation_expected_total * 100) if citation_expected_total > 0 else 100.0
-    valid_faith = [s for s in faithfulness_scores if s is not None]
-    avg_faithfulness = (sum(valid_faith) / len(valid_faith)) if valid_faith else 0.0
-    valid_rel = [s for s in relevance_scores if s is not None]
-    avg_relevance = (sum(valid_rel) / len(valid_rel)) if valid_rel else 0.0
-    valid_prec = [s for s in precision_scores if s is not None]
-    avg_precision = (sum(valid_prec) / len(valid_prec)) if valid_prec else 0.0
-    avg_latency = (total_latency / len(cases)) if cases else 0.0
-
-    summary_data = {
-        "run_id": f"run_{run_index}",
-        "timestamp": run_timestamp,
-        "total_testcases": len(cases),
-        "metrics": {
-            "average_faithfulness": round(avg_faithfulness, 4),
-            "average_answer_relevance": round(avg_relevance, 4),
-            "average_context_precision": round(avg_precision, 4),
-            "no_answer_refusal_rate_pct": round(refusal_rate, 2),
-            "no_answer_correct": no_answer_correct,
-            "no_answer_total": no_answer_total,
-            "action_verification_rate_pct": round(action_rate, 2),
-            "action_verified": action_verified,
-            "action_total": action_total,
-            "citation_hit_rate_pct": round(citation_rate, 2),
-            "citation_matches": citation_matches,
-            "citation_expected": citation_expected_total,
-            "average_latency_sec": round(avg_latency, 2),
-            "total_prompt_tokens": total_prompt_tokens,
-            "total_completion_tokens": total_completion_tokens,
-            "total_tokens": total_tokens,
-        },
-        "details": results
-    }
-
-    # Lưu log ra file JSON
-    out_file = LOGS_DIR / f"eval_run_{run_index}_{run_timestamp}.json"
-    with open(out_file, "w", encoding="utf-8") as f:
-        json.dump(summary_data, f, indent=2, ensure_ascii=False)
 
     # Hiển thị bảng kết quả chi tiết
     console.print("\n")
@@ -365,20 +497,19 @@ def run_evaluation(testset_file: Path = TESTSET_PATH, limit: Optional[int] = Non
     table.add_column("Latency", justify="right", width=8)
 
     for r in results:
-        # Refusal icon
-        if r["refusal_correct"] is True:
+        if r.get("refusal_correct") is True:
             ref_str = "[green]✓ Đúng[/green]"
-        elif r["refusal_correct"] is False:
+        elif r.get("refusal_correct") is False:
             ref_str = "[red]✗ Sai[/red]"
         else:
             ref_str = "[dim]—[/dim]"
 
-        cited_str = ", ".join(r["cited_doc_ids"]) if r["cited_doc_ids"] else "[dim]none[/dim]"
-        tok_val = r["usage"].get("total_tokens", 0)
+        cited_str = ", ".join(r.get("cited_doc_ids", [])) if r.get("cited_doc_ids") else "[dim]none[/dim]"
+        tok_val = r.get("usage", {}).get("total_tokens", 0)
 
-        faith_str = f"{r['faithfulness']:.2f}" if r["faithfulness"] is not None else "[dim]N/A[/dim]"
-        rel_str = f"{r['answer_relevance']:.2f}" if r["answer_relevance"] is not None else "[dim]N/A[/dim]"
-        prec_str = f"{r['context_precision']:.2f}" if r["context_precision"] is not None else "[dim]N/A[/dim]"
+        faith_str = f"{r['faithfulness']:.2f}" if r.get("faithfulness") is not None else "[dim]N/A[/dim]"
+        rel_str = f"{r['answer_relevance']:.2f}" if r.get("answer_relevance") is not None else "[dim]N/A[/dim]"
+        prec_str = f"{r['context_precision']:.2f}" if r.get("context_precision") is not None else "[dim]N/A[/dim]"
 
         table.add_row(
             r["id"],
@@ -395,31 +526,43 @@ def run_evaluation(testset_file: Path = TESTSET_PATH, limit: Optional[int] = Non
     console.print(table)
 
     # Hiển thị bảng tổng kết chỉ số định lượng
-    sum_table = Table(title=f"TỔNG KẾT CHỈ SỐ ĐỊNH LƯỢNG — EVALUATION RUN #{run_index}", header_style="bold cyan")
+    metrics = summary_data.get("metrics", {})
+    sum_table = Table(title=f"TỔNG KẾT CHỈ SỐ ĐỊNH LƯỢNG — {run_id.upper()}", header_style="bold cyan")
     sum_table.add_column("Chỉ số đo lường", style="bold white")
     sum_table.add_column("Kết quả đạt được", justify="right", style="bold green")
     sum_table.add_column("Mục tiêu Rubric", justify="right", style="dim")
 
-    sum_table.add_row("1. Tính trung thực (Faithfulness Score)", f"{avg_faithfulness:.2f} / 1.0", "≥ 0.85")
-    sum_table.add_row("2. Độ phù hợp câu trả lời (Answer Relevance)", f"{avg_relevance:.2f} / 1.0", "≥ 0.85")
-    sum_table.add_row("3. Độ chính xác ngữ cảnh (Context Precision)", f"{avg_precision:.2f} / 1.0", "≥ 0.80")
-    sum_table.add_row("4. Tỉ lệ từ chối đúng (Refusal Rate)", f"{refusal_rate:.1f}% ({no_answer_correct}/{no_answer_total})", "100%")
-    sum_table.add_row("5. Tỉ lệ Verify Hành động (Action Rate)", f"{action_rate:.1f}% ({action_verified}/{action_total})", "100%")
-    sum_table.add_row("6. Tỉ lệ trích nguồn đúng (Citation Rate)", f"{citation_rate:.1f}% ({citation_matches}/{citation_expected_total})", "≥ 80%")
-    sum_table.add_row("7. Thời gian xử lý trung bình", f"{avg_latency:.2f} giây / câu", "< 15s")
-    sum_table.add_row("8. Tổng Token tiêu thụ", f"{total_tokens:,} tokens", "Chi phí hợp lý")
-    sum_table.add_row("Log đánh giá đã lưu tại", str(out_file), "Cần ≥3 runs")
+    sum_table.add_row("1. Tính trung thực (Faithfulness Score)", f"{metrics.get('average_faithfulness', 0):.2f} / 1.0", "≥ 0.85")
+    sum_table.add_row("2. Độ phù hợp câu trả lời (Answer Relevance)", f"{metrics.get('average_answer_relevance', 0):.2f} / 1.0", "≥ 0.85")
+    sum_table.add_row("3. Độ chính xác ngữ cảnh (Context Precision)", f"{metrics.get('average_context_precision', 0):.2f} / 1.0", "≥ 0.80")
+    sum_table.add_row("4. Tỉ lệ từ chối đúng (Refusal Rate)", f"{metrics.get('no_answer_refusal_rate_pct', 0):.1f}% ({metrics.get('no_answer_correct', 0)}/{metrics.get('no_answer_total', 0)})", "100%")
+    sum_table.add_row("5. Tỉ lệ Verify Hành động (Action Rate)", f"{metrics.get('action_verification_rate_pct', 0):.1f}% ({metrics.get('action_verified', 0)}/{metrics.get('action_total', 0)})", "100%")
+    sum_table.add_row("6. Tỉ lệ trích nguồn đúng (Citation Rate)", f"{metrics.get('citation_hit_rate_pct', 0):.1f}% ({metrics.get('citation_matches', 0)}/{metrics.get('citation_expected', 0)})", "≥ 80%")
+    sum_table.add_row("7. Thời gian xử lý trung bình", f"{metrics.get('average_latency_sec', 0):.2f} giây / câu", "< 15s")
+    sum_table.add_row("8. Tổng Token tiêu thụ", f"{metrics.get('total_tokens', 0):,} tokens", "Chi phí hợp lý")
+    sum_table.add_row("Log đánh giá JSON & CSV", f"{out_file.name} | {out_csv.name}", "Cần ≥3 runs")
 
     console.print(sum_table)
-    console.print(f"\n[bold green]✓ Hoàn thành đánh giá Run #{run_index}. File lưu:[/bold green] [cyan]{out_file}[/cyan]\n")
+
+    # Tự động vẽ đồ thị
+    out_chart = out_file.with_name(out_file.stem + "_chart.png")
+    generate_eval_charts(out_chart, summary_data)
+
+    console.print(f"\n[bold green]✓ Hoàn thành đánh giá {run_id}.[/bold green]")
+    console.print(f"- JSON: [cyan]{out_file}[/cyan]")
+    console.print(f"- CSV:  [cyan]{out_csv}[/cyan]")
+    console.print(f"- PNG:  [cyan]{out_chart}[/cyan]\n")
 
     return summary_data
+
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="AIPR Course Assistant - Evaluation Pipeline")
     parser.add_argument("--limit", type=int, default=None, help="Giới hạn số câu test để chạy thử nhanh")
     parser.add_argument("--testset", type=str, default=str(TESTSET_PATH), help="Đường dẫn file testset.jsonl")
+    parser.add_argument("--resume", action="store_true", help="Tiếp tục chạy tiếp từ câu chưa xong của lần trước")
+    parser.add_argument("--force-new", action="store_true", help="Bắt buộc tạo run mới kể cả khi run cũ chưa hoàn thành")
     args = parser.parse_args()
 
-    run_evaluation(testset_file=Path(args.testset), limit=args.limit)
+    run_evaluation(testset_file=Path(args.testset), limit=args.limit, resume=args.resume, force_new=args.force_new)
