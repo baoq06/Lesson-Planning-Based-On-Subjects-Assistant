@@ -132,9 +132,9 @@ def run_evaluation(
 
     groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-    # Tự động phát hiện run chưa hoàn thành gần nhất để resume (rất tiện khi chạy make eval)
+    # Chỉ resume khi người dùng truyền cờ --resume
     resumed_file = None
-    if not force_new:
+    if resume:
         existing_json_files = sorted(LOGS_DIR.glob("eval_run_*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
         for jf in existing_json_files:
             try:
