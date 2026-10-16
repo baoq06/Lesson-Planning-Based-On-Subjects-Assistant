@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, asdict
-from typing import Optional, Any
+from typing import Optional, Any, Literal, List
 from datetime import datetime
 from typing_extensions import TypedDict
 
@@ -125,3 +125,10 @@ class AgentResponse:
     # verified: bool = False
     usage:  UsageStats = field(default_factory=dict)
 
+@dataclass
+# Handoff contract kết quả đánh giá từ Critic Agent
+class CriticReview:
+    verdict: Literal["PASS", "FAIL"]
+    critque: str
+    issues: List[str] = field(default_factory=list)
+    suggested_fix: Optional[str] = None
