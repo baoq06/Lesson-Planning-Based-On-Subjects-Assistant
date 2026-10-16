@@ -15,7 +15,7 @@ from src.agent.call_llm import call_llm
 from mcp import Client, StdioServerParameters
 
 
-MODEL = "qwen/qwen3.8-27b"
+MODEL = os.getenv("LLM_MODEL", "qwen/qwen3.8-27b").strip()
 MAX_STEPS = 7
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

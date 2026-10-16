@@ -119,7 +119,7 @@ def run_comparison(top_k: int = 4):
         )
     rprint(table)
 
-    # 4. Bảng tổng kết số liệu
+    # 4. Bảng tổng kết số liệu định lượng (đánh giá động theo kết quả thực tế)
     avg_hybrid_score = sum(hybrid_scores) / len(hybrid_scores) if hybrid_scores else 0.0
     avg_dense_score = sum(dense_scores) / len(dense_scores) if dense_scores else 0.0
     avg_hybrid_time = sum(hybrid_times) / len(hybrid_times) if hybrid_times else 0.0
@@ -127,16 +127,64 @@ def run_comparison(top_k: int = 4):
     hit_rate_hybrid = (sum(1 for r in comparison_records if r["hybrid_hit"]) / len(comparison_records)) * 100
     hit_rate_dense = (sum(1 for r in comparison_records if r["dense_hit"]) / len(comparison_records)) * 100
 
+    # Đánh giá động trung thực dựa trên số liệu thực nghiệm
+    if hit_rate_hybrid > hit_rate_dense:
+        hit_eval = "Hybrid vượt trội nhờ kết hợp từ khóa BM25"
+    elif hit_rate_hybrid == hit_rate_dense:
+        hit_eval = "Hai cấu hình đạt tỉ lệ tìm trúng ngang nhau"
+    else:
+        hit_eval = "Dense chiếm ưu thế ở các câu hỏi tự nhiên dài"
+
+    if avg_hybrid_score > avg_dense_score:
+        rel_eval = "Hybrid cho điểm liên quan trung bình cao hơn"
+    elif avg_hybrid_score == avg_dense_score:
+        rel_eval = "Điểm tương đồng trung bình tương đương"
+    else:
+        rel_eval = "Dense cosine thuần cao hơn (Hybrid bị chia tỉ lệ 0.3/0.7)"
+
+    speed_diff = abs(avg_hybrid_time - avg_dense_time)
+    if speed_diff < 80:
+        lat_eval = f"Tương đương (~{avg_hybrid_time:.0f}ms, độ trễ chính từ Jina API)"
+    elif avg_hybrid_time > avg_dense_time:
+        lat_eval = f"Hybrid chậm hơn {speed_diff:.0f}ms do tính thêm BM25"
+    else:
+        lat_eval = f"Dense chậm hơn {speed_diff:.0f}ms"
+
+    # Kết luận đánh giá tổng hợp tự động từ số liệu thực nghiệm
+    if hit_rate_hybrid > hit_rate_dense:
+        tradeoff_conclusion = (
+            f"Hybrid vượt trội với Hit Rate {hit_rate_hybrid:.1f}% (so với {hit_rate_dense:.1f}% của Dense). "
+            "BM25 phát huy hiệu quả hỗ trợ bắt từ khóa kỹ thuật kết hợp ngữ nghĩa vector."
+        )
+        count_eval = "Hybrid tìm đúng nhiều hơn"
+    elif hit_rate_hybrid == hit_rate_dense:
+        tradeoff_conclusion = (
+            f"Cả 2 cấu hình đạt Hit Rate tương đương ({hit_rate_hybrid:.1f}%). "
+            f"Dense đạt điểm liên quan cosine cao hơn ({avg_dense_score:.4f} so với {avg_hybrid_score:.4f}) do điểm thuần không bị chia tỉ lệ với BM25."
+        )
+        count_eval = "Số câu tìm trúng ngang nhau"
+    else:
+        tradeoff_conclusion = (
+            f"Dense đạt Hit Rate {hit_rate_dense:.1f}% cao hơn Hybrid ({hit_rate_hybrid:.1f}%) trên tập câu hỏi ngữ nghĩa tự nhiên dài. "
+            "Hybrid có thể cân nhắc tăng tỉ lệ trọng số vector (>0.7) để tối ưu."
+        )
+        count_eval = "Dense tìm trúng nhiều hơn"
+
     sum_table = Table(title="TỔNG KẾT SO SÁNH 2 CẤU HÌNH RETRIEVAL", header_style="bold cyan")
     sum_table.add_column("Chỉ số đo lường", style="bold white")
     sum_table.add_column("Cấu hình A (Hybrid: BM25 + Vector)", style="bold green", justify="right")
     sum_table.add_column("Cấu hình B (Dense-only: Cosine)", style="bold yellow", justify="right")
     sum_table.add_column("Đánh giá thực nghiệm", style="dim", justify="right")
 
-    sum_table.add_row("1. Tỉ lệ tìm trúng tài liệu (Hit Rate)", f"{hit_rate_hybrid:.1f}%", f"{hit_rate_dense:.1f}%", "Hybrid vượt trội hoặc tương đương")
-    sum_table.add_row("2. Độ liên quan cao nhất trung bình", f"{avg_hybrid_score:.4f}", f"{avg_dense_score:.4f}", "Hybrid xếp hạng cao hơn khi có từ khóa")
-    sum_table.add_row("3. Thời gian tìm kiếm trung bình", f"{avg_hybrid_time:.1f} ms", f"{avg_dense_time:.1f} ms", "Cả hai đều dưới 50ms (rất nhanh)")
-    sum_table.add_row("4. Khả năng bắt tên riêng / mã lỗi", "Rất tốt (nhờ BM25)", "Dễ bỏ sót từ khóa hiếm", "Hybrid toàn diện hơn")
+    sum_table.add_row("1. Tỉ lệ tìm trúng tài liệu (Hit Rate)", f"{hit_rate_hybrid:.1f}%", f"{hit_rate_dense:.1f}%", hit_eval)
+    sum_table.add_row("2. Độ liên quan cao nhất trung bình", f"{avg_hybrid_score:.4f}", f"{avg_dense_score:.4f}", rel_eval)
+    sum_table.add_row("3. Thời gian tìm kiếm trung bình", f"{avg_hybrid_time:.1f} ms", f"{avg_dense_time:.1f} ms", lat_eval)
+    sum_table.add_row(
+        "4. Số câu khớp đúng tài liệu kỳ vọng",
+        f"{sum(1 for r in comparison_records if r['hybrid_hit'])} / {len(comparison_records)}",
+        f"{sum(1 for r in comparison_records if r['dense_hit'])} / {len(comparison_records)}",
+        count_eval
+    )
     rprint(sum_table)
 
     # 5. Lưu báo cáo so sánh ra file JSON
@@ -144,8 +192,26 @@ def run_comparison(top_k: int = 4):
     summary_report = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "configurations": {
-            "config_A_hybrid": {"weights": {"bm25": 0.3, "vector": 0.7}, "avg_relevance": round(avg_hybrid_score, 4), "hit_rate_pct": hit_rate_hybrid},
-            "config_B_dense": {"weights": {"bm25": 0.0, "vector": 1.0}, "avg_relevance": round(avg_dense_score, 4), "hit_rate_pct": hit_rate_dense},
+            "config_A_hybrid": {
+                "name": "Hybrid Search (BM25 0.3 + Vector 0.7)",
+                "weights": {"bm25": 0.3, "vector": 0.7},
+                "avg_relevance": round(avg_hybrid_score, 4),
+                "hit_rate_pct": hit_rate_hybrid,
+                "avg_latency_ms": round(avg_hybrid_time, 2)
+            },
+            "config_B_dense": {
+                "name": "Dense-only Search (Vector 1.0)",
+                "weights": {"bm25": 0.0, "vector": 1.0},
+                "avg_relevance": round(avg_dense_score, 4),
+                "hit_rate_pct": hit_rate_dense,
+                "avg_latency_ms": round(avg_dense_time, 2)
+            },
+        },
+        "findings": {
+            "hit_rate_analysis": hit_eval,
+            "relevance_analysis": rel_eval,
+            "latency_analysis": lat_eval,
+            "tradeoff_conclusion": tradeoff_conclusion
         },
         "details": comparison_records
     }
