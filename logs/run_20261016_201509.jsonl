@@ -1,0 +1,90 @@
+{
+  "timestamp": "2026-10-16T20:15:22.969331",
+  "question": "Trong @dataclass, vì sao không được viết `topics: list = []` mà phải dùng field(default_factory=list)?",
+  "steps": [
+    {
+      "step_num": 1,
+      "thought": "Cần tìm nội dung bài giảng về dataclass và lỗi mutable default, tại sao phải dùng field(default_factory=list).",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "hybrid",
+        "query": "dataclass mutable default list field default_factory",
+        "top_k": 4,
+        "week": 0
+      },
+      "observation": "{\"query\": \"dataclass mutable default list field default_factory\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.7143, \"hits\": [{\"doc_id\": \"LP_W01\", \"chunk_id\": \"LP_W01_chunk_95\", \"week\": 1, \"score\": 0.7843, \"text\": \"# WRONG — @dataclass rejects this at class definition:\\n# ValueError: mutable default <class 'list'> for field tags is not allowed\\n# (The danger it prevents: all instances would share the same list.)\\n@dataclass\\nclass BadExample:\\n    tags: list = []  # Don't do this!\\n\\n# RIGHT — each instance gets a new list\\n@dataclass\\nclass GoodExample:\\n    tags: list = field(default_factory=list)\\n```\"}, {\"doc_id\": \"LP_W01\", \"chunk_id\": \"LP_W01_chunk_96\", \"week\": 1, \"score\": 0.7497, \"text\": \"**Teaching tip:** Run the `BadExample` class definition live — `@dataclass` refuses it outright with `ValueError: mutable default <class 'list'> for field tags is not allowed: use default_factory`. This is Python protecting you: the default `[]` is evaluated ONCE at class-definition time, so if it were allowed, every instance would share the same list object\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_15\", \"week\": 3, \"score\": 0.5208, \"text\": \"> \\\"From Week 1:\\n> - How do you define a @dataclass with a mutable default? (`field(default_factory=list)`)\\n> - What does `from __future__ import annotations` do? (enables `list[str]` syntax in older Python)\\n>\\n> Prior knowledge — think about search:\\n> - How does a library catalogue work? You look up a topic and find books on that topic.\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_166\", \"week\": 3, \"score\": 0.4631, \"text\": \"| Mistake | When It Appears | Intervention |\\n|---|---|---|\\n| `field(default_factory=dict)` forgotten — mutable default error | Code Along 1, S1 | \\\"Mutable defaults must use `field(default_factory=...)`\\\" |\\n| Overlap logic wrong — chunks don't overlap correctly | Code Along 1, S1 | Draw the overlap diagram on the board |\"}]}"
+    }
+  ],
+  "answer": "Trong `@dataclass`, bạn **không được** viết `topics: list = []` vì Python sẽ từ chối ngay khi định nghĩa class với lỗi:\n\n```\nValueError: mutable default <class 'list'> for field topics is not allowed: use default_factory\n```\n\n**Lý do:**\n\n1. **Mặc định mutable được đánh giá CHỈ MỘT LẦN** tại thời điểm định nghĩa class. Nếu Python cho phép `[]` làm giá trị mặc định, thì **mọi instance** của class đó sẽ **chia sẻ cùng một list object** — thay đổi của instance này sẽ \"rò rỉ\" sang instance khác. Đây là một bug rất nguy hiểm và khó phát hiện.\n\n2. **`@dataclass` chủ động bảo vệ bạn** bằng cách ném `ValueError` ngay khi phát hiện mutable default, thay vì để bug âm thầm tồn tại.\n\n**Cách viết đúng — dùng `field(default_factory=list)`:**\n\n```python\nfrom dataclasses import dataclass, field\n\n# SAI — @dataclass từ chối ngay\n@dataclass\nclass BadExample:\n    topics: list = []  # ValueError!\n\n# ĐÚNG — mỗi instance nhận một list MỚI\n@dataclass\nclass GoodExample:\n    topics: list = field(default_factory=list)\n```\n\nVới `default_factory=list`, mỗi lần tạo instance mới, Python sẽ **gọi hàm `list()`** để tạo một list mới riêng cho instance đó, tránh được việc chia sẻ object giữa các instance [LP_W01].\n\n> **Mẹo ghi nhớ:** Bất kỳ giá trị mặc định nào là mutable (`list`, `dict`, `set`, ...) trong `@dataclass` đều phải dùng `field(default_factory=...)` — đây là lỗi rất hay gặp trong bài tập [LP_W03].",
+  "usage": {
+    "calls": 2,
+    "prompt_tokens": 6136,
+    "completion_tokens": 492,
+    "total_tokens": 6628,
+    "max_prompt": 3422
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
+{
+  "timestamp": "2026-10-16T20:16:44.387536",
+  "question": "Khi gọi LLM API, những lỗi nào nên retry và những lỗi nào không nên retry?",
+  "steps": [
+    {
+      "step_num": 1,
+      "thought": "Học viên hỏi về chiến lược retry khi gọi LLM API; cần tìm nội dung bài giảng liên quan đến lỗi API và retry.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "hybrid",
+        "query": "LLM API retry lỗi nên retry không nên retry lỗi 429 500 timeout",
+        "top_k": 6,
+        "week": 0
+      },
+      "observation": "{\"query\": \"LLM API retry lỗi nên retry không nên retry lỗi 429 500 timeout\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.5677, \"hits\": [{\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_117\", \"week\": 2, \"score\": 0.6616, \"text\": \"**Key insight:** \\\"Not all errors are retryable. Rate limits and connection errors → retry. Authentication errors → don't retry (the key is wrong). Bad requests → don't retry (fix the code). The reference card (above) is your guide.\\\"\\n\\n---\\n\\n### 7. Code Along 2 — Retry Wrapper + Logging (2:30–2:55) [PART B — LAB]\"}, {\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_104\", \"week\": 2, \"score\": 0.6365, \"text\": \"> **Persistent reference card — keep visible for the whole session:**\\n>\\n> ```\\n> RETRY (transient)         DON'T RETRY (fix the root cause)\\n> ─────────────────────     ────────────────────────────────\\n> RateLimitError            AuthenticationError  → check API key\\n> APIConnectionError        BadRequestError      → fix request params\\n>                           APIStatusError (4xx)  → fix request\"}, {\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_119\", \"week\": 2, \"score\": 0.6332, \"text\": \"def call_llm(messages, model=\\\"gpt-4o-mini\\\", max_retries=3, stream=False):\\n    \\\"\\\"\\\"Call LLM with retry logic and logging.\\\"\\\"\\\"\\n    last_error = None\\n\\n    for attempt in range(max_retries + 1):\\n        try:\\n            start_time = time.time()\"}, {\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_115\", \"week\": 2, \"score\": 0.5881, \"text\": \"except AuthenticationError:\\n            print(\\\"Authentication failed. Check your API key.\\\")\\n            raise  # Don't retry — wrong key\\n\\n        except BadRequestError as e:\\n            print(f\\\"Bad request: {e}\\\")\\n            raise  # Don't retry — fix the code\"}, {\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_112\", \"week\": 2, \"score\": 0.5721, \"text\": \"```python\\nfrom openai import (\\n    RateLimitError, APIConnectionError, AuthenticationError,\\n    BadRequestError, APIStatusError\\n)\\n\\ndef call_with_retry(messages, model=\\\"gpt-4o-mini\\\", max_retries=3):\\n    \\\"\\\"\\\"\\n    Full retry loop with error taxonomy.\"}, {\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_107\", \"week\": 2, \"score\": 0.4789, \"text\": \"def call_with_retry_simple(messages, model=\\\"gpt-4o-mini\\\", max_retries=3):\\n    \\\"\\\"\\\"\\n    Simple retry loop with exponential backoff.\\n    Only handles RateLimitError and APIConnectionError (both are retryable).\\n    \\\"\\\"\\\"\\n    for attempt in range(max_retries + 1):\\n        try:\\n            response = client.chat.completions.create(\\n                model=model, messages=messages\\n            )\"}]}"
+    }
+  ],
+  "answer": "Theo bài giảng Tuần 2, nguyên tắc chung là: **không phải mọi lỗi đều nên retry** — chỉ retry các lỗi tạm thời (transient), còn lỗi do sai cấu hình/cách gọi thì phải sửa nguyên nhân gốc [LP_W02].\n\n**NÊN retry (lỗi tạm thời – transient):**\n- `RateLimitError` — bị giới hạn tần suất gọi (rate limit) [LP_W02].\n- `APIConnectionError` — lỗi kết nối (mất mạng, timeout, server tạm thời không phản hồi) [LP_W02].\n\n**KHÔNG NÊN retry (cần sửa nguyên nhân gốc):**\n- `AuthenticationError` — API key sai hoặc hết hạn → kiểm tra lại API key, không retry vì retry cũng sẽ thất bại [LP_W02].\n- `BadRequestError` — tham số request sai (model không tồn tại, prompt/parameter không hợp lệ) → sửa code/request [LP_W02].\n- `APIStatusError` (các mã 4xx) — lỗi do phía request → sửa request thay vì gọi lại [LP_W02].\n\n**Thực hành gợi ý:**\n- Dùng vòng lặp retry với `max_retries` (ví dụ 3 lần) và **exponential backoff** (chờ tăng dần giữa các lần thử) cho các lỗi transient [LP_W02].\n- Với `AuthenticationError` và `BadRequestError`, nên `raise` ngay (không retry) và in thông báo rõ ràng để người dùng biết cần sửa gì [LP_W02].\n\nTóm tắt nhanh:\n\n| Lỗi | Hành động |\n|---|---|\n| `RateLimitError` | Retry (backoff) |\n| `APIConnectionError` | Retry (backoff) |\n| `AuthenticationError` | Không retry — kiểm tra API key |\n| `BadRequestError` | Không retry — sửa tham số request |\n| `APIStatusError` (4xx) | Không retry — sửa request |\n\n[Nguồn: LP_W02]",
+  "usage": {
+    "calls": 2,
+    "prompt_tokens": 6379,
+    "completion_tokens": 556,
+    "total_tokens": 6935,
+    "max_prompt": 3671
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
+{
+  "timestamp": "2026-10-16T20:18:08.798209",
+  "question": "Vì sao khi chunking tài liệu cần để các chunk gối đầu (overlap) lên nhau?",
+  "steps": [
+    {
+      "step_num": 1,
+      "thought": "Cần tìm lý do tại sao chunking cần overlap trong bài giảng AIPR để trả lời có trích dẫn.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "hybrid",
+        "query": "chunking overlap lý do cần gối đầu chunk tài liệu",
+        "top_k": 4,
+        "week": 0
+      },
+      "observation": "{\"query\": \"chunking overlap lý do cần gối đầu chunk tài liệu\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.6542, \"hits\": [{\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_29\", \"week\": 3, \"score\": 0.5309, \"text\": \"**Key insight:** \\\"Overlap ensures that no information is lost at chunk boundaries. If a sentence spans from position 500 to 520, it appears in both chunk 0 and chunk 1. This prevents cutting a sentence in half.\\\"\\n\\n---\\n\\n### 4. Code Along 1 — Define Dataclasses + Chunking (2:00–2:30) [PART B — LAB]\\n\\n**File:** `ex1_1_document_model.py`\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_41\", \"week\": 3, \"score\": 0.5107, \"text\": \"### 5. Knowledge Check 1 (0:45–0:50)\\n\\n**MCQ:**\\n\\n> Why do we use overlapping chunks when splitting a document?\\n>\\n> (a) To increase the number of chunks (more chunks = more retrieval)\\n> (b) To avoid cutting a sentence or thought in half at the boundary\\n> (c) To reduce storage space\\n\\n**Correct answer: (b) To avoid cutting a sentence or thought in half at the boundary**\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_42\", \"week\": 3, \"score\": 0.4955, \"text\": \"**Explanation:** Overlap ensures continuity. If a sentence spans from character 148 to 155 in a 150-char chunk, part of it appears in chunk 0 (chars 148–150) and part in chunk 1 (chars 120–155 due to overlap). Without overlap, the sentence would be cut — the LLM would only see half of it.\\n\\n---\\n\\n### 6. Concept 2 — DocumentStore (In-Memory) (0:50–1:15)\\n\\n#### Worked Example: DocumentStore Interface\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_38\", \"week\": 3, \"score\": 0.4602, \"text\": \"chunk = DocumentChunk(\\n            content=chunk_text,\\n            chunk_id=f\\\"{doc.doc_id}_chunk_{len(chunks)}\\\",\\n            doc_id=doc.doc_id,\\n            chunk_index=len(chunks),\\n            metadata={**doc.metadata, \\\"chunk_size\\\": chunk_size, \\\"overlap\\\": overlap}\\n        )\\n        chunks.append(chunk)\\n\\n        start += chunk_size - overlap\\n        if start >= len(text):\\n            break\"}]}"
+    }
+  ],
+  "answer": "Khi chunking tài liệu, việc để các chunk **gối đầu (overlap)** lên nhau nhằm **tránh cắt một câu hoặc một ý tưởng đôi ở ranh giới giữa các chunk** [LP_W03].\n\nCụ thể:\n\n- **Giữ nguyên tính liên tục của thông tin:** Overlap đảm bảo không có thông tin nào bị mất tại ranh giới giữa các chunk. Ví dụ, nếu một câu nằm từ vị trí 500 đến 520, nó sẽ xuất hiện trong cả chunk 0 lẫn chunk 1, thay vì bị cắt đôi [LP_W03].\n- **Tránh LLM chỉ nhìn thấy nửa câu:** Nếu một câu nằm từ ký tự 148 đến 155 trong một chunk 150 ký tự, phần đầu (148–150) nằm trong chunk 0 và phần còn lại (120–155) nằm trong chunk 1 nhờ overlap. Nếu không có overlap, câu sẽ bị cắt và mô hình chỉ thấy một nửa ý nghĩa [LP_W03].\n\nTóm lại, overlap giúp mỗi chunk giữ được ngữ cảnh đầy đủ, đảm bảo khi truy xuất (retrieval) mô hình nhận được thông tin trọn vẹn thay vì bị \"cắt ngang\" [LP_W03].",
+  "usage": {
+    "calls": 2,
+    "prompt_tokens": 6236,
+    "completion_tokens": 403,
+    "total_tokens": 6639,
+    "max_prompt": 3528
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+

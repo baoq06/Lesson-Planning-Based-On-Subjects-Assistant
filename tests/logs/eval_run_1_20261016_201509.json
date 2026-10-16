@@ -1,0 +1,581 @@
+{
+  "run_id": "run_1",
+  "timestamp": "20261016_201509",
+  "total_testcases": 18,
+  "completed_testcases": 18,
+  "is_completed": true,
+  "metrics": {
+    "average_faithfulness": 0.9517,
+    "average_answer_relevance": 0.9333,
+    "average_context_precision": 0.9306,
+    "no_answer_refusal_rate_pct": 100.0,
+    "no_answer_correct": 5,
+    "no_answer_total": 5,
+    "action_verification_rate_pct": 100.0,
+    "action_verified": 1,
+    "action_total": 1,
+    "citation_hit_rate_pct": 85.71,
+    "citation_matches": 12,
+    "citation_expected": 14,
+    "average_latency_sec": 66.66,
+    "total_prompt_tokens": 158805,
+    "total_completion_tokens": 9525,
+    "total_tokens": 168330
+  },
+  "details": [
+    {
+      "id": "TC01",
+      "type": "factual",
+      "question": "Trong @dataclass, vì sao không được viết `topics: list = []` mà phải dùng field(default_factory=list)?",
+      "expected_doc_ids": [
+        "LP_W01"
+      ],
+      "expected_tools": [],
+      "answer": "Trong `@dataclass`, bạn **không được** viết `topics: list = []` vì Python sẽ từ chối ngay khi định nghĩa class với lỗi:\n\n```\nValueError: mutable default <class 'list'> for field topics is not allowed: use default_factory\n```\n\n**Lý do:**\n\n1. **Mặc định mutable được đánh giá CHỈ MỘT LẦN** tại thời điểm định nghĩa class. Nếu Python cho phép `[]` làm giá trị mặc định, thì **mọi instance** của class đó sẽ **chia sẻ cùng một list object** — thay đổi của instance này sẽ \"rò rỉ\" sang instance khác. Đây là một bug rất nguy hiểm và khó phát hiện.\n\n2. **`@dataclass` chủ động bảo vệ bạn** bằng cách ném `ValueError` ngay khi phát hiện mutable default, thay vì để bug âm thầm tồn tại.\n\n**Cách viết đúng — dùng `field(default_factory=list)`:**\n\n```python\nfrom dataclasses import dataclass, field\n\n# SAI — @dataclass từ chối ngay\n@dataclass\nclass BadExample:\n    topics: list = []  # ValueError!\n\n# ĐÚNG — mỗi instance nhận một list MỚI\n@dataclass\nclass GoodExample:\n    topics: list = field(default_factory=list)\n```\n\nVới `default_factory=list`, mỗi lần tạo instance mới, Python sẽ **gọi hàm `list()`** để tạo một list mới riêng cho instance đó, tránh được việc chia sẻ object giữa các instance [LP_W01].\n\n> **Mẹo ghi nhớ:** Bất kỳ giá trị mặc định nào là mutable (`list`, `dict`, `set`, ...) trong `@dataclass` đều phải dùng `field(default_factory=...)` — đây là lỗi rất hay gặp trong bài tập [LP_W03].",
+      "steps_count": 1,
+      "tools_called": [
+        "search_lesson_content"
+      ],
+      "cited_doc_ids": [
+        "LP_W01",
+        "LP_W03"
+      ],
+      "refusal_correct": null,
+      "action_verified": null,
+      "citation_ok": true,
+      "faithfulness": 0.95,
+      "answer_relevance": 1.0,
+      "context_precision": 0.85,
+      "latency_sec": 13.6,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 6136,
+        "completion_tokens": 492,
+        "total_tokens": 6628,
+        "max_prompt": 3422
+      }
+    },
+    {
+      "id": "TC02",
+      "type": "factual",
+      "question": "Khi gọi LLM API, những lỗi nào nên retry và những lỗi nào không nên retry?",
+      "expected_doc_ids": [
+        "LP_W02"
+      ],
+      "expected_tools": [],
+      "answer": "Theo bài giảng Tuần 2, nguyên tắc chung là: **không phải mọi lỗi đều nên retry** — chỉ retry các lỗi tạm thời (transient), còn lỗi do sai cấu hình/cách gọi thì phải sửa nguyên nhân gốc [LP_W02].\n\n**NÊN retry (lỗi tạm thời – transient):**\n- `RateLimitError` — bị giới hạn tần suất gọi (rate limit) [LP_W02].\n- `APIConnectionError` — lỗi kết nối (mất mạng, timeout, server tạm thời không phản hồi) [LP_W02].\n\n**KHÔNG NÊN retry (cần sửa nguyên nhân gốc):**\n- `AuthenticationError` — API key sai hoặc hết hạn → kiểm tra lại API key, không retry vì retry cũng sẽ thất bại [LP_W02].\n- `BadRequestError` — tham số request sai (model không tồn tại, prompt/parameter không hợp lệ) → sửa code/request [LP_W02].\n- `APIStatusError` (các mã 4xx) — lỗi do phía request → sửa request thay vì gọi lại [LP_W02].\n\n**Thực hành gợi ý:**\n- Dùng vòng lặp retry với `max_retries` (ví dụ 3 lần) và **exponential backoff** (chờ tăng dần giữa các lần thử) cho các lỗi transient [LP_W02].\n- Với `AuthenticationError` và `BadRequestError`, nên `raise` ngay (không retry) và in thông báo rõ ràng để người dùng biết cần sửa gì [LP_W02].\n\nTóm tắt nhanh:\n\n| Lỗi | Hành động |\n|---|---|\n| `RateLimitError` | Retry (backoff) |\n| `APIConnectionError` | Retry (backoff) |\n| `AuthenticationError` | Không retry — kiểm tra API key |\n| `BadRequestError` | Không retry — sửa tham số request |\n| `APIStatusError` (4xx) | Không retry — sửa request |\n\n[Nguồn: LP_W02]",
+      "steps_count": 1,
+      "tools_called": [
+        "search_lesson_content"
+      ],
+      "cited_doc_ids": [
+        "LP_W02"
+      ],
+      "refusal_correct": null,
+      "action_verified": null,
+      "citation_ok": true,
+      "faithfulness": 0.95,
+      "answer_relevance": 1.0,
+      "context_precision": 0.95,
+      "latency_sec": 54.35,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 6379,
+        "completion_tokens": 556,
+        "total_tokens": 6935,
+        "max_prompt": 3671
+      }
+    },
+    {
+      "id": "TC03",
+      "type": "factual",
+      "question": "Vì sao khi chunking tài liệu cần để các chunk gối đầu (overlap) lên nhau?",
+      "expected_doc_ids": [
+        "LP_W03"
+      ],
+      "expected_tools": [],
+      "answer": "Khi chunking tài liệu, việc để các chunk **gối đầu (overlap)** lên nhau nhằm **tránh cắt một câu hoặc một ý tưởng đôi ở ranh giới giữa các chunk** [LP_W03].\n\nCụ thể:\n\n- **Giữ nguyên tính liên tục của thông tin:** Overlap đảm bảo không có thông tin nào bị mất tại ranh giới giữa các chunk. Ví dụ, nếu một câu nằm từ vị trí 500 đến 520, nó sẽ xuất hiện trong cả chunk 0 lẫn chunk 1, thay vì bị cắt đôi [LP_W03].\n- **Tránh LLM chỉ nhìn thấy nửa câu:** Nếu một câu nằm từ ký tự 148 đến 155 trong một chunk 150 ký tự, phần đầu (148–150) nằm trong chunk 0 và phần còn lại (120–155) nằm trong chunk 1 nhờ overlap. Nếu không có overlap, câu sẽ bị cắt và mô hình chỉ thấy một nửa ý nghĩa [LP_W03].\n\nTóm lại, overlap giúp mỗi chunk giữ được ngữ cảnh đầy đủ, đảm bảo khi truy xuất (retrieval) mô hình nhận được thông tin trọn vẹn thay vì bị \"cắt ngang\" [LP_W03].",
+      "steps_count": 1,
+      "tools_called": [
+        "search_lesson_content"
+      ],
+      "cited_doc_ids": [
+        "LP_W03"
+      ],
+      "refusal_correct": null,
+      "action_verified": null,
+      "citation_ok": true,
+      "faithfulness": 1.0,
+      "answer_relevance": 0.95,
+      "context_precision": 0.9,
+      "latency_sec": 52.25,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 6236,
+        "completion_tokens": 403,
+        "total_tokens": 6639,
+        "max_prompt": 3528
+      }
+    },
+    {
+      "id": "TC04",
+      "type": "factual",
+      "question": "Công thức tính điểm hybrid search trong bài giảng là gì và trọng số mặc định bao nhiêu?",
+      "expected_doc_ids": [
+        "LP_W04"
+      ],
+      "expected_tools": [],
+      "answer": "Tôi đã tìm đủ thông tin để trả lời.\n\n## Công thức tính điểm Hybrid Search\n\nCông thức fusion (trộn điểm) trong bài giảng là:\n\n```\nhybrid_score = (w_bm25 × normalized_bm25) + (w_vector × cosine_similarity)\n```\n\nTrong đó [LP_W04]:\n- **w_bm25 + w_vector = 1.0** (tổng trọng số phải bằng 1)\n- **normalized_bm25 ∈ [0, 1]** — điểm BM25 vốn không có giới hạn (unbounded, có thể là 5.2, 13.7, ...), nên **bắt buộc phải chuẩn hoá** trước khi trộn\n- **cosine_similarity ∈ [-1, 1]** — vốn đã có giới hạn\n\n### Trọng số mặc định\n\n```\nw_bm25 = 0.3\nw_vector = 0.7\n```\n\nLý do: vector thường là tín hiệu chính tốt hơn, còn BM25 giúp \"bắt\" các khoảng trống mà vector bỏ sót [LP_W04].\n\n### Lưu ý quan trọng (lỗi phổ biến nhất)\n\nĐiểm BM25 không có giới hạn trong khi cosine similarity bị chặn trong [-1, 1]. Nếu **quên bước chuẩn hoá BM25**, điểm BM25 sẽ \"áp đảo\" tổng điểm — đây được gọi là lỗi phổ biến nhất trong hybrid search [LP_W04].\n\n### Ví dụ code thực hiện fusion\n\n```python\n# Normalise BM25 to [0, 1]\nbm25_norm = normalise_scores(list(bm25_scores))\n\n# Fuse\nhybrid = [\n    w_bm25 * b + w_vector * v\n    for b, v in zip(bm25_norm, vector_scores)\n]\n\n# Sort by hybrid score descending, return top_k\nranked = sorted(\n    enumerate(hybrid), key=lambda x: x[1], reverse=True\n)[:top_k]\n```\n[LP_W04]",
+      "steps_count": 3,
+      "tools_called": [
+        "search_lesson_content",
+        "search_lesson_content",
+        "search_lesson_content"
+      ],
+      "cited_doc_ids": [
+        "LP_W04"
+      ],
+      "refusal_correct": null,
+      "action_verified": null,
+      "citation_ok": true,
+      "faithfulness": 1.0,
+      "answer_relevance": 0.95,
+      "context_precision": 0.85,
+      "latency_sec": 75.28,
+      "usage": {
+        "calls": 4,
+        "prompt_tokens": 15195,
+        "completion_tokens": 836,
+        "total_tokens": 16031,
+        "max_prompt": 4921
+      }
+    },
+    {
+      "id": "TC05",
+      "type": "factual",
+      "question": "Chỉ số context_recall trong RAGAS đo điều gì?",
+      "expected_doc_ids": [
+        "LP_W05"
+      ],
+      "expected_tools": [],
+      "answer": "Tôi đã tìm được thông tin chi tiết về `context_recall`. Dưới đây là câu trả lời:\n\n## Chỉ số `context_recall` trong RAGAS\n\n**`context_recall` đo lường số lượng các phần tử liên quan (relevant items) từ toàn bộ corpus đã được hệ thống thu hồi (retrieved).** [LP_W05]\n\nCụ thể hơn:\n\n- **Công thức:** `context_recall = (relevant chunks retrieved) / (ALL relevant chunks in the corpus)` [LP_W05]\n- **Ý nghĩa:** Khác với `context_precision` (đo chất lượng của tập chunks đã thu hồi), `context_recall` đo xem quá trình retrieval có **bỏ sót** (miss) bất kỳ chunk liên quan nào hay không. [LP_W05]\n- **Yêu cầu đặc biệt:** Chỉ số này cần một **reference set (ground truth)** — tức là tập các chunks *nên* được thu hồi — để so sánh. [LP_W05]\n\n### So sánh nhanh với các metric khác trong RAGAS [LP_W05]\n\n| Metric | Đo lường |\n|---|---|\n| `faithfulness` | Các claim trong câu trả lời có được context hỗ trợ không |\n| `answer_relevancy` | Câu trả lời có giải quyết đúng câu hỏi không |\n| `context_precision` | Các chunks đã thu hồi có thực sự liên quan không |\n| `context_recall` | **Toàn bộ chunks liên quan trong corpus đã được thu hồi chưa** |\n\nTóm lại, `context_recall` trả lời câu hỏi: *\"Hệ thống có lấy đủ tất cả thông tin liên quan cần thiết từ kho dữ liệu không?\"* [LP_W05]",
+      "steps_count": 2,
+      "tools_called": [
+        "search_lesson_content",
+        "search_lesson_content"
+      ],
+      "cited_doc_ids": [
+        "LP_W05"
+      ],
+      "refusal_correct": null,
+      "action_verified": null,
+      "citation_ok": true,
+      "faithfulness": 1.0,
+      "answer_relevance": 0.95,
+      "context_precision": 0.85,
+      "latency_sec": 36.66,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 10680,
+        "completion_tokens": 653,
+        "total_tokens": 11333,
+        "max_prompt": 4448
+      }
+    },
+    {
+      "id": "TC06",
+      "type": "factual",
+      "question": "Bài giảng nêu những mức bộ nhớ hội thoại nào cho agent, ưu nhược điểm của từng mức?",
+      "expected_doc_ids": [
+        "LP_W06"
+      ],
+      "expected_tools": [],
+      "answer": "Tôi đã thu thập đủ thông tin từ bài giảng Week 6. Dưới đây là nội dung chi tiết.\n\n## Ba mức bộ nhớ hội thoại cho Agent [LP_W06]\n\nBài giảng Week 6 (Agent Loop, ReAct & Agent Memory) nêu ra **ba mức bộ nhớ hội thoại** (Three Memory Levels), xuất phát từ vấn đề: mỗi lượt hội thoại thêm message, sau ~20 lượt có thể lên tới 20.000 tokens — vượt context window, tốn kém, và agent \"quên\" phần đầu cuộc trò chuyện [LP_W06].\n\n### Level 1: Conversation Buffer (gửi toàn bộ lịch sử)\n- **Cách hoạt động:** Gửi **tất cả** message (system + toàn bộ lượt user/assistant) cho LLM ở mỗi bước [LP_W06].\n- **Ưu điểm:** Giữ nguyên vẹn toàn bộ ngữ cảnh, không mất thông tin.\n- **Nhược điểm:** Bộ nhớ tăng **không giới hạn** (unbounded) — dễ vượt context window, tốn chi phí, và khiến agent \"quên\" phần đầu khi quá dài [LP_W06].\n\n### Level 2: Sliding Window (cửa sổ trượt)\n- **Cách hoạt động:** Chỉ giữ **N message gần nhất**, loại bỏ (drop) các message cũ [LP_W06].\n- **Ưu điểm:** Giới hạn kích thước bộ nhớ (bounded), kiểm soát được số token.\n- **Nhược điểm:** Mất thông tin ở phần đầu hội thoại; nếu cửa sổ quá nhỏ, agent có thể \"quên\" nhiệm vụ đang làm (cần cân bằng kích thước cửa sổ: chi tiết gần đây + tóm tắt) [LP_W06].\n\n### Level 3: Summarization Memory (bộ nhớ tóm tắt)\n- **Cách hoạt động:** Nén các message cũ thành một **tóm tắt chạy** (running summary) do LLM tạo, kết hợp với các message gần đây [LP_W06].\n- **Ưu điểm:** Bounded (giới hạn kích thước) **và** giữ được ý chính (gist) của hội thoại cũ [LP_W06].\n- **Nhược điểm:** Bản tóm tắt **mất chi tiết** (summary loses details) [LP_W06].\n\n### Ý chính (Key insight)\nBài giảng nhấn mạnh: *\"Agent memory là với hội thoại giống như RAG là với tri thức — không thể nhét mọi thứ vào context window, nên ta giữ những gì quan trọng và tóm tắt hoặc truy xuất phần còn lại.\"* Đây chính là schema chunking + summarization đã xây ở Week 3, nay áp dụng cho hội thoại thay vì tài liệu [LP_W06].\n\nBạn có muốn tôi đi sâu vào cách **cân bằng kích thước sliding window** hoặc cách **triển khai summarization memory** trong lab không?",
+      "steps_count": 3,
+      "tools_called": [
+        "search_lesson_content",
+        "search_lesson_content",
+        "search_lesson_content"
+      ],
+      "cited_doc_ids": [
+        "LP_W06"
+      ],
+      "refusal_correct": null,
+      "action_verified": null,
+      "citation_ok": true,
+      "faithfulness": 0.95,
+      "answer_relevance": 0.95,
+      "context_precision": 0.85,
+      "latency_sec": 140.15,
+      "usage": {
+        "calls": 4,
+        "prompt_tokens": 16449,
+        "completion_tokens": 1026,
+        "total_tokens": 17475,
+        "max_prompt": 5497
+      }
+    },
+    {
+      "id": "TC07",
+      "type": "transform",
+      "question": "Dense retrieval học ở tuần 3 có điểm yếu gì, và hybrid search ở tuần 4 khắc phục điểm yếu đó như thế nào?",
+      "expected_doc_ids": [
+        "LP_W03",
+        "LP_W04"
+      ],
+      "expected_tools": [],
+      "answer": "Tôi đã có đủ thông tin để trả lời câu hỏi.\n\n## Điểm yếu của Dense Retrieval (tuần 3) và cách Hybrid Search (tuần 4) khắc phục\n\n### Điểm yếu của Dense Retrieval (Vector Search)\n\nDense Retrieval hoạt động dựa trên **matching ngữ nghĩa** (semantic matching) — nó so sánh vector embedding của query với vector của các chunk trong không gian ngữ nghĩa. Tuy nhiên, nó có một điểm yếu rõ ràng:\n\n- **Bỏ sót các từ khóa chính xác, hiếm gặp hoặc thuật ngữ kỹ thuật** (misses rare exact terms). Vector search có thể bỏ lỡ một thuật ngữ kỹ thuật hiếm như \"reimbursement rate\" hay tên model \"BERT-2024\" nếu chunk xung quanh bị nhiễu (noisy) hoặc embedding của từ đó nằm xa paraphrase của query [LP_W04].\n\nNói cách khác, vector search rất giỏi với **ý nghĩa/paraphrase** nhưng lại yếu với **từ khóa chính xác** [LP_W04].\n\n### Cách Hybrid Search khắc phục\n\nHybrid Search kết hợp **cả hai** phương pháp để lấy \"best of both worlds\" [LP_W04]:\n\n| Phương pháp | Điểm mạnh | Điểm yếu |\n|---|---|---|\n| **Keyword (BM25)** | Exact term match — bắt được từ hiếm/thuật ngữ kỹ thuật | Bỏ sót synonym, typo |\n| **Vector (Dense)** | Semantic match — bắt được paraphrase, ý nghĩa | Bỏ sót rare exact terms |\n\n**Cơ chế kết hợp:**\n1. **BM25** xử lý phần mà vector search yếu — các thuật ngữ chính xác, hiếm gặp [LP_W04].\n2. **Vector search** xử lý phần mà BM25 yếu — paraphrase và ý nghĩa [LP_W04].\n3. Hai score được **fusion** (gộp) lại thành một hybrid score duy nhất.\n\n**Lưu ý quan trọng khi kết hợp:** BM25 scores là **unbounded** (có thể là 5.2, 13.7, bất kỳ giá trị nào), trong khi cosine similarity là **bounded** trong [-1, 1]. Do đó, **bắt buộc phải normalise BM25** (thường dùng min-max scaling về [0,1]) trước khi gộp — nếu không, BM25 sẽ \"dominate\" (áp đảo) tổng điểm. Đây là lỗi phổ biến nhất trong hybrid search [LP_W04].\n\n### Tóm tắt\n\nDense Retrieval yếu ở việc bắt các **từ khóa chính xác/hiếm** → Hybrid Search bổ sung **BM25** (chuyên về exact term match) và **normalise** score của BM25 trước khi fusion với vector score, từ đó khắc phục được điểm yếu đó [LP_W04].",
+      "steps_count": 4,
+      "tools_called": [
+        "search_lesson_content",
+        "search_lesson_content",
+        "search_lesson_content",
+        "search_lesson_content"
+      ],
+      "cited_doc_ids": [
+        "LP_W04"
+      ],
+      "refusal_correct": null,
+      "action_verified": null,
+      "citation_ok": false,
+      "faithfulness": 1.0,
+      "answer_relevance": 0.95,
+      "context_precision": 0.85,
+      "latency_sec": 112.17,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 13078,
+        "completion_tokens": 1089,
+        "total_tokens": 14167,
+        "max_prompt": 6173
+      }
+    },
+    {
+      "id": "TC08",
+      "type": "transform",
+      "question": "Để đánh giá pipeline RAG xây ở tuần 4 có đang bịa thông tin hay không, em dùng chỉ số nào ở tuần 5 và nó đo gì?",
+      "expected_doc_ids": [
+        "LP_W04",
+        "LP_W05"
+      ],
+      "expected_tools": [],
+      "answer": "Để kiểm tra pipeline RAG của em có đang \"bịa\" (hallucinate) thông tin hay không, chỉ số em cần dùng ở tuần 5 là **Faithfulness** [LP_W05].\n\n**Faithfulness đo gì?**\n- Nó đo mức độ **grounded** (có căn cứ) của câu trả lời: liệu các **claims (khẳng định) trong câu trả lời có được hỗ trợ bởi context (các chunk đã retrieve)** hay không [LP_W05].\n- Công thức tính: **số claims được context hỗ trợ / tổng số claims** trong câu trả lời [LP_W05].\n- Đây là một chỉ số dạng **LLM-judge** (dùng LLM để chấm) [LP_W05].\n\n**Lưu ý quan trọng về phạm vi đo:**\n- Faithfulness **KHÔNG** đo tính đúng đắn trong thế giới thực — vì bản thân context retrieve về có thể đã lỗi thời hoặc sai [LP_W05].\n- Nó cũng **KHÔNG** đo relevance — một câu trả lời có thể hoàn toàn bám sát context nhưng vẫn không trả lời đúng câu hỏi được đặt ra [LP_W05].\n\n**Cách áp dụng thực tế:**\n- Em có thể dùng framework **RAGAS** để tính faithfulness một cách định lượng cho pipeline RAG [LP_W05].\n- Trong RAGAS, metric `faithfulness` tương ứng với hàm `check_faithfulness()` mà em đã tự viết ở Session 1 [LP_W05].\n- Khi hallucination xảy ra (LLM bỏ qua context và trả lời từ dữ liệu huấn luyện), faithfulness sẽ **thấp** — và cách khắc phục là tăng cường grounding: cải thiện prompt, đặt `temperature=0.0`, và verify các claims [LP_W05].\n\nTóm lại: nếu em muốn biết pipeline RAG tuần 4 có đang bịa thông tin không, hãy chạy **faithfulness** (qua RAGAS) trên bộ test — giá trị càng cao (gần 1.0) nghĩa là câu trả lời càng bám sát context, ít bịa hơn [LP_W05].",
+      "steps_count": 2,
+      "tools_called": [
+        "search_lesson_content",
+        "search_lesson_content"
+      ],
+      "cited_doc_ids": [
+        "LP_W05"
+      ],
+      "refusal_correct": null,
+      "action_verified": null,
+      "citation_ok": false,
+      "faithfulness": 1.0,
+      "answer_relevance": 0.95,
+      "context_precision": 0.95,
+      "latency_sec": 91.2,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 10786,
+        "completion_tokens": 674,
+        "total_tokens": 11460,
+        "max_prompt": 4503
+      }
+    },
+    {
+      "id": "TC09",
+      "type": "transform",
+      "question": "Cơ chế retry khi gọi API ở tuần 2 và giới hạn số bước của agent loop ở tuần 6 cùng giải quyết vấn đề gì, khác nhau ở đâu?",
+      "expected_doc_ids": [
+        "LP_W02",
+        "LP_W06"
+      ],
+      "expected_tools": [],
+      "answer": "Dựa trên tài liệu bài giảng, tôi có thể so sánh hai cơ chế này như sau:\n\n## Điểm chung: cùng giải quyết vấn đề \"chạy không kiểm soát được\"\n\nCả hai đều là cơ chế **bảo vệ (guard/brake)** để ngăn chương trình rơi vào trạng thái lặp vô hạn hoặc tiêu tốn tài nguyên không cần thiết:\n\n- **Retry (tuần 2):** giới hạn số lần thử lại khi gọi API gặp lỗi tạm thời (transient) — ví dụ `max_retries=3` trong hàm `call_with_retry` [LP_W02].\n- **Max steps / max_iterations (tuần 6):** giới hạn số bước của agent loop để đảm bảo vòng lặp **kết thúc (terminates)** [LP_W06].\n\nCả hai đều trả lời câu hỏi: *\"Làm sao để không lặp mãi mãi?\"*\n\n## Điểm khác nhau\n\n| Tiêu chí | Retry (Tuần 2) | Max steps (Tuần 6) |\n|---|---|---|\n| **Mục đích** | Xử lý **lỗi tạm thời** khi gọi API (rate limit, connection error) [LP_W02] | Ngăn **agent loop chạy vô hạn** khi LLM liên tục yêu cầu gọi tool [LP_W06] |\n| **Bản chất vấn đề** | Lỗi **ngoại vi** từ phía API (transient) — có thể tự phục hồi | Lỗi **nội tại** của logic agent — LLM \"confused\" cứ gọi tool mãi [LP_W06] |\n| **Khi nào kích hoạt** | Chỉ khi gặp lỗi retryable (RateLimitError, APIConnectionError) [LP_W02] | Kích hoạt khi số bước đạt ngưỡng, dù không có lỗi nào [LP_W06] |\n| **Kết quả khi chạm giới hạn** | Tiếp tục thử lại đến khi thành công hoặc hết số lần | Trả về `\"Error: max steps reached.\"` và dừng [LP_W06] |\n\n## Lưu ý quan trọng\n\n- **Không phải lỗi nào cũng nên retry.** AuthenticationError (sai API key) và BadRequestError (sai tham số) **không nên retry** — phải sửa nguyên nhân gốc [LP_W02].\n- **Max steps là \"phanh\" bắt buộc** cho agent loop: *\"The loop is infinite without it — add the brake\"* [LP_W06]. Đây là cách đúng để ngăn agent chạy vô hạn (không phải dùng max_tokens) [LP_W06].\n\n**Tóm lại:** Retry giải quyết vấn đề **API thất bại tạm thời** (tái thử một thao tác đơn lẻ), còn max steps giải quyết vấn đề **agent không biết dừng** (giới hạn tổng số vòng lặp của toàn bộ quy trình). Một bên bảo vệ **mỗi lần gọi**, một bên bảo vệ **toàn bộ vòng lặp**.",
+      "steps_count": 3,
+      "tools_called": [
+        "search_lesson_content",
+        "search_lesson_content",
+        "search_lesson_content"
+      ],
+      "cited_doc_ids": [
+        "LP_W02",
+        "LP_W06"
+      ],
+      "refusal_correct": null,
+      "action_verified": null,
+      "citation_ok": true,
+      "faithfulness": 0.98,
+      "answer_relevance": 0.95,
+      "context_precision": 0.85,
+      "latency_sec": 98.56,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 11579,
+        "completion_tokens": 957,
+        "total_tokens": 12536,
+        "max_prompt": 4723
+      }
+    },
+    {
+      "id": "TC10",
+      "type": "transform",
+      "question": "Bài tập lab của em bị nộp trễ 30 giờ. Theo quy định môn AIPR em bị trừ bao nhiêu phần trăm?",
+      "expected_doc_ids": [
+        "POLICY_AIPR"
+      ],
+      "expected_tools": [],
+      "answer": "Theo quy định môn AIPR (Mục 4 - Quy chế nộp bài tập trễ) [POLICY_AIPR], mức phạt được tính theo số giờ trễ như sau:\n\n- **≤ 24 giờ:** trừ 10%\n- **25–48 giờ:** trừ 20%\n- **49–72 giờ:** trừ 30%\n- **> 72 giờ:** bài bị từ chối (0 điểm)\n\nVì bài lab của em bị nộp trễ **30 giờ**, em rơi vào khoảng **25–48 giờ**, nên sẽ bị **trừ 20%** tổng điểm của bài tập đó [POLICY_AIPR].\n\nChúc em sớm hoàn thành và nộp bài nhé! Nếu cần hỗ trợ thêm về nội dung bài lab, cứ hỏi mình.",
+      "steps_count": 2,
+      "tools_called": [
+        "search_lesson_content",
+        "check_late_submission_penalty"
+      ],
+      "cited_doc_ids": [
+        "POLICY_AIPR"
+      ],
+      "refusal_correct": null,
+      "action_verified": null,
+      "citation_ok": true,
+      "faithfulness": 0.85,
+      "answer_relevance": 0.95,
+      "context_precision": 0.85,
+      "latency_sec": 79.21,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 9407,
+        "completion_tokens": 356,
+        "total_tokens": 9763,
+        "max_prompt": 3443
+      }
+    },
+    {
+      "id": "TC11",
+      "type": "transform",
+      "question": "Điểm chuyên cần 9, lab 8, test 1 là 7, test 2 là 8, đồ án 8.5, tỉ lệ vắng 10%. Điểm tổng kết môn của em là bao nhiêu?",
+      "expected_doc_ids": [
+        "POLICY_AIPR"
+      ],
+      "expected_tools": [],
+      "answer": "Dựa trên các thành phần điểm em cung cấp, điểm tổng kết môn AIPR của em được tính như sau [POLICY_AIPR]:\n\n*   **Chuyên cần (5%):** 9.0\n*   **Thực hành/Lab (15%):** 8.0\n*   **Test 1 (15%):** 7.0\n*   **Test 2 (15%):** 8.0\n*   **Đồ án cuối kỳ (50%):** 8.5\n*   **Tỉ lệ vắng mặt:** 10% (Đạt yêu cầu, không bị cấm thi vì dưới ngưỡng 20%)\n\n**Điểm tổng kết môn của em là: 8.15 / 10** [POLICY_AIPR].\n\nChúc mừng em đã hoàn thành môn học với một kết quả rất tốt!",
+      "steps_count": 1,
+      "tools_called": [
+        "calculate_course_grade"
+      ],
+      "cited_doc_ids": [
+        "POLICY_AIPR"
+      ],
+      "refusal_correct": null,
+      "action_verified": null,
+      "citation_ok": true,
+      "faithfulness": 0.95,
+      "answer_relevance": 0.95,
+      "context_precision": 1.0,
+      "latency_sec": 48.57,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 5791,
+        "completion_tokens": 354,
+        "total_tokens": 6145,
+        "max_prompt": 3053
+      }
+    },
+    {
+      "id": "TC12",
+      "type": "transform",
+      "question": "Em nộp bài tập lớn bị muộn so với hạn, em sẽ bị trừ bao nhiêu điểm?",
+      "expected_doc_ids": [],
+      "expected_tools": [],
+      "answer": "Để xác định mức trừ điểm chính xác, em vui lòng cho biết bài tập lớn đã nộp muộn bao nhiêu giờ so với hạn chót ạ?",
+      "steps_count": 0,
+      "tools_called": [],
+      "cited_doc_ids": [],
+      "refusal_correct": null,
+      "action_verified": null,
+      "citation_ok": true,
+      "faithfulness": 0.5,
+      "answer_relevance": 0.3,
+      "context_precision": 1.0,
+      "latency_sec": 22.57,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 2708,
+        "completion_tokens": 31,
+        "total_tokens": 2739,
+        "max_prompt": 2708
+      }
+    },
+    {
+      "id": "TC13",
+      "type": "action",
+      "question": "Em là Nguyễn Văn An, MSSV 24110001. Em bị ốm phải nằm viện và có giấy xác nhận y tế hợp lệ. Hãy soạn giúp em đơn xin gia hạn bài Lab 1 thêm 3 ngày.",
+      "expected_doc_ids": [],
+      "expected_tools": [
+        "draft_template_submission",
+        "read_draft"
+      ],
+      "answer": "Đã soạn xong đơn xin gia hạn cho bạn. Dưới đây là nội dung bản nháp:\n\n---\n\n**CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM**\n**ĐỘC LẬP - TỰ DO - HẠNH PHÚC**\n\n**ĐƠN XIN GIA HẠN NỘP BÀI**\n\nKính gửi: Giảng viên môn Lập trình AI với Python (AIPR_24110FIE)\n\nEm tên là: Nguyễn Văn An (MSSV: 24110001).\nEm làm đơn này xin gia hạn nộp: **Lab 1**.\nSố ngày xin gia hạn: **3 ngày**.\nLý do: Bị ốm phải nằm viện, có giấy xác nhận y tế hợp lệ.\nMinh chứng đính kèm: Giấy xác nhận y tế.\n\nEm cam kết thông tin trên là đúng sự thật.\nEm xin chân thành cảm ơn.\n\nNgày: 2026-10-16\nSinh viên ký tên,\nNguyễn Văn An\n\n---\n\n⚠️ **Lưu ý quan trọng:** Đây chỉ là **bản nháp (draft)** đã được lưu lại, **chưa được chính thức gửi đi**. Bạn cần kiểm tra lại thông tin và tự mình gửi đơn kèm giấy xác nhận y tế cho giảng viên.\n\nBạn có muốn tôi chỉnh sửa lại nội dung (ví dụ: lý do, số ngày) không?",
+      "steps_count": 2,
+      "tools_called": [
+        "draft_template_submission",
+        "read_draft"
+      ],
+      "cited_doc_ids": [],
+      "refusal_correct": null,
+      "action_verified": true,
+      "citation_ok": true,
+      "faithfulness": 1.0,
+      "answer_relevance": 0.95,
+      "context_precision": 1.0,
+      "latency_sec": 78.13,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 9154,
+        "completion_tokens": 599,
+        "total_tokens": 9753,
+        "max_prompt": 3380
+      }
+    },
+    {
+      "id": "TC14",
+      "type": "no_answer",
+      "question": "Mức học phí cho một tín chỉ hệ chính quy năm nay là bao nhiêu?",
+      "expected_doc_ids": [],
+      "expected_tools": [],
+      "answer": "Xin lỗi, thông tin này không có trong tài liệu bài giảng và quy chế môn học AIPR.",
+      "steps_count": 0,
+      "tools_called": [],
+      "cited_doc_ids": [],
+      "refusal_correct": true,
+      "action_verified": null,
+      "citation_ok": true,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "context_precision": 1.0,
+      "latency_sec": 21.61,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 2706,
+        "completion_tokens": 24,
+        "total_tokens": 2730,
+        "max_prompt": 2706
+      }
+    },
+    {
+      "id": "TC15",
+      "type": "no_answer",
+      "question": "Hướng dẫn em fine-tune một mô hình ngôn ngữ bằng LoRA.",
+      "expected_doc_ids": [],
+      "expected_tools": [],
+      "answer": "Mình đã tra cứu tài liệu bài giảng AIPR (tuần 1–6) nhưng không tìm thấy nội dung nào hướng dẫn về kỹ thuật **fine-tune mô hình ngôn ngữ bằng LoRA** (Low-Rank Adaptation). Các kết quả gần nhất chỉ liên quan đến RAG, prompt engineering và đánh giá RAGAS, không phải fine-tune/LoRA.\n\nVì vậy, theo quy định mình chỉ có thể trả lời dựa trên tài liệu bài giảng và quy chế môn học, nên:\n\n**Xin lỗi, thông tin này không có trong tài liệu bài giảng và quy chế môn học AIPR.**\n\nNếu em muốn, mình có thể hỗ trợ em với những nội dung **có** trong chương trình, ví dụ:\n- Xây dựng pipeline RAG (embed query → search → build prompt → call LLM) [LP_W04].\n- Thiết kế prompt template để LLM chỉ trả lời dựa trên context [LP_W04].\n- Đánh giá chất lượng RAG với RAGAS và 5 failure modes [LP_W05].\n\nEm cho mình biết em đang cần ở tuần/bài nào để mình tra cứu chính xác hơn nhé.",
+      "steps_count": 1,
+      "tools_called": [
+        "search_lesson_content"
+      ],
+      "cited_doc_ids": [
+        "LP_W04",
+        "LP_W05"
+      ],
+      "refusal_correct": true,
+      "action_verified": null,
+      "citation_ok": true,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "context_precision": 1.0,
+      "latency_sec": 52.35,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 6255,
+        "completion_tokens": 393,
+        "total_tokens": 6648,
+        "max_prompt": 3551
+      }
+    },
+    {
+      "id": "TC16",
+      "type": "no_answer",
+      "question": "Thuật toán Q-learning trong reinforcement learning cập nhật giá trị Q như thế nào?",
+      "expected_doc_ids": [],
+      "expected_tools": [],
+      "answer": "Tôi đã tìm kiếm kỹ lưỡng trong tài liệu bài giảng AIPR (cả theo từ khóa lẫn theo ngữ nghĩa). Tài liệu chỉ đề cập đến khái niệm tổng quát về Reinforcement Learning — một agent học qua tương tác với môi trường và nhận phần thưởng hoặc hình phạt dựa trên hành động của nó [LP_W03]. Tuy nhiên, **không có nội dung nào mô tả thuật toán Q-learning hay công thức cập nhật giá trị Q** (ví dụ phương trình Bellman, hệ số chiết khấu, learning rate).\n\nDo đó, theo chính sách, tôi xin trả lời:\n\nXin lỗi, thông tin này không có trong tài liệu bài giảng và quy chế môn học AIPR.\n\nNếu bạn muốn, tôi có thể giúp bạn tìm hiểu các nội dung khác đã được đề cập trong bài giảng (ví dụ: các dạng học máy supervised/unsupervised/reinforcement ở tuần 3 [LP_W03]).",
+      "steps_count": 2,
+      "tools_called": [
+        "search_lesson_content",
+        "search_lesson_content"
+      ],
+      "cited_doc_ids": [
+        "LP_W03"
+      ],
+      "refusal_correct": true,
+      "action_verified": null,
+      "citation_ok": true,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "context_precision": 1.0,
+      "latency_sec": 81.6,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 9761,
+        "completion_tokens": 494,
+        "total_tokens": 10255,
+        "max_prompt": 3818
+      }
+    },
+    {
+      "id": "TC17",
+      "type": "no_answer",
+      "question": "Làm sao viết một MCP server bằng Python SDK và chạy qua stdio?",
+      "expected_doc_ids": [],
+      "expected_tools": [],
+      "answer": "Tôi đã tìm kiếm cả hai cách (hybrid và dense) với các truy vấn khác nhau, nhưng không có nội dung bài giảng nào đề cập đến việc viết MCP server bằng Python SDK hay chạy qua stdio. Các kết quả trả về đều không liên quan đến chủ đề này.\n\nXin lỗi, thông tin này không có trong tài liệu bài giảng và quy chế môn học AIPR.",
+      "steps_count": 2,
+      "tools_called": [
+        "search_lesson_content",
+        "search_lesson_content"
+      ],
+      "cited_doc_ids": [],
+      "refusal_correct": true,
+      "action_verified": null,
+      "citation_ok": true,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "context_precision": 1.0,
+      "latency_sec": 87.07,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 10394,
+        "completion_tokens": 358,
+        "total_tokens": 10752,
+        "max_prompt": 4151
+      }
+    },
+    {
+      "id": "TC18",
+      "type": "no_answer",
+      "question": "Làm thế nào để deploy một mô hình AI lên Kubernetes?",
+      "expected_doc_ids": [],
+      "expected_tools": [],
+      "answer": "Kết quả tìm kiếm cho thấy nội dung về \"deploy mô hình AI lên Kubernetes\" **không được đề cập** trong tài liệu bài giảng AIPR. Các kết quả trả về chỉ liên quan đến các chủ đề cơ bản như lists, dicts, dataclass, và streaming chat — không có nội dung nào về Kubernetes hay deployment.\n\nXin lỗi, thông tin này không có trong tài liệu bài giảng và quy chế môn học AIPR.",
+      "steps_count": 1,
+      "tools_called": [
+        "search_lesson_content"
+      ],
+      "cited_doc_ids": [],
+      "refusal_correct": true,
+      "action_verified": null,
+      "citation_ok": true,
+      "faithfulness": 1.0,
+      "answer_relevance": 1.0,
+      "context_precision": 1.0,
+      "latency_sec": 54.63,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 6111,
+        "completion_tokens": 230,
+        "total_tokens": 6341,
+        "max_prompt": 3410
+      }
+    }
+  ]
+}

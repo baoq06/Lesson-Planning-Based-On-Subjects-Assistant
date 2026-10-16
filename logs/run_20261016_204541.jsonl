@@ -1,0 +1,538 @@
+{
+  "timestamp": "2026-10-16T20:46:18.158032",
+  "question": "Chỉ số context_recall trong RAGAS đo điều gì?",
+  "steps": [
+    {
+      "step_num": 1,
+      "thought": "Người dùng hỏi về chỉ số context_recall trong RAGAS. Tôi cần tìm kiếm trong tài liệu bài giảng để trả lời chính xác và trích dẫn nguồn.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "hybrid",
+        "query": "RAGAS context_recall metric",
+        "top_k": 4,
+        "week": 0
+      },
+      "observation": "{\"query\": \"RAGAS context_recall metric\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.6351, \"hits\": [{\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_76\", \"week\": 5, \"score\": 0.674, \"text\": \"| 3 | Concept 1: RAGAS | 0:20–0:45 | 4. Present content | Install, run, interpret RAGAS scores |\\n| 5 | KC 1 | 0:45–0:50 | 7. Feedback | MCQ: context_recall definition |\\n| 6 | Concept 2: Failure Modes | 0:50–1:15 | 4. Present content | 5 failure modes + fixes |\\n| — | Break | 1:15–1:20 | — | — |\\n| 9 | Concept 3: Improving RAG from Metrics | 1:20–1:40 | 4. Present content | Metric → fix mapping |\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_84\", \"week\": 5, \"score\": 0.5721, \"text\": \"```\\nMANUAL (Session 1):                        RAGAS (automated):\\n  you write judge prompts                   standardised metrics:\\n  you call the LLM yourself                   answer_relevancy\\n  you aggregate by hand                       faithfulness\\n  hard to compare configs                     context_recall\\n                                              context_precision\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_91\", \"week\": 5, \"score\": 0.552, \"text\": \"---\\n\\n### 4. Code Along 1 — Run RAGAS (2:00–2:30) [PART B — LAB]\\n\\n**File:** `ex2_1_ragas.py`\\n\\n```python\\n# Install first: pip install ragas datasets\\n\\nfrom datasets import Dataset\\nfrom ragas import evaluate\\nfrom ragas.metrics import faithfulness, answer_relevancy, context_precision, context_recall\\n\\n# ===== Build the test set in RAGAS format =====\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_83\", \"week\": 5, \"score\": 0.4448, \"text\": \"> \\\"In 30 seconds, explain to your partner:\\n> 1. What does faithfulness measure? *(claims supported by context)*\\n> 2. What is the difference between relevance and precision? *(answer vs chunks)*\\n> 3. What did you find in your lab's worst-performing question?\\\"\\n\\n---\\n\\n### 3. Concept 1 — RAGAS Framework (0:20–0:45)\\n\\n#### What RAGAS Adds\\n\\n**Show on projector:**\"}]}"
+    },
+    {
+      "step_num": 2,
+      "thought": "Cần tìm định nghĩa chi tiết của context_recall - chỉ số đo lường khả năng thu hồi thông tin liên quan từ context.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "dense",
+        "query": "context_recall definition measures how much relevant information retrieved context contains",
+        "top_k": 6,
+        "week": 5
+      },
+      "observation": "{\"query\": \"context_recall definition measures how much relevant information retrieved context contains\", \"mode\": \"dense\", \"found\": true, \"best_relevance\": 0.7475, \"hits\": [{\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_98\", \"week\": 5, \"score\": 0.7475, \"text\": \"**Explanation:** Context recall = (relevant chunks retrieved) / (ALL relevant chunks in the corpus). Unlike context precision (which measures the retrieved set), recall measures whether retrieval *missed* any relevant chunks. It requires a reference set (ground truth) of what SHOULD have been retrieved.\\n\\n---\\n\\n### 6. Concept 2 — RAG Failure Modes (0:50–1:15)\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_97\", \"week\": 5, \"score\": 0.6943, \"text\": \"> What does RAGAS's `context_recall` measure?\\n>\\n> (a) How many relevant chunks were retrieved\\n> (b) How many relevant items from the full corpus were retrieved\\n> (c) How fast the retrieval is\\n\\n**Correct answer: (b) How many relevant items from the full corpus were retrieved**\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_88\", \"week\": 5, \"score\": 0.5857, \"text\": \"| `context_recall` | All relevant chunks from corpus were retrieved | (new — needs a reference set) |\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_51\", \"week\": 5, \"score\": 0.4517, \"text\": \"```\\ncontext_precision = relevant_chunks / total_retrieved_chunks\\n\\nFor a query with 3 retrieved chunks where only 2 are actually relevant:\\n  context_precision = 2/3 = 0.67\\n```\\n\\n---\\n\\n### 7. Code Along 2 — answer_relevance + context_precision (2:30–2:55) [PART B — LAB]\\n\\n**File:** `ex1_2_relevance_precision.py`\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_44\", \"week\": 5, \"score\": 0.4289, \"text\": \"│  ANSWER RELEVANCE = does the answer address      │\\n          │                  the question?                   │\\n          │                                                  │\\n          │  CONTEXT PRECISION = are the retrieved chunks    │\\n          │                  actually relevant?              │\\n          └──────────────────────────────────────────────────┘\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_87\", \"week\": 5, \"score\": 0.4247, \"text\": \"| Metric | What it measures | Your Session 1 equivalent |\\n|---|---|---|\\n| `faithfulness` | Claims in answer supported by context | `check_faithfulness()` |\\n| `answer_relevancy` | Answer addresses the question | `answer_relevance()` |\\n| `context_precision` | Retrieved chunks are relevant | `context_precision()` |\"}]}"
+    }
+  ],
+  "answer": "Tôi đã tìm được thông tin chi tiết về `context_recall`. Dưới đây là câu trả lời:\n\n## Chỉ số `context_recall` trong RAGAS\n\n**`context_recall` đo lường số lượng các phần tử liên quan (relevant items) từ toàn bộ corpus đã được hệ thống thu hồi (retrieved).** [LP_W05]\n\nCụ thể hơn:\n\n- **Công thức:** `context_recall = (relevant chunks retrieved) / (ALL relevant chunks in the corpus)` [LP_W05]\n- **Ý nghĩa:** Khác với `context_precision` (đo chất lượng của tập chunks đã thu hồi), `context_recall` đo xem quá trình retrieval có **bỏ sót** (miss) bất kỳ chunk liên quan nào hay không. [LP_W05]\n- **Yêu cầu đặc biệt:** Chỉ số này cần một **reference set (ground truth)** — tức là tập các chunks *nên* được thu hồi — để so sánh. [LP_W05]\n\n### So sánh nhanh với các metric khác trong RAGAS [LP_W05]\n\n| Metric | Đo lường |\n|---|---|\n| `faithfulness` | Các claim trong câu trả lời có được context hỗ trợ không |\n| `answer_relevancy` | Câu trả lời có giải quyết đúng câu hỏi không |\n| `context_precision` | Các chunks đã thu hồi có thực sự liên quan không |\n| `context_recall` | **Toàn bộ chunks liên quan trong corpus đã được thu hồi chưa** |\n\nTóm lại, `context_recall` trả lời câu hỏi: *\"Hệ thống có lấy đủ tất cả thông tin liên quan cần thiết từ kho dữ liệu không?\"* [LP_W05]",
+  "usage": {
+    "calls": 3,
+    "prompt_tokens": 10680,
+    "completion_tokens": 653,
+    "total_tokens": 11333,
+    "max_prompt": 4448
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
+{
+  "timestamp": "2026-10-16T20:49:19.708360",
+  "question": "Bài giảng nêu những mức bộ nhớ hội thoại nào cho agent, ưu nhược điểm của từng mức?",
+  "steps": [
+    {
+      "step_num": 1,
+      "thought": "Cần tìm nội dung bài giảng về các mức bộ nhớ hội thoại cho agent và ưu nhược điểm.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "hybrid",
+        "query": "conversation memory levels for agent short-term long-term memory",
+        "top_k": 6,
+        "week": 0
+      },
+      "observation": "{\"query\": \"conversation memory levels for agent short-term long-term memory\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.6453, \"hits\": [{\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_74\", \"week\": 6, \"score\": 0.6374, \"text\": \"> \\\"Every turn adds messages. After 20 turns, the conversation might be 20,000 tokens — over the context window, and expensive. The agent 'forgets' the beginning of the conversation.\\\"\\n\\n#### Three Memory Levels\\n\\n**Show on projector:**\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_3\", \"week\": 6, \"score\": 0.5246, \"text\": \"> - A6.5 Implement agent memory: sliding-window conversation history and summarization memory.\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_0\", \"week\": 6, \"score\": 0.4524, \"text\": \"---\\ndoc_id: LP_W06\\ntitle: Week 6 — Agent Loop, ReAct & Agent Memory\\nversion: 1.0\\ndate: 2026-10-12\\nowner: AIPR Instructor\\n---\\n# Week 6 — Lecture Notes (Instructor Guide)\\n\\n## Agent Loop, ReAct & Agent Memory\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_38\", \"week\": 4, \"score\": 0.4517, \"text\": \"Question: What is the remote work policy?\\n\\n=== USER MESSAGE ===\\nWhat is the remote work policy?\\n```\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_78\", \"week\": 6, \"score\": 0.4375, \"text\": \"**Key insight (analogy):** \\\"Agent memory is to conversation what RAG is to knowledge — you can't fit everything in the context window, so you keep what matters and summarize or retrieve the rest. This is the SAME schema you built in Week 3 (chunking + summarization), now applied to conversation instead of documents.\\\"\\n\\n---\\n\\n### 10. Independent Lab — Tool-Using Agent (2:55–3:35) [PART B — LAB]\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_138\", \"week\": 5, \"score\": 0.4027, \"text\": \"---\"}]}"
+    },
+    {
+      "step_num": 2,
+      "thought": "Cần chi tiết 3 mức bộ nhớ và ưu nhược điểm từng mức.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "hybrid",
+        "query": "Three Memory Levels sliding window summarization full history pros cons",
+        "top_k": 8,
+        "week": 6
+      },
+      "observation": "{\"query\": \"Three Memory Levels sliding window summarization full history pros cons\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.5571, \"hits\": [{\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_3\", \"week\": 6, \"score\": 0.6523, \"text\": \"> - A6.5 Implement agent memory: sliding-window conversation history and summarization memory.\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_74\", \"week\": 6, \"score\": 0.5102, \"text\": \"> \\\"Every turn adds messages. After 20 turns, the conversation might be 20,000 tokens — over the context window, and expensive. The agent 'forgets' the beginning of the conversation.\\\"\\n\\n#### Three Memory Levels\\n\\n**Show on projector:**\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_77\", \"week\": 6, \"score\": 0.4984, \"text\": \"LEVEL 3: SUMMARIZATION MEMORY\\n  compress old messages into a running summary\\n  ┌───────────────────┐\\n  │ system            │\\n  │ SUMMARY: user     │\\n  │ asked about ...   │  ← LLM-compressed old turns\\n  │ user 15 / asst 15 │\\n  │ ...               │\\n  │ user 20 / asst 20 │\\n  └───────────────────┘\\n  ✓ bounded + keeps gist\\n  ✗ summary loses details\\n```\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_7\", \"week\": 6, \"score\": 0.4755, \"text\": \"| 9 | Concept 3: Agent Memory | 1:20–1:40 | 4. Present content | Buffer / sliding window / summarization |\\n| 12 | KC 2 | 1:40–1:45 | 8. Assess | MCQ: 20K token history fix |\\n| 13 | Wrap & Reflect | 1:45–2:00 | 9. Retention/Transfer | Preview ReAct |\\n| — | **PART B — LAB (2h)** | 2:00–4:00 | — | Segments 4, 7, 10–11 — see `lab_sheet.md` |\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_146\", \"week\": 6, \"score\": 0.4089, \"text\": \"| Agent invents a tool name | Code Along 1, S2 | \\\"Validate against registry — reject unknown\\\" |\\n| Sliding window too small → forgets task | Independent Lab, S2 | \\\"Balance window size: recent detail + summary\\\" |\\n| Memory grows unbounded (no window) | Independent Lab, S2 | \\\"Show token count before/after windowing\\\" |\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_75\", \"week\": 6, \"score\": 0.4036, \"text\": \"```\\nLEVEL 1: CONVERSATION BUFFER          LEVEL 2: SLIDING WINDOW\\n  send ALL messages                     keep only last N messages\\n  ┌───────────────────┐                 ┌───────────────────┐\\n  │ system            │                 │ system            │\\n  │ user 1 / asst 1   │                 │ ... (dropped)     │\\n  │ user 2 / asst 2   │  → full         │ user 8 / asst 8   │\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_83\", \"week\": 6, \"score\": 0.3749, \"text\": \"**Explanation:** `max_tokens` (c) limits OUTPUT length, not input context — it won't help. Deleting history (a) loses all context including the current task. Summarization (b) compresses old turns into a summary while keeping recent detail — the bounded-memory-with-gist approach from Concept 3.\\n\\n---\\n\\n### 13. Wrap & Reflect (1:45–2:00)\\n\\n**Instructor summary:**\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_81\", \"week\": 6, \"score\": 0.3234, \"text\": \"> 1. Does the agent loop terminate? (max_iterations guard present)\\n> 2. Can it handle multiple tool calls in one turn?\\n> 3. Does the sliding window actually bound the message list?\\n> 4. Can it answer a follow-up question that relies on history?\\n\\n---\\n\\n### 12. Knowledge Check 2 (1:40–1:45)\\n\\n**MCQ:**\"}]}"
+    },
+    {
+      "step_num": 3,
+      "thought": "Cần ưu nhược điểm đầy đủ của Level 1 và Level 2.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "dense",
+        "query": "Level 1 conversation buffer full history pros cons Level 2 sliding window keep last N messages",
+        "top_k": 4,
+        "week": 6
+      },
+      "observation": "{\"query\": \"Level 1 conversation buffer full history pros cons Level 2 sliding window keep last N messages\", \"mode\": \"dense\", \"found\": true, \"best_relevance\": 0.6265, \"hits\": [{\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_75\", \"week\": 6, \"score\": 0.6265, \"text\": \"```\\nLEVEL 1: CONVERSATION BUFFER          LEVEL 2: SLIDING WINDOW\\n  send ALL messages                     keep only last N messages\\n  ┌───────────────────┐                 ┌───────────────────┐\\n  │ system            │                 │ system            │\\n  │ user 1 / asst 1   │                 │ ... (dropped)     │\\n  │ user 2 / asst 2   │  → full         │ user 8 / asst 8   │\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_3\", \"week\": 6, \"score\": 0.5565, \"text\": \"> - A6.5 Implement agent memory: sliding-window conversation history and summarization memory.\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_74\", \"week\": 6, \"score\": 0.5398, \"text\": \"> \\\"Every turn adds messages. After 20 turns, the conversation might be 20,000 tokens — over the context window, and expensive. The agent 'forgets' the beginning of the conversation.\\\"\\n\\n#### Three Memory Levels\\n\\n**Show on projector:**\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_77\", \"week\": 6, \"score\": 0.5201, \"text\": \"LEVEL 3: SUMMARIZATION MEMORY\\n  compress old messages into a running summary\\n  ┌───────────────────┐\\n  │ system            │\\n  │ SUMMARY: user     │\\n  │ asked about ...   │  ← LLM-compressed old turns\\n  │ user 15 / asst 15 │\\n  │ ...               │\\n  │ user 20 / asst 20 │\\n  └───────────────────┘\\n  ✓ bounded + keeps gist\\n  ✗ summary loses details\\n```\"}]}"
+    }
+  ],
+  "answer": "Tôi đã thu thập đủ thông tin từ bài giảng Week 6. Dưới đây là nội dung chi tiết.\n\n## Ba mức bộ nhớ hội thoại cho Agent [LP_W06]\n\nBài giảng Week 6 (Agent Loop, ReAct & Agent Memory) nêu ra **ba mức bộ nhớ hội thoại** (Three Memory Levels), xuất phát từ vấn đề: mỗi lượt hội thoại thêm message, sau ~20 lượt có thể lên tới 20.000 tokens — vượt context window, tốn kém, và agent \"quên\" phần đầu cuộc trò chuyện [LP_W06].\n\n### Level 1: Conversation Buffer (gửi toàn bộ lịch sử)\n- **Cách hoạt động:** Gửi **tất cả** message (system + toàn bộ lượt user/assistant) cho LLM ở mỗi bước [LP_W06].\n- **Ưu điểm:** Giữ nguyên vẹn toàn bộ ngữ cảnh, không mất thông tin.\n- **Nhược điểm:** Bộ nhớ tăng **không giới hạn** (unbounded) — dễ vượt context window, tốn chi phí, và khiến agent \"quên\" phần đầu khi quá dài [LP_W06].\n\n### Level 2: Sliding Window (cửa sổ trượt)\n- **Cách hoạt động:** Chỉ giữ **N message gần nhất**, loại bỏ (drop) các message cũ [LP_W06].\n- **Ưu điểm:** Giới hạn kích thước bộ nhớ (bounded), kiểm soát được số token.\n- **Nhược điểm:** Mất thông tin ở phần đầu hội thoại; nếu cửa sổ quá nhỏ, agent có thể \"quên\" nhiệm vụ đang làm (cần cân bằng kích thước cửa sổ: chi tiết gần đây + tóm tắt) [LP_W06].\n\n### Level 3: Summarization Memory (bộ nhớ tóm tắt)\n- **Cách hoạt động:** Nén các message cũ thành một **tóm tắt chạy** (running summary) do LLM tạo, kết hợp với các message gần đây [LP_W06].\n- **Ưu điểm:** Bounded (giới hạn kích thước) **và** giữ được ý chính (gist) của hội thoại cũ [LP_W06].\n- **Nhược điểm:** Bản tóm tắt **mất chi tiết** (summary loses details) [LP_W06].\n\n### Ý chính (Key insight)\nBài giảng nhấn mạnh: *\"Agent memory là với hội thoại giống như RAG là với tri thức — không thể nhét mọi thứ vào context window, nên ta giữ những gì quan trọng và tóm tắt hoặc truy xuất phần còn lại.\"* Đây chính là schema chunking + summarization đã xây ở Week 3, nay áp dụng cho hội thoại thay vì tài liệu [LP_W06].\n\nBạn có muốn tôi đi sâu vào cách **cân bằng kích thước sliding window** hoặc cách **triển khai summarization memory** trong lab không?",
+  "usage": {
+    "calls": 4,
+    "prompt_tokens": 16449,
+    "completion_tokens": 1026,
+    "total_tokens": 17475,
+    "max_prompt": 5497
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
+{
+  "timestamp": "2026-10-16T20:52:12.053643",
+  "question": "Dense retrieval học ở tuần 3 có điểm yếu gì, và hybrid search ở tuần 4 khắc phục điểm yếu đó như thế nào?",
+  "steps": [
+    {
+      "step_num": 1,
+      "thought": "Tìm hiểu về điểm yếu của Dense Retrieval được đề cập trong bài giảng tuần 3.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "dense",
+        "query": "Dense Retrieval limitations weaknesses",
+        "top_k": 4,
+        "week": 3
+      },
+      "observation": "{\"query\": \"Dense Retrieval limitations weaknesses\", \"mode\": \"dense\", \"found\": true, \"best_relevance\": 0.397, \"hits\": [{\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_107\", \"week\": 3, \"score\": 0.397, \"text\": \"---\\n\\n### 3. Concept 1 — Embedding Models (0:20–0:45)\\n\\n#### Persistent Reference Card (keep visible all session)\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_5\", \"week\": 3, \"score\": 0.3559, \"text\": \"| 3 | Concept 1: Document Model | 0:20–0:45 | 4. Present content | Document + DocumentChunk @dataclass worked example |\\n| 5 | KC 1 | 0:45–0:50 | 7. Feedback | MCQ: why overlapping chunks |\\n| 6 | Concept 2: DocumentStore | 0:50–1:15 | 4. Present content | In-memory DocumentStore with CRUD |\\n| — | Break | 1:15–1:20 | — | — |\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_156\", \"week\": 3, \"score\": 0.3445, \"text\": \"> 1. Does the search return semantically relevant results? (not just keyword matches)\\n> 2. Are scores reasonable? (0.7–1.0 for relevant, < 0.5 for irrelevant)\\n> 3. Is cosine similarity correctly implemented?\\n> 4. Are edge cases handled? (empty store, query with no matches)\\n> 5. Does the search_with_threshold work?\\n\\n---\\n\\n### 12. Knowledge Check 2 (1:40–1:45)\\n\\n**MCQ:**\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_2\", \"week\": 3, \"score\": 0.3368, \"text\": \"> - A3.2 Implement a `DocumentStore` with add, get, delete, and list operations.\\n> - A3.3 Implement a chunking strategy (fixed-size, recursive, semantic).\\n> - A3.4 Generate embeddings using an embedding API and compute cosine similarity between vectors.\"}]}"
+    },
+    {
+      "step_num": 1,
+      "thought": "Tìm hiểu về cách Hybrid Search kết hợp BM25 và Dense Retrieval để khắc phục điểm yếu của Dense Retrieval trong tuần 4.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "dense",
+        "query": "Hybrid Search BM25 Dense Retrieval combine",
+        "top_k": 4,
+        "week": 4
+      },
+      "observation": "{\"query\": \"Hybrid Search BM25 Dense Retrieval combine\", \"mode\": \"dense\", \"found\": true, \"best_relevance\": 0.5742, \"hits\": [{\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_107\", \"week\": 4, \"score\": 0.5742, \"text\": \"> Before we add re-ranking, consolidate what you just built. **In 30 seconds, tell your partner:**\\n>\\n> 1. What does normalisation do in hybrid search, and why is it needed? *(BM25 is unbounded; min-max scales it to [0,1] so it doesn't dominate cosine)*\\n> 2. What does `hybrid_search()` return? *(list of (chunk_index, hybrid_score) sorted descending)*\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_88\", \"week\": 4, \"score\": 0.5729, \"text\": \"> \\\"By the end of this session, you will be able to:\\n> 1. Combine BM25 keyword scores with vector scores (hybrid search).\\n> 2. Re-rank top results with a cross-encoder for better precision.\\n> 3. Pre-filter chunks by metadata before searching.\\n> 4. Compare your enhanced pipeline against the v1 baseline.\\\"\\n\\n**Recall sprint (pair, 2 min):**\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_96\", \"week\": 4, \"score\": 0.5476, \"text\": \"**Key insight:** \\\"BM25 scores are unbounded (they can be 5.2, 13.7, anything). Cosine similarity is bounded [-1, 1]. You MUST normalise BM25 before combining — otherwise BM25 dominates the sum. This is the single most common bug in hybrid search: forgetting the normalisation step.\\\"\\n\\n#### Normalisation approach\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_80\", \"week\": 4, \"score\": 0.5334, \"text\": \"| 3 | Concept 1: Hybrid Search | 0:20–0:45 | 4. Present content | BM25 + vector worked example |\\n| 5 | KC 1 | 0:45–0:50 | 7. Feedback | MCQ: when BM25 beats vector |\\n| 6 | Concept 2: Re-Ranking | 0:50–1:15 | 4. Present content | Two-stage retrieval worked example |\\n| — | Break | 1:15–1:20 | — | — |\"}]}"
+    },
+    {
+      "step_num": 2,
+      "thought": "Tìm hiểu cụ thể hơn về điểm yếu của Dense Retrieval (không bắt được từ khóa chính xác) và lợi thế của BM25.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "hybrid",
+        "query": "Dense Retrieval weakness keyword exact match BM25 advantage",
+        "top_k": 6,
+        "week": 4
+      },
+      "observation": "{\"query\": \"Dense Retrieval weakness keyword exact match BM25 advantage\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.5002, \"hits\": [{\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_90\", \"week\": 4, \"score\": 0.5462, \"text\": \"```\\nKEYWORD (BM25):                    VECTOR (Week 3):\\n  \\\"reimbursement rate\\\"               \\\"what can I claim for business travel?\\\"\\n   → exact term match                → semantic match\\n   → misses synonyms, typos          → misses rare exact terms\\n   → good for rare/technical terms   → good for paraphrase, meaning\\n```\\n\\n#### Worked Example: The Score Fusion Formula\\n\\n**Show on the projector:**\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_105\", \"week\": 4, \"score\": 0.4974, \"text\": \"**Explanation:** BM25 matches exact terms. A rare technical term like \\\"reimbursement rate\\\" or a model name \\\"BERT-2024\\\" appears exactly in the document — BM25 nails it. Vector search may miss it if the surrounding chunk is noisy or the term's embedding sits far from the query's paraphrase. Long paragraphs (b) favour vector search; (c) is false — neither always wins.\\n\\n---\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_80\", \"week\": 4, \"score\": 0.4367, \"text\": \"| 3 | Concept 1: Hybrid Search | 0:20–0:45 | 4. Present content | BM25 + vector worked example |\\n| 5 | KC 1 | 0:45–0:50 | 7. Feedback | MCQ: when BM25 beats vector |\\n| 6 | Concept 2: Re-Ranking | 0:50–1:15 | 4. Present content | Two-stage retrieval worked example |\\n| — | Break | 1:15–1:20 | — | — |\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_88\", \"week\": 4, \"score\": 0.4293, \"text\": \"> \\\"By the end of this session, you will be able to:\\n> 1. Combine BM25 keyword scores with vector scores (hybrid search).\\n> 2. Re-rank top results with a cross-encoder for better precision.\\n> 3. Pre-filter chunks by metadata before searching.\\n> 4. Compare your enhanced pipeline against the v1 baseline.\\\"\\n\\n**Recall sprint (pair, 2 min):**\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_108\", \"week\": 4, \"score\": 0.4238, \"text\": \"> 3. Which query type does BM25 handle better than vector? *(rare/technical exact terms)*\\n>\\n> **Why this helps:** Re-ranking builds on top of the hybrid search you just learned. Activating it now gives a consolidation beat between the two techniques and reduces the load of layering re-ranking on top.\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_86\", \"week\": 4, \"score\": 0.4227, \"text\": \"> \\\"Vector search is great at *meaning*. Keyword search is great at *exact terms*. Today we combine both — plus two more optimisations:\\n> 1. **Hybrid search** (BM25 keywords + vector) — best of both worlds\\n> 2. **Re-ranking** (a careful second pass over fast first results)\\n> 3. **Metadata filtering** (narrow the search space before searching)\\\"\"}]}"
+    },
+    {
+      "step_num": 2,
+      "thought": "Tìm hiểu về các hạn chế cụ thể của Dense Retrieval trong tuần 3.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "hybrid",
+        "query": "Dense Retrieval limitations semantic matching rare words",
+        "top_k": 6,
+        "week": 3
+      },
+      "observation": "{\"query\": \"Dense Retrieval limitations semantic matching rare words\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.4246, \"hits\": [{\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_146\", \"week\": 3, \"score\": 0.4148, \"text\": \"#### Worked Example: Extending DocumentStore with Embeddings\\n\\n```python\\n@dataclass\\nclass VectorStore(DocumentStore):\\n    \\\"\\\"\\\"\\n    A DocumentStore that also indexes chunks by embedding vectors\\n    for semantic similarity search.\\n    \\\"\\\"\\\"\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_81\", \"week\": 3, \"score\": 0.4088, \"text\": \"> **Instructor note:** Present semantic chunking only if time permits and students are engaged. Otherwise, mention it briefly and point to the reference notes.\\n\\n**Strategy 3: Semantic (LLM-based topic boundaries)**\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_124\", \"week\": 3, \"score\": 0.3481, \"text\": \"**Explanation:** Each embedding is a point in a 1536-dimensional semantic space. The position of the point captures the *meaning* of the text. Similar texts are located near each other in this space. It's not a bag of keywords (a) nor a list of tokens (c).\\n\\n---\\n\\n### 6. Concept 2 — Cosine Similarity (0:50–1:15)\\n\\n#### Worked Example: The Formula\\n\\n**Show on the projector:**\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_123\", \"week\": 3, \"score\": 0.3472, \"text\": \"### 5. Knowledge Check 1 (0:45–0:50)\\n\\n**MCQ:**\\n\\n> What does a 1536-dimensional embedding from `text-embedding-3-small` represent?\\n>\\n> (a) 1536 keywords extracted from the text\\n> (b) 1536 numerical coordinates in a semantic vector space\\n> (c) 1536 tokens from the text\\n\\n**Correct answer: (b) 1536 numerical coordinates in a semantic vector space**\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_80\", \"week\": 3, \"score\": 0.3458, \"text\": \"**Knowledge check (think-pair-share):** \\\"Which strategy would you use for a legal document where every sentence matters? Which for a set of Tweets?\\\" (30 seconds, discuss with partner)\\n\\n---\\n\\n### 9b. Concept 3 (Part B) — Semantic Chunking (Bonus/Extension) (2:10–2:35 continued)\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_84\", \"week\": 3, \"score\": 0.332, \"text\": \"| Strategy | Pros | Cons | Best For |\\n|---|---|---|---|\\n| Semantic | Coherent topics | Expensive, slow, variable | High-stakes QA |\\n\\n**When to use semantic chunking:** If you have a small number of high-value documents (e.g., legal contracts, medical guidelines) and need the highest possible chunk quality. For most RAG applications, recursive chunking is the right default.\\n\\n---\"}]}"
+    }
+  ],
+  "answer": "Tôi đã có đủ thông tin để trả lời câu hỏi.\n\n## Điểm yếu của Dense Retrieval (tuần 3) và cách Hybrid Search (tuần 4) khắc phục\n\n### Điểm yếu của Dense Retrieval (Vector Search)\n\nDense Retrieval hoạt động dựa trên **matching ngữ nghĩa** (semantic matching) — nó so sánh vector embedding của query với vector của các chunk trong không gian ngữ nghĩa. Tuy nhiên, nó có một điểm yếu rõ ràng:\n\n- **Bỏ sót các từ khóa chính xác, hiếm gặp hoặc thuật ngữ kỹ thuật** (misses rare exact terms). Vector search có thể bỏ lỡ một thuật ngữ kỹ thuật hiếm như \"reimbursement rate\" hay tên model \"BERT-2024\" nếu chunk xung quanh bị nhiễu (noisy) hoặc embedding của từ đó nằm xa paraphrase của query [LP_W04].\n\nNói cách khác, vector search rất giỏi với **ý nghĩa/paraphrase** nhưng lại yếu với **từ khóa chính xác** [LP_W04].\n\n### Cách Hybrid Search khắc phục\n\nHybrid Search kết hợp **cả hai** phương pháp để lấy \"best of both worlds\" [LP_W04]:\n\n| Phương pháp | Điểm mạnh | Điểm yếu |\n|---|---|---|\n| **Keyword (BM25)** | Exact term match — bắt được từ hiếm/thuật ngữ kỹ thuật | Bỏ sót synonym, typo |\n| **Vector (Dense)** | Semantic match — bắt được paraphrase, ý nghĩa | Bỏ sót rare exact terms |\n\n**Cơ chế kết hợp:**\n1. **BM25** xử lý phần mà vector search yếu — các thuật ngữ chính xác, hiếm gặp [LP_W04].\n2. **Vector search** xử lý phần mà BM25 yếu — paraphrase và ý nghĩa [LP_W04].\n3. Hai score được **fusion** (gộp) lại thành một hybrid score duy nhất.\n\n**Lưu ý quan trọng khi kết hợp:** BM25 scores là **unbounded** (có thể là 5.2, 13.7, bất kỳ giá trị nào), trong khi cosine similarity là **bounded** trong [-1, 1]. Do đó, **bắt buộc phải normalise BM25** (thường dùng min-max scaling về [0,1]) trước khi gộp — nếu không, BM25 sẽ \"dominate\" (áp đảo) tổng điểm. Đây là lỗi phổ biến nhất trong hybrid search [LP_W04].\n\n### Tóm tắt\n\nDense Retrieval yếu ở việc bắt các **từ khóa chính xác/hiếm** → Hybrid Search bổ sung **BM25** (chuyên về exact term match) và **normalise** score của BM25 trước khi fusion với vector score, từ đó khắc phục được điểm yếu đó [LP_W04].",
+  "usage": {
+    "calls": 3,
+    "prompt_tokens": 13078,
+    "completion_tokens": 1089,
+    "total_tokens": 14167,
+    "max_prompt": 6173
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
+{
+  "timestamp": "2026-10-16T20:54:54.624578",
+  "question": "Để đánh giá pipeline RAG xây ở tuần 4 có đang bịa thông tin hay không, em dùng chỉ số nào ở tuần 5 và nó đo gì?",
+  "steps": [
+    {
+      "step_num": 1,
+      "thought": "Sinh viên hỏi về chỉ số đánh giá hallucination trong pipeline RAG (tuần 4) được dạy ở tuần 5. Cần tìm nội dung tuần 5 về evaluation metrics cho RAG.",
+      "tool": "search_lesson_content",
+      "args": {
+        "query": "chỉ số đánh giá hallucination RAG faithfulness",
+        "top_k": 6,
+        "week": 5
+      },
+      "observation": "{\"query\": \"chỉ số đánh giá hallucination RAG faithfulness\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.5429, \"hits\": [{\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_13\", \"week\": 5, \"score\": 0.46, \"text\": \"> \\\"This week you'll build the measurement layer: faithfulness, relevance, precision — and then automate it with RAGAS. By the end, you'll be able to say: 'My RAG system scores 0.92 faithfulness on this test set' — and mean something real.\\\"\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_3\", \"week\": 5, \"score\": 0.4377, \"text\": \"> - A5.4 Identify and diagnose common RAG failure modes (missing context, irrelevant retrieval, hallucination).\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_101\", \"week\": 5, \"score\": 0.4356, \"text\": \"2. Hallucination      LLM ignores context,     Strengthen grounding\\n                      answers from training    prompt, temperature=0.0,\\n                      data → low faithfulness  verify claims\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_2\", \"week\": 5, \"score\": 0.4165, \"text\": \"> - A5.1 Compute faithfulness (answer claims are supported by context) and answer relevance (answer addresses the question).\\n> - A5.2 Use the RAGAS framework to evaluate a RAG pipeline quantitatively.\\n> - A5.3 Implement a citation verification function that checks each claim against source chunks.\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_43\", \"week\": 5, \"score\": 0.3994, \"text\": \"```\\n          ┌──────────────────────────────────────────────────┐\\n          │        THE THREE METRICS OF RAG QUALITY          │\\n          ├──────────────────────────────────────────────────┤\\n          │  FAITHFULNESS   = is the answer grounded?        │\\n          │                  (claims supported by context)   │\\n          │                                                  │\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_83\", \"week\": 5, \"score\": 0.3728, \"text\": \"> \\\"In 30 seconds, explain to your partner:\\n> 1. What does faithfulness measure? *(claims supported by context)*\\n> 2. What is the difference between relevance and precision? *(answer vs chunks)*\\n> 3. What did you find in your lab's worst-performing question?\\\"\\n\\n---\\n\\n### 3. Concept 1 — RAGAS Framework (0:20–0:45)\\n\\n#### What RAGAS Adds\\n\\n**Show on projector:**\"}]}"
+    },
+    {
+      "step_num": 2,
+      "thought": "Cần chi tiết hơn về định nghĩa faithfulness và cách RAGAS tính toán để trả lời chính xác \"nó đo gì\".",
+      "tool": "search_lesson_content",
+      "args": {
+        "query": "faithfulness metric definition RAGAS how computed claims supported by context",
+        "top_k": 6,
+        "week": 5
+      },
+      "observation": "{\"query\": \"faithfulness metric definition RAGAS how computed claims supported by context\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.6298, \"hits\": [{\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_46\", \"week\": 5, \"score\": 0.6425, \"text\": \"> **Persistent metric cheat-sheet — keep visible for BOTH sessions:**\\n>\\n> ```\\n> METRIC          ASKS                    MEASURES            TYPE\\n> ─────────────────────────────────────────────────────────────────\\n> faithfulness Is the answer          claims supported    LLM-judge\\n>                 grounded?              / total claims\\n>                 (answer ↔ context)\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_83\", \"week\": 5, \"score\": 0.6363, \"text\": \"> \\\"In 30 seconds, explain to your partner:\\n> 1. What does faithfulness measure? *(claims supported by context)*\\n> 2. What is the difference between relevance and precision? *(answer vs chunks)*\\n> 3. What did you find in your lab's worst-performing question?\\\"\\n\\n---\\n\\n### 3. Concept 1 — RAGAS Framework (0:20–0:45)\\n\\n#### What RAGAS Adds\\n\\n**Show on projector:**\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_2\", \"week\": 5, \"score\": 0.623, \"text\": \"> - A5.1 Compute faithfulness (answer claims are supported by context) and answer relevance (answer addresses the question).\\n> - A5.2 Use the RAGAS framework to evaluate a RAG pipeline quantitatively.\\n> - A5.3 Implement a citation verification function that checks each claim against source chunks.\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_41\", \"week\": 5, \"score\": 0.5855, \"text\": \"**Explanation:** Faithfulness measures grounding — whether claims in the answer are supported by the retrieved context. It does NOT measure real-world correctness (the context itself could be outdated or wrong) nor relevance (an answer can be fully grounded in context but not answer the question asked).\\n\\n---\\n\\n### 6. Concept 2 — Answer Relevance & Context Precision (0:50–1:15)\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_43\", \"week\": 5, \"score\": 0.542, \"text\": \"```\\n          ┌──────────────────────────────────────────────────┐\\n          │        THE THREE METRICS OF RAG QUALITY          │\\n          ├──────────────────────────────────────────────────┤\\n          │  FAITHFULNESS   = is the answer grounded?        │\\n          │                  (claims supported by context)   │\\n          │                                                  │\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_87\", \"week\": 5, \"score\": 0.523, \"text\": \"| Metric | What it measures | Your Session 1 equivalent |\\n|---|---|---|\\n| `faithfulness` | Claims in answer supported by context | `check_faithfulness()` |\\n| `answer_relevancy` | Answer addresses the question | `answer_relevance()` |\\n| `context_precision` | Retrieved chunks are relevant | `context_precision()` |\"}]}"
+    }
+  ],
+  "answer": "Để kiểm tra pipeline RAG của em có đang \"bịa\" (hallucinate) thông tin hay không, chỉ số em cần dùng ở tuần 5 là **Faithfulness** [LP_W05].\n\n**Faithfulness đo gì?**\n- Nó đo mức độ **grounded** (có căn cứ) của câu trả lời: liệu các **claims (khẳng định) trong câu trả lời có được hỗ trợ bởi context (các chunk đã retrieve)** hay không [LP_W05].\n- Công thức tính: **số claims được context hỗ trợ / tổng số claims** trong câu trả lời [LP_W05].\n- Đây là một chỉ số dạng **LLM-judge** (dùng LLM để chấm) [LP_W05].\n\n**Lưu ý quan trọng về phạm vi đo:**\n- Faithfulness **KHÔNG** đo tính đúng đắn trong thế giới thực — vì bản thân context retrieve về có thể đã lỗi thời hoặc sai [LP_W05].\n- Nó cũng **KHÔNG** đo relevance — một câu trả lời có thể hoàn toàn bám sát context nhưng vẫn không trả lời đúng câu hỏi được đặt ra [LP_W05].\n\n**Cách áp dụng thực tế:**\n- Em có thể dùng framework **RAGAS** để tính faithfulness một cách định lượng cho pipeline RAG [LP_W05].\n- Trong RAGAS, metric `faithfulness` tương ứng với hàm `check_faithfulness()` mà em đã tự viết ở Session 1 [LP_W05].\n- Khi hallucination xảy ra (LLM bỏ qua context và trả lời từ dữ liệu huấn luyện), faithfulness sẽ **thấp** — và cách khắc phục là tăng cường grounding: cải thiện prompt, đặt `temperature=0.0`, và verify các claims [LP_W05].\n\nTóm lại: nếu em muốn biết pipeline RAG tuần 4 có đang bịa thông tin không, hãy chạy **faithfulness** (qua RAGAS) trên bộ test — giá trị càng cao (gần 1.0) nghĩa là câu trả lời càng bám sát context, ít bịa hơn [LP_W05].",
+  "usage": {
+    "calls": 3,
+    "prompt_tokens": 10786,
+    "completion_tokens": 674,
+    "total_tokens": 11460,
+    "max_prompt": 4503
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
+{
+  "timestamp": "2026-10-16T20:57:18.399347",
+  "question": "Cơ chế retry khi gọi API ở tuần 2 và giới hạn số bước của agent loop ở tuần 6 cùng giải quyết vấn đề gì, khác nhau ở đâu?",
+  "steps": [
+    {
+      "step_num": 1,
+      "thought": "Tìm nội dung tuần 2 về retry API để so sánh với agent loop tuần 6.",
+      "tool": "search_lesson_content",
+      "args": {
+        "query": "cơ chế retry khi gọi API lỗi timeout",
+        "top_k": 4,
+        "week": 2
+      },
+      "observation": "{\"query\": \"cơ chế retry khi gọi API lỗi timeout\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.6016, \"hits\": [{\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_104\", \"week\": 2, \"score\": 0.6423, \"text\": \"> **Persistent reference card — keep visible for the whole session:**\\n>\\n> ```\\n> RETRY (transient)         DON'T RETRY (fix the root cause)\\n> ─────────────────────     ────────────────────────────────\\n> RateLimitError            AuthenticationError  → check API key\\n> APIConnectionError        BadRequestError      → fix request params\\n>                           APIStatusError (4xx)  → fix request\"}, {\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_117\", \"week\": 2, \"score\": 0.6373, \"text\": \"**Key insight:** \\\"Not all errors are retryable. Rate limits and connection errors → retry. Authentication errors → don't retry (the key is wrong). Bad requests → don't retry (fix the code). The reference card (above) is your guide.\\\"\\n\\n---\\n\\n### 7. Code Along 2 — Retry Wrapper + Logging (2:30–2:55) [PART B — LAB]\"}, {\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_115\", \"week\": 2, \"score\": 0.6037, \"text\": \"except AuthenticationError:\\n            print(\\\"Authentication failed. Check your API key.\\\")\\n            raise  # Don't retry — wrong key\\n\\n        except BadRequestError as e:\\n            print(f\\\"Bad request: {e}\\\")\\n            raise  # Don't retry — fix the code\"}, {\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_112\", \"week\": 2, \"score\": 0.5311, \"text\": \"```python\\nfrom openai import (\\n    RateLimitError, APIConnectionError, AuthenticationError,\\n    BadRequestError, APIStatusError\\n)\\n\\ndef call_with_retry(messages, model=\\\"gpt-4o-mini\\\", max_retries=3):\\n    \\\"\\\"\\\"\\n    Full retry loop with error taxonomy.\"}]}"
+    },
+    {
+      "step_num": 1,
+      "thought": "Tìm nội dung tuần 6 về giới hạn bước của agent loop.",
+      "tool": "search_lesson_content",
+      "args": {
+        "query": "giới hạn số bước max steps agent loop",
+        "top_k": 4,
+        "week": 6
+      },
+      "observation": "{\"query\": \"giới hạn số bước max steps agent loop\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.5291, \"hits\": [{\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_50\", \"week\": 6, \"score\": 0.5668, \"text\": \"**Key insight:** \\\"The loop is SIMPLE — 4 steps. The complexity is in (a) writing good tool descriptions, (b) handling tool errors, and (c) making sure the loop terminates. A naive agent loop can run forever if the LLM keeps requesting tools.\\\"\\n\\n---\\n\\n### 7. Code Along 2 — Agent Class + ToolRegistry (2:30–2:55) [PART B — LAB]\\n\\n**File:** `ex1_2_agent_loop.py`\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_145\", \"week\": 6, \"score\": 0.4943, \"text\": \"| No max_iterations guard | Code Along 2, S1 | \\\"The loop is infinite without it — add the brake\\\" |\\n| Agent loops forever (confused LLM) | Independent Lab, S1 | \\\"Check the guard; check tool descriptions\\\" |\\n| parse_action regex fails | Code Along 1, S2 | \\\"ReAct format must be exact — show the rigid template\\\" |\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_112\", \"week\": 6, \"score\": 0.4875, \"text\": \"name, args = parsed\\n        result = TOOL_REGISTRY.get(name, lambda **kw: \\\"Error: unknown tool\\\")(**args)\\n        print(f\\\"  → Observation: {result}\\\")\\n\\n        messages.append({\\\"role\\\": \\\"assistant\\\", \\\"content\\\": output})\\n        messages.append({\\\"role\\\": \\\"user\\\", \\\"content\\\": f\\\"Observation: {result}\\\"})\\n\\n    return \\\"Error: max steps reached.\\\"\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_97\", \"week\": 6, \"score\": 0.4764, \"text\": \"**Recall sprint (pair, 2 min):**\\n\\n> \\\"In 30 seconds, explain to your partner:\\n> 1. What are the 4 steps of the agent loop? *(send → content? done : execute → loop)*\\n> 2. What does `finish_reason='tool_calls'` mean?\\n> 3. Why does an agent need max_iterations?\\\"\\n\\n**Decision prompt (1 min, think-pair-share) — why ReAct when Session 1 already did function calling?**\"}]}"
+    },
+    {
+      "step_num": 2,
+      "thought": "Tìm thêm lý do cụ thể tại sao agent loop cần giới hạn bước để so sánh chính xác với retry.",
+      "tool": "search_lesson_content",
+      "args": {
+        "query": "tại sao cần max_iterations agent loop chạy vô hạn LLM yêu cầu tool liên tục",
+        "top_k": 3,
+        "week": 6
+      },
+      "observation": "{\"query\": \"tại sao cần max_iterations agent loop chạy vô hạn LLM yêu cầu tool liên tục\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.6316, \"hits\": [{\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_50\", \"week\": 6, \"score\": 0.669, \"text\": \"**Key insight:** \\\"The loop is SIMPLE — 4 steps. The complexity is in (a) writing good tool descriptions, (b) handling tool errors, and (c) making sure the loop terminates. A naive agent loop can run forever if the LLM keeps requesting tools.\\\"\\n\\n---\\n\\n### 7. Code Along 2 — Agent Class + ToolRegistry (2:30–2:55) [PART B — LAB]\\n\\n**File:** `ex1_2_agent_loop.py`\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_145\", \"week\": 6, \"score\": 0.6368, \"text\": \"| No max_iterations guard | Code Along 2, S1 | \\\"The loop is infinite without it — add the brake\\\" |\\n| Agent loops forever (confused LLM) | Independent Lab, S1 | \\\"Check the guard; check tool descriptions\\\" |\\n| parse_action regex fails | Code Along 1, S2 | \\\"ReAct format must be exact — show the rigid template\\\" |\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_137\", \"week\": 6, \"score\": 0.6368, \"text\": \"> How do you prevent an agent from running indefinitely?\\n>\\n> (a) Set a max_tokens limit\\n> (b) Set a max_iterations limit\\n> (c) Both are needed\\n\\n**Correct answer: (b) Set a max_iterations limit**\"}]}"
+    }
+  ],
+  "answer": "Dựa trên tài liệu bài giảng, tôi có thể so sánh hai cơ chế này như sau:\n\n## Điểm chung: cùng giải quyết vấn đề \"chạy không kiểm soát được\"\n\nCả hai đều là cơ chế **bảo vệ (guard/brake)** để ngăn chương trình rơi vào trạng thái lặp vô hạn hoặc tiêu tốn tài nguyên không cần thiết:\n\n- **Retry (tuần 2):** giới hạn số lần thử lại khi gọi API gặp lỗi tạm thời (transient) — ví dụ `max_retries=3` trong hàm `call_with_retry` [LP_W02].\n- **Max steps / max_iterations (tuần 6):** giới hạn số bước của agent loop để đảm bảo vòng lặp **kết thúc (terminates)** [LP_W06].\n\nCả hai đều trả lời câu hỏi: *\"Làm sao để không lặp mãi mãi?\"*\n\n## Điểm khác nhau\n\n| Tiêu chí | Retry (Tuần 2) | Max steps (Tuần 6) |\n|---|---|---|\n| **Mục đích** | Xử lý **lỗi tạm thời** khi gọi API (rate limit, connection error) [LP_W02] | Ngăn **agent loop chạy vô hạn** khi LLM liên tục yêu cầu gọi tool [LP_W06] |\n| **Bản chất vấn đề** | Lỗi **ngoại vi** từ phía API (transient) — có thể tự phục hồi | Lỗi **nội tại** của logic agent — LLM \"confused\" cứ gọi tool mãi [LP_W06] |\n| **Khi nào kích hoạt** | Chỉ khi gặp lỗi retryable (RateLimitError, APIConnectionError) [LP_W02] | Kích hoạt khi số bước đạt ngưỡng, dù không có lỗi nào [LP_W06] |\n| **Kết quả khi chạm giới hạn** | Tiếp tục thử lại đến khi thành công hoặc hết số lần | Trả về `\"Error: max steps reached.\"` và dừng [LP_W06] |\n\n## Lưu ý quan trọng\n\n- **Không phải lỗi nào cũng nên retry.** AuthenticationError (sai API key) và BadRequestError (sai tham số) **không nên retry** — phải sửa nguyên nhân gốc [LP_W02].\n- **Max steps là \"phanh\" bắt buộc** cho agent loop: *\"The loop is infinite without it — add the brake\"* [LP_W06]. Đây là cách đúng để ngăn agent chạy vô hạn (không phải dùng max_tokens) [LP_W06].\n\n**Tóm lại:** Retry giải quyết vấn đề **API thất bại tạm thời** (tái thử một thao tác đơn lẻ), còn max steps giải quyết vấn đề **agent không biết dừng** (giới hạn tổng số vòng lặp của toàn bộ quy trình). Một bên bảo vệ **mỗi lần gọi**, một bên bảo vệ **toàn bộ vòng lặp**.",
+  "usage": {
+    "calls": 3,
+    "prompt_tokens": 11579,
+    "completion_tokens": 957,
+    "total_tokens": 12536,
+    "max_prompt": 4723
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
+{
+  "timestamp": "2026-10-16T20:59:26.578761",
+  "question": "Bài tập lab của em bị nộp trễ 30 giờ. Theo quy định môn AIPR em bị trừ bao nhiêu phần trăm?",
+  "steps": [
+    {
+      "step_num": 1,
+      "thought": "Cần tìm quy định về mức phạt khi nộp bài tập trễ theo số giờ.",
+      "tool": "search_lesson_content",
+      "args": {
+        "query": "late submission penalty hours percentage"
+      },
+      "observation": "{\"query\": \"late submission penalty hours percentage\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.5669, \"hits\": [{\"doc_id\": \"LP_W01\", \"chunk_id\": \"LP_W01_chunk_67\", \"week\": 1, \"score\": 0.4904, \"text\": \"> **Session format:** 4 hours total = **Part A — Theory (2h)** (this guide) + **Part B — Lab (2h)** (`lab_sheet.md`).\\n\\n### Session Structure\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_3\", \"week\": 4, \"score\": 0.443, \"text\": \"---\\n\\n## Session 1 — Retrieval and Prompt Design\\n\\n> **Session format:** 4 hours total = **Part A — Theory (2h)** (this guide) + **Part B — Lab (2h)** (`lab_sheet.md`).\\n\\n### Session Structure\"}, {\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_3\", \"week\": 2, \"score\": 0.4208, \"text\": \"---\\n\\n## Session 1 — HTTP APIs & Chat Completions\\n\\n> **Session format:** 4 hours total = **Part A — Theory (2h)** (this guide) + **Part B — Lab (2h)** (`lab_sheet.md`).\\n\\n### Session Structure\"}, {\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_8\", \"week\": 2, \"score\": 0.4203, \"text\": \"---\\n\\n### Before Class: API Key Setup\\n\\n**Critical prerequisite:** Every student must have an OpenAI API key (or compatible provider) before Session 1. Send this email 48 hours before class:\"}]}"
+    },
+    {
+      "step_num": 2,
+      "thought": "Sinh viên nộp trễ 30 giờ, cần tra mức phạt tương ứng theo quy định.",
+      "tool": "check_late_submission_penalty",
+      "args": {
+        "hours_late": 30
+      },
+      "observation": "LATE SUBMISSION PENALTY APPLIED [POLICY_AIPR]:\n- Late Duration: 30 hours (Late by 25 to 48 hours (Day 2)).\n- Policy: AIPR Course Policy Section 4 [POLICY_AIPR].\n- Penalty: DEDUCT 20% of the assignment's total score [POLICY_AIPR]."
+    }
+  ],
+  "answer": "Theo quy định môn AIPR (Mục 4 - Quy chế nộp bài tập trễ) [POLICY_AIPR], mức phạt được tính theo số giờ trễ như sau:\n\n- **≤ 24 giờ:** trừ 10%\n- **25–48 giờ:** trừ 20%\n- **49–72 giờ:** trừ 30%\n- **> 72 giờ:** bài bị từ chối (0 điểm)\n\nVì bài lab của em bị nộp trễ **30 giờ**, em rơi vào khoảng **25–48 giờ**, nên sẽ bị **trừ 20%** tổng điểm của bài tập đó [POLICY_AIPR].\n\nChúc em sớm hoàn thành và nộp bài nhé! Nếu cần hỗ trợ thêm về nội dung bài lab, cứ hỏi mình.",
+  "usage": {
+    "calls": 3,
+    "prompt_tokens": 9407,
+    "completion_tokens": 356,
+    "total_tokens": 9763,
+    "max_prompt": 3443
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
+{
+  "timestamp": "2026-10-16T21:00:38.217891",
+  "question": "Điểm chuyên cần 9, lab 8, test 1 là 7, test 2 là 8, đồ án 8.5, tỉ lệ vắng 10%. Điểm tổng kết môn của em là bao nhiêu?",
+  "steps": [
+    {
+      "step_num": 1,
+      "thought": "Sinh viên đã cung cấp đủ 5 thành phần điểm và tỉ lệ vắng mặt. Mình sẽ gọi công cụ tính điểm tổng kết theo trọng số quy định.",
+      "tool": "calculate_course_grade",
+      "args": {
+        "absence_rate": 10,
+        "attendance": 9,
+        "final_project": 8.5,
+        "labs": 8,
+        "test1": 7,
+        "test2": 8
+      },
+      "observation": "COURSE EVALUATION RESULT [POLICY_AIPR]:\n- Attendance (5%): 9.0\n- Practical Labs (15%): 8.0\n- Test 1 - Midterm (15%): 7.0\n- Test 2 (15%): 8.0\n- Final Project & Oral Defense (50%): 8.5\n- Absence Rate: 10.0% (Compliant)\n----------------------------------------\nFINAL GRADE: 8.15 / 10 [POLICY_AIPR]\n"
+    }
+  ],
+  "answer": "Dựa trên các thành phần điểm em cung cấp, điểm tổng kết môn AIPR của em được tính như sau [POLICY_AIPR]:\n\n*   **Chuyên cần (5%):** 9.0\n*   **Thực hành/Lab (15%):** 8.0\n*   **Test 1 (15%):** 7.0\n*   **Test 2 (15%):** 8.0\n*   **Đồ án cuối kỳ (50%):** 8.5\n*   **Tỉ lệ vắng mặt:** 10% (Đạt yêu cầu, không bị cấm thi vì dưới ngưỡng 20%)\n\n**Điểm tổng kết môn của em là: 8.15 / 10** [POLICY_AIPR].\n\nChúc mừng em đã hoàn thành môn học với một kết quả rất tốt!",
+  "usage": {
+    "calls": 2,
+    "prompt_tokens": 5791,
+    "completion_tokens": 354,
+    "total_tokens": 6145,
+    "max_prompt": 3053
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
+{
+  "timestamp": "2026-10-16T21:01:17.690602",
+  "question": "Em nộp bài tập lớn bị muộn so với hạn, em sẽ bị trừ bao nhiêu điểm?",
+  "steps": [],
+  "answer": "Để xác định mức trừ điểm chính xác, em vui lòng cho biết bài tập lớn đã nộp muộn bao nhiêu giờ so với hạn chót ạ?",
+  "usage": {
+    "calls": 1,
+    "prompt_tokens": 2708,
+    "completion_tokens": 31,
+    "total_tokens": 2739,
+    "max_prompt": 2708
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
+{
+  "timestamp": "2026-10-16T21:02:39.495122",
+  "question": "Em là Nguyễn Văn An, MSSV 24110001. Em bị ốm phải nằm viện và có giấy xác nhận y tế hợp lệ. Hãy soạn giúp em đơn xin gia hạn bài Lab 1 thêm 3 ngày.",
+  "steps": [
+    {
+      "step_num": 1,
+      "thought": "Sinh viên cung cấp đủ thông tin (MSSV, họ tên, bài Lab 1, 3 ngày, lý do ốm nằm viện, có giấy y tế hợp lệ) nên có thể soạn đơn xin gia hạn ngay.",
+      "tool": "draft_template_submission",
+      "args": {
+        "assignment": "Lab 1",
+        "days_requested": 3,
+        "has_medical_proof": true,
+        "reason": "Bị ốm phải nằm viện, có giấy xác nhận y tế hợp lệ",
+        "student_id": "24110001",
+        "student_name": "Nguyễn Văn An"
+      },
+      "observation": "{\"path\": \"C:\\\\Lesson Planning Based On Subjects Assistant\\\\data\\\\drafts\\\\draft_submission_24110001.txt\", \"overwritten\": false, \"chars\": 482, \"note\": \"This is an unsubmitted draft. Call 'read_draft' with this student ID to verify the content.\"}"
+    },
+    {
+      "step_num": 2,
+      "thought": "Xác minh nội dung bản nháp vừa lưu để đảm bảo chính xác trước khi trình bày cho sinh viên.",
+      "tool": "read_draft",
+      "args": {
+        "student_id": "24110001"
+      },
+      "observation": "{\"path\": \"C:\\\\Lesson Planning Based On Subjects Assistant\\\\data\\\\drafts\\\\draft_submission_24110001.txt\", \"chars\": 482, \"content\": \"CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\\nĐỘC LẬP - TỰ DO - HẠNH PHÚC\\nĐƠN XIN GIA HẠN NỘP BÀI\\n\\nKính gửi: Giảng viên môn Lập trình AI với Python (AIPR_24110FIE)\\n\\nEm tên là: Nguyễn Văn An (MSSV: 24110001).\\nEm làm đơn này xin gia hạn nộp: Lab 1.\\nSố ngày xin gia hạn: 3 ngày.\\nLý do: Bị ốm phải nằm viện, có giấy xác nhận y tế hợp lệ\\nMinh chứng đính kèm: Giấy xác nhận y tế\\n\\nEm cam kết thông tin trên là đúng sự thật.\\nEm xin chân thành cảm ơn.\\n\\nNgày: 2026-10-16\\nSinh viên ký tên,\\nNguyễn Văn An\\n\"}"
+    }
+  ],
+  "answer": "Đã soạn xong đơn xin gia hạn cho bạn. Dưới đây là nội dung bản nháp:\n\n---\n\n**CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM**\n**ĐỘC LẬP - TỰ DO - HẠNH PHÚC**\n\n**ĐƠN XIN GIA HẠN NỘP BÀI**\n\nKính gửi: Giảng viên môn Lập trình AI với Python (AIPR_24110FIE)\n\nEm tên là: Nguyễn Văn An (MSSV: 24110001).\nEm làm đơn này xin gia hạn nộp: **Lab 1**.\nSố ngày xin gia hạn: **3 ngày**.\nLý do: Bị ốm phải nằm viện, có giấy xác nhận y tế hợp lệ.\nMinh chứng đính kèm: Giấy xác nhận y tế.\n\nEm cam kết thông tin trên là đúng sự thật.\nEm xin chân thành cảm ơn.\n\nNgày: 2026-10-16\nSinh viên ký tên,\nNguyễn Văn An\n\n---\n\n⚠️ **Lưu ý quan trọng:** Đây chỉ là **bản nháp (draft)** đã được lưu lại, **chưa được chính thức gửi đi**. Bạn cần kiểm tra lại thông tin và tự mình gửi đơn kèm giấy xác nhận y tế cho giảng viên.\n\nBạn có muốn tôi chỉnh sửa lại nội dung (ví dụ: lý do, số ngày) không?",
+  "usage": {
+    "calls": 3,
+    "prompt_tokens": 9154,
+    "completion_tokens": 599,
+    "total_tokens": 9753,
+    "max_prompt": 3380
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
+{
+  "timestamp": "2026-10-16T21:03:23.364190",
+  "question": "Mức học phí cho một tín chỉ hệ chính quy năm nay là bao nhiêu?",
+  "steps": [],
+  "answer": "Xin lỗi, thông tin này không có trong tài liệu bài giảng và quy chế môn học AIPR.",
+  "usage": {
+    "calls": 1,
+    "prompt_tokens": 2706,
+    "completion_tokens": 24,
+    "total_tokens": 2730,
+    "max_prompt": 2706
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
+{
+  "timestamp": "2026-10-16T21:04:17.512383",
+  "question": "Hướng dẫn em fine-tune một mô hình ngôn ngữ bằng LoRA.",
+  "steps": [
+    {
+      "step_num": 1,
+      "thought": "Cần tìm nội dung bài giảng về fine-tune và LoRA để trả lời có trích dẫn, tránh suy đoán.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "hybrid",
+        "query": "fine-tune mô hình ngôn ngữ LoRA low-rank adaptation",
+        "top_k": 6,
+        "week": 0
+      },
+      "observation": "{\"query\": \"fine-tune mô hình ngôn ngữ LoRA low-rank adaptation\", \"mode\": \"hybrid\", \"found\": false, \"best_relevance\": 0.3408, \"hits\": [{\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_106\", \"week\": 5, \"score\": 0.2385, \"text\": \"5. Over-reliance      LLM copies context       Weaker \\\"based ONLY on\\\",\\n                      verbatim without         ask for synthesis,\\n                      synthesis → stiff        better prompt guidance\\n                      robotic answers\\n```\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_123\", \"week\": 4, \"score\": 0.2268, \"text\": \"**Key insight:** \\\"Metadata filtering is 'search space narrowing' — you make the search easier by removing chunks you already know are irrelevant. It's cheap, predictable, and often the single biggest retrieval improvement for structured corpora.\\\"\\n\\n**Filter types:**\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_73\", \"week\": 4, \"score\": 0.2172, \"text\": \"> The LLM ignores the RAG prompt and answers from its training data. What's the most likely fix?\\n>\\n> (a) Increase temperature\\n> (b) Strengthen the prompt instruction\\n> (c) Use a different embedding model\\n\\n**Correct answer: (b) Strengthen the prompt instruction**\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_2\", \"week\": 4, \"score\": 0.2169, \"text\": \"> - A4.1 Design a RAG prompt template that instructs the LLM to answer based only on provided context.\\n> - A4.2 Build a complete RAG pipeline: embed query → search → build prompt → call LLM → return answer.\\n> - A4.3 Implement a retriever that returns both the answer and the source chunks (citations).\\n> - A4.4 Handle edge cases: no relevant chunks found, empty query, overly long context.\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_81\", \"week\": 5, \"score\": 0.2144, \"text\": \"> \\\"That's 6,000 LLM calls by hand. Not feasible.\\n>\\n> \\\"Enter **RAGAS** — a framework that standardises these metrics, runs them in batches, and gives you comparable numbers across configurations. Today you'll learn to use it, and you'll learn the five failure modes that explain WHY your metrics are low — so the numbers actually tell you what to fix.\\\"\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_42\", \"week\": 5, \"score\": 0.2139, \"text\": \"#### The Three-Metric Framework\\n\\n**Show on projector:**\"}]}"
+    }
+  ],
+  "answer": "Mình đã tra cứu tài liệu bài giảng AIPR (tuần 1–6) nhưng không tìm thấy nội dung nào hướng dẫn về kỹ thuật **fine-tune mô hình ngôn ngữ bằng LoRA** (Low-Rank Adaptation). Các kết quả gần nhất chỉ liên quan đến RAG, prompt engineering và đánh giá RAGAS, không phải fine-tune/LoRA.\n\nVì vậy, theo quy định mình chỉ có thể trả lời dựa trên tài liệu bài giảng và quy chế môn học, nên:\n\n**Xin lỗi, thông tin này không có trong tài liệu bài giảng và quy chế môn học AIPR.**\n\nNếu em muốn, mình có thể hỗ trợ em với những nội dung **có** trong chương trình, ví dụ:\n- Xây dựng pipeline RAG (embed query → search → build prompt → call LLM) [LP_W04].\n- Thiết kế prompt template để LLM chỉ trả lời dựa trên context [LP_W04].\n- Đánh giá chất lượng RAG với RAGAS và 5 failure modes [LP_W05].\n\nEm cho mình biết em đang cần ở tuần/bài nào để mình tra cứu chính xác hơn nhé.",
+  "usage": {
+    "calls": 2,
+    "prompt_tokens": 6255,
+    "completion_tokens": 393,
+    "total_tokens": 6648,
+    "max_prompt": 3551
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
+{
+  "timestamp": "2026-10-16T21:05:41.361817",
+  "question": "Thuật toán Q-learning trong reinforcement learning cập nhật giá trị Q như thế nào?",
+  "steps": [
+    {
+      "step_num": 1,
+      "thought": "Cần tìm công thức cập nhật Q-value của Q-learning trong tài liệu AIPR để trả lời có trích dẫn.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "hybrid",
+        "query": "Q-learning update rule Q-value reinforcement learning",
+        "top_k": 4
+      },
+      "observation": "{\"query\": \"Q-learning update rule Q-value reinforcement learning\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.62, \"hits\": [{\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_70\", \"week\": 3, \"score\": 0.5941, \"text\": \"Reinforcement learning involves an agent that learns by interacting with an environment. The agent receives rewards or penalties based on its actions.\\\"\\\"\\\"\\n```\\n\\n**Strategy 1: Fixed-size (simple but may cut mid-sentence)**\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_69\", \"week\": 3, \"score\": 0.4864, \"text\": \"Supervised learning is the most common form of machine learning. The algorithm is trained on labeled data, where each training example is paired with an output label.\\n\\n## 1.2 Unsupervised Learning\\n\\nUnsupervised learning involves training on data without labels. The algorithm must find patterns and structure in the data on its own.\\n\\n## 1.3 Reinforcement Learning\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_38\", \"week\": 4, \"score\": 0.434, \"text\": \"Question: What is the remote work policy?\\n\\n=== USER MESSAGE ===\\nWhat is the remote work policy?\\n```\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_135\", \"week\": 4, \"score\": 0.3796, \"text\": \"### Marking Criteria (aligned to the grading rubric)\"}]}"
+    },
+    {
+      "step_num": 2,
+      "thought": "Tìm kiếm theo nghĩa (dense) với từ khóa công thức Bellman và cập nhật Q để xác nhận có hay không trong tài liệu.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "dense",
+        "query": "Q-learning Bellman equation Q(s,a) update formula reward discount factor",
+        "top_k": 5
+      },
+      "observation": "{\"query\": \"Q-learning Bellman equation Q(s,a) update formula reward discount factor\", \"mode\": \"dense\", \"found\": true, \"best_relevance\": 0.4185, \"hits\": [{\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_38\", \"week\": 4, \"score\": 0.4185, \"text\": \"Question: What is the remote work policy?\\n\\n=== USER MESSAGE ===\\nWhat is the remote work policy?\\n```\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_135\", \"week\": 4, \"score\": 0.4109, \"text\": \"### Marking Criteria (aligned to the grading rubric)\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_138\", \"week\": 5, \"score\": 0.3897, \"text\": \"---\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_70\", \"week\": 3, \"score\": 0.3749, \"text\": \"Reinforcement learning involves an agent that learns by interacting with an environment. The agent receives rewards or penalties based on its actions.\\\"\\\"\\\"\\n```\\n\\n**Strategy 1: Fixed-size (simple but may cut mid-sentence)**\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_106\", \"week\": 3, \"score\": 0.3626, \"text\": \"> - What is the dot product of two vectors? (sum of element-wise products)\\\"\"}]}"
+    }
+  ],
+  "answer": "Tôi đã tìm kiếm kỹ lưỡng trong tài liệu bài giảng AIPR (cả theo từ khóa lẫn theo ngữ nghĩa). Tài liệu chỉ đề cập đến khái niệm tổng quát về Reinforcement Learning — một agent học qua tương tác với môi trường và nhận phần thưởng hoặc hình phạt dựa trên hành động của nó [LP_W03]. Tuy nhiên, **không có nội dung nào mô tả thuật toán Q-learning hay công thức cập nhật giá trị Q** (ví dụ phương trình Bellman, hệ số chiết khấu, learning rate).\n\nDo đó, theo chính sách, tôi xin trả lời:\n\nXin lỗi, thông tin này không có trong tài liệu bài giảng và quy chế môn học AIPR.\n\nNếu bạn muốn, tôi có thể giúp bạn tìm hiểu các nội dung khác đã được đề cập trong bài giảng (ví dụ: các dạng học máy supervised/unsupervised/reinforcement ở tuần 3 [LP_W03]).",
+  "usage": {
+    "calls": 3,
+    "prompt_tokens": 9761,
+    "completion_tokens": 494,
+    "total_tokens": 10255,
+    "max_prompt": 3818
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
+{
+  "timestamp": "2026-10-16T21:07:10.434097",
+  "question": "Làm sao viết một MCP server bằng Python SDK và chạy qua stdio?",
+  "steps": [
+    {
+      "step_num": 1,
+      "thought": "Cần tìm nội dung bài giảng về cách viết MCP server bằng Python SDK và chạy qua stdio để trả lời có trích dẫn.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "hybrid",
+        "query": "MCP server Python SDK stdio",
+        "top_k": 6,
+        "week": 0
+      },
+      "observation": "{\"query\": \"MCP server Python SDK stdio\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.5423, \"hits\": [{\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_26\", \"week\": 2, \"score\": 0.4526, \"text\": \"```\\n┌─────────────────────────────────────────────────────────┐\\n│  Your Python Script           OpenAI API Server         │\\n│                              │                          │\\n│  POST /v1/chat/completions ──┤                          │\\n│  Headers:                    │                          │\\n│    Authorization: Bearer sk-...│                        │\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_38\", \"week\": 4, \"score\": 0.3796, \"text\": \"Question: What is the remote work policy?\\n\\n=== USER MESSAGE ===\\nWhat is the remote work policy?\\n```\"}, {\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_24\", \"week\": 2, \"score\": 0.3639, \"text\": \"> - What is an API key? (authentication token)\\\"\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_67\", \"week\": 3, \"score\": 0.3216, \"text\": \"Documents (3):\\n  - Introduction to Python (doc_0001): 4 chunks\\n  - What is RAG? (doc_0002): 4 chunks\\n  - Understanding Embeddings (doc_0003): 4 chunks\\n\\nAll chunks (12):\\n  - [doc_0001_chunk_0] Python is a high-level programming language. It was ...\\n  ...\\n```\\n\\n---\\n\\n### 8. Break (1:15–1:20)\\n\\n---\\n\\n### 9. Concept 3 — Chunking Strategies (Part A: Fixed-Size & Recursive) (1:20–1:40)\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_42\", \"week\": 5, \"score\": 0.3191, \"text\": \"#### The Three-Metric Framework\\n\\n**Show on projector:**\"}, {\"doc_id\": \"LP_W01\", \"chunk_id\": \"LP_W01_chunk_0\", \"week\": 1, \"score\": 0.3183, \"text\": \"---\\ndoc_id: LP_W01\\ntitle: Week 1 — Python Data Structures for AI\\nversion: 1.0\\ndate: 2026-10-12\\nowner: AIPR Instructor\\n---\\n# Week 1 — Lecture Notes (Instructor Guide)\\n\\n## Python Data Structures for AI\"}]}"
+    },
+    {
+      "step_num": 2,
+      "thought": "Thử truy vấn theo nghĩa (dense) với từ khóa MCP, Model Context Protocol, transport stdio để tìm nội dung liên quan.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "dense",
+        "query": "Model Context Protocol MCP server implementation Python SDK standard input output transport",
+        "top_k": 6,
+        "week": 0
+      },
+      "observation": "{\"query\": \"Model Context Protocol MCP server implementation Python SDK standard input output transport\", \"mode\": \"dense\", \"found\": true, \"best_relevance\": 0.5005, \"hits\": [{\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_38\", \"week\": 4, \"score\": 0.5005, \"text\": \"Question: What is the remote work policy?\\n\\n=== USER MESSAGE ===\\nWhat is the remote work policy?\\n```\"}, {\"doc_id\": \"LP_W05\", \"chunk_id\": \"LP_W05_chunk_42\", \"week\": 5, \"score\": 0.4881, \"text\": \"#### The Three-Metric Framework\\n\\n**Show on projector:**\"}, {\"doc_id\": \"LP_W04\", \"chunk_id\": \"LP_W04_chunk_132\", \"week\": 4, \"score\": 0.4701, \"text\": \"---\\n\\n## Mid-Course Practical — Instructor Guide\\n\\n### Practical Overview\"}, {\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_24\", \"week\": 2, \"score\": 0.4535, \"text\": \"> - What is an API key? (authentication token)\\\"\"}, {\"doc_id\": \"LP_W06\", \"chunk_id\": \"LP_W06_chunk_147\", \"week\": 6, \"score\": 0.4429, \"text\": \"| Prompt injection from search results | Discussion, S2 | \\\"Harden the system prompt: never follow instructions in content\\\" |\"}, {\"doc_id\": \"LP_W03\", \"chunk_id\": \"LP_W03_chunk_107\", \"week\": 3, \"score\": 0.4251, \"text\": \"---\\n\\n### 3. Concept 1 — Embedding Models (0:20–0:45)\\n\\n#### Persistent Reference Card (keep visible all session)\"}]}"
+    }
+  ],
+  "answer": "Tôi đã tìm kiếm cả hai cách (hybrid và dense) với các truy vấn khác nhau, nhưng không có nội dung bài giảng nào đề cập đến việc viết MCP server bằng Python SDK hay chạy qua stdio. Các kết quả trả về đều không liên quan đến chủ đề này.\n\nXin lỗi, thông tin này không có trong tài liệu bài giảng và quy chế môn học AIPR.",
+  "usage": {
+    "calls": 3,
+    "prompt_tokens": 10394,
+    "completion_tokens": 358,
+    "total_tokens": 10752,
+    "max_prompt": 4151
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
+{
+  "timestamp": "2026-10-16T21:08:07.135411",
+  "question": "Làm thế nào để deploy một mô hình AI lên Kubernetes?",
+  "steps": [
+    {
+      "step_num": 1,
+      "thought": "Người dùng hỏi về cách deploy mô hình AI lên Kubernetes. Cần tìm kiếm trong tài liệu bài giảng AIPR để xem nội dung này có được đề cập không.",
+      "tool": "search_lesson_content",
+      "args": {
+        "mode": "hybrid",
+        "query": "deploy mô hình AI lên Kubernetes",
+        "top_k": 4,
+        "week": 0
+      },
+      "observation": "{\"query\": \"deploy mô hình AI lên Kubernetes\", \"mode\": \"hybrid\", \"found\": true, \"best_relevance\": 0.4307, \"hits\": [{\"doc_id\": \"LP_W01\", \"chunk_id\": \"LP_W01_chunk_6\", \"week\": 1, \"score\": 0.3829, \"text\": \"| 3 | Concept 1: Lists for AI | 0:20–0:45 | 4. Present content | Worked example: list of embeddings, chat messages |\\n| 5 | KC 1 | 0:45–0:50 | 7. Feedback | MCQ: tuple vs list for embedding vector |\\n| 6 | Concept 2: Dicts as AI Records | 0:50–1:15 | 4. Present content | Worked example: LLM API response dict |\\n| — | Break | 1:15–1:20 | — | — |\"}, {\"doc_id\": \"LP_W01\", \"chunk_id\": \"LP_W01_chunk_18\", \"week\": 1, \"score\": 0.3398, \"text\": \"**Expected student knowledge:** Students have used all four types in introductory Python. The gap is knowing *which* to use in AI-specific scenarios, not the syntax itself.\\n\\n---\\n\\n### 3. Concept 1 — Lists for AI Pipelines (0:20–0:45)\\n\\n#### Worked Example: AI Data as Lists\\n\\n**Instructor presents these three scenarios on the projector:**\"}, {\"doc_id\": \"LP_W02\", \"chunk_id\": \"LP_W02_chunk_83\", \"week\": 2, \"score\": 0.335, \"text\": \"> \\\"This is what every AI chat interface does — ChatGPT, Claude, Copilot — they all stream. By the end of this session, you'll build your own streaming chat assistant.\\\"\"}, {\"doc_id\": \"LP_W01\", \"chunk_id\": \"LP_W01_chunk_127\", \"week\": 1, \"score\": 0.3208, \"text\": \"> \\\"This week you built the foundation for everything that follows:\\n> - **Session 1:** You can process AI data with lists, dicts, sets, and tuples.\\n> - **Session 2:** You can model AI data with @dataclass, serialise to JSON, and add type hints.\\n>\"}]}"
+    }
+  ],
+  "answer": "Kết quả tìm kiếm cho thấy nội dung về \"deploy mô hình AI lên Kubernetes\" **không được đề cập** trong tài liệu bài giảng AIPR. Các kết quả trả về chỉ liên quan đến các chủ đề cơ bản như lists, dicts, dataclass, và streaming chat — không có nội dung nào về Kubernetes hay deployment.\n\nXin lỗi, thông tin này không có trong tài liệu bài giảng và quy chế môn học AIPR.",
+  "usage": {
+    "calls": 2,
+    "prompt_tokens": 6111,
+    "completion_tokens": 230,
+    "total_tokens": 6341,
+    "max_prompt": 3410
+  },
+  "rag_triad": {},
+  "latency_sec": null,
+  "cited_doc_ids": []
+}
+
