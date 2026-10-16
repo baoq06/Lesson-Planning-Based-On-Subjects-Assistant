@@ -1,0 +1,24 @@
+﻿STT,Mã câu/ID,Phân loại,Câu hỏi,Câu trả lời của Bot,Faithfulness,Answer Relevance,Context Precision,Độ trễ (giây),Tổng Tokens,Nguồn trích dẫn (Docs Cited),Công cụ đã dùng (Tools)
+1,Demo_Q01,demo,Em nộp bài trễ 2 ngày có vấn đề gì không?,"Để trả lời chính xác, em cần xác định số giờ trễ cụ thể. 2 ngày thường tương đương 48 giờ, nhưng em có thể nộp trễ ít hơn hoặc nhiều hơn 48 giờ tùy thời điểm deadline.
+
+**Em cho anh/chị biết em nộp trễ bao nhiêu giờ chính xác nhé?** (Ví dụ: 36 giờ, 48 giờ, 60 giờ...)
+
+Trong lúc chờ, anh/chị có thể tham khảo chính sách nộp trễ của môn AIPR [POLICY_AIPR]:
+
+- **≤ 24 giờ**: trừ 10% điểm
+- **25–48 giờ**: trừ 20% điểm
+- **49–72 giờ**: trừ 30% điểm
+- **> 72 giờ**: bài nộp bị từ chối (0 điểm)
+
+Nếu đúng là 48 giờ (2 ngày tròn), em sẽ bị **trừ 20% điểm** bài làm. Em xác nhận lại số giờ trễ để anh/chị kiểm tra chính xác giúp em nhé!",0.5,0.85,1.0,3.31,2908,POLICY_AIPR,
+2,Demo_Q02,demo,48 giờ ạ,"Em nộp trễ **48 giờ** (ngay thứ 2) sẽ bị **trừ 20% điểm** của bài làm đó [POLICY_AIPR].
+
+**Ví dụ minh họa:**
+- Nếu bài làm được chấm 10/10 → sau khi trừ phạt: **8/10**
+- Nếu bài làm được chấm 8/10 → sau khi trừ phạt: **6.4/10**
+
+**Lưu ý thêm:**
+- Mức phạt này áp dụng theo **Mục 4 – Chính sách nộp trễ** của môn AIPR [POLICY_AIPR].
+- Nếu lần sau em dự kiến không thể nộp đúng hạn vì lý do sức khỏe, em nên chuẩn bị **giấy xác nhận y tế** để có thể xin gia hạn thời hạn nộp bài (tối đa 5 ngày). Anh/chị có thể hỗ trợ soạn mẫu đơn xin gia hạn khi em cần.
+
+Em còn thắc mắc gì thêm không?",0.6,0.95,1.0,6.7,6297,POLICY_AIPR,check_late_submission_penalty
