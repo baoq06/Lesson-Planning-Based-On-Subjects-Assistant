@@ -150,7 +150,7 @@ def log_question_run(
         "cited_doc_ids": cited_docs or [],
     }
     with open(RUN_LOG_PATH, "a", encoding="utf-8") as f:
-        f.write(json.dumps(record, indent=2, ensure_ascii=False) + "\n\n")
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 async def run_agent_loop(
     question: str, 
@@ -370,4 +370,4 @@ if __name__ == "__main__":
         rprint(f"  • File CSV:   [cyan]{demo_csv}[/cyan]")
         rprint(f"  • Đồ thị PNG: [cyan]{demo_chart}[/cyan]\n")
     else:
-        rprint("[yellow]Chưa có câu hỏi nào được thực hiện trong phiên này.[/yellow]")
+        rprint("[yellow]Chưa có câu hỏi nào được thực hiện trong phiên này.[/yellow]")
