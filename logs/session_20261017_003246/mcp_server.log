@@ -1,0 +1,3 @@
+2026-10-17 00:33:00,332 [INFO] [mcp_server]: Starting LessonPlanningAssistantServer on stdio transport...
+2026-10-17 00:33:01,479 [INFO] [mcp_server]: Executing 'get_curriculum_week' for week 1, full_content=False
+2026-10-17 00:33:01,479 [INFO] [mcp_server]: Successfully read lecture notes for Week 1 (38681 characters).

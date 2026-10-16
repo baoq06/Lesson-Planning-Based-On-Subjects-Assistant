@@ -1,0 +1,11 @@
+﻿STT,Mã câu/ID,Phân loại,Câu hỏi,Câu trả lời của Bot,Faithfulness,Answer Relevance,Context Precision,Độ trễ (giây),Tổng Tokens,Nguồn trích dẫn (Docs Cited),Công cụ đã dùng (Tools)
+1,Demo_Q01,demo,Nội dung bài giảng Tuần 1 môn AIPR học những gì?,"Dựa trên tài liệu bài giảng, nội dung chính của **Tuần 1** môn AIPR (AI Programming with Python) là **Cấu trúc dữ liệu Python cho AI (Python Data Structures for AI)** [LP_W01].
+
+Cụ thể, các mục tiêu học tập (Learning Objectives) của tuần này bao gồm:
+
+*   **A1.1:** Chọn loại dữ liệu phù hợp (`list`, `tuple`, `dict`, `set`) cho một tác vụ xử lý dữ liệu AI cụ thể và giải thích lý do lựa chọn [LP_W01].
+*   **A1.2:** Đọc và ghi dữ liệu JSON bằng module `json` của Python, bao gồm cả việc serialize các đối tượng tùy chỉnh (custom object serialisation) [LP_W01].
+*   **A1.3:** Định nghĩa `@dataclass` với type hints và các giá trị mặc định để mô hình hóa dữ liệu AI có cấu trúc [LP_W01].
+*   **A1.4:** Chuyển đổi một danh sách các instance của `@dataclass` thành một từ điển (dictionary) có thể serialize được sang JSON [LP_W01].
+
+Ngoài ra, để theo kịp bài giảng tuần này, sinh viên cần có kiến thức tiên quyết về các cơ bản của Python (biến, hàm, vòng lặp, câu điều kiện, đọc/ghi file) và lập trình hướng đối tượng (OOP) trong C++ [LP_W01].",1.0,0.95,0.95,4.39,6154,LP_W01,get_curriculum_week

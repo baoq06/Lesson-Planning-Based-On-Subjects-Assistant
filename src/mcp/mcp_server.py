@@ -43,10 +43,17 @@ OPERATORS = {
 }
 MAX_EXPONENT = 100
 
+session_log_dir = os.getenv("SESSION_LOG_DIR")
+TARGET_LOG_DIR = Path(session_log_dir) if session_log_dir else (REPO_ROOT / "logs")
+TARGET_LOG_DIR.mkdir(parents=True, exist_ok=True
+                     )
 logging.basicConfig(
-    stream=sys.stderr, 
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] [%(name)s]: %(message)s"
+    format="%(asctime)s [%(levelname)s] [%(name)s]: %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stderr),
+        logging.FileHandler(TARGET_LOG_DIR / "mcp_server.log", encoding="utf-8")
+    ]
 )
 logger = logging.getLogger("mcp_server")
 

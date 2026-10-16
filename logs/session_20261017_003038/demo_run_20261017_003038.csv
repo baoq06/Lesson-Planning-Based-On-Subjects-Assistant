@@ -1,0 +1,20 @@
+﻿STT,Mã câu/ID,Phân loại,Câu hỏi,Câu trả lời của Bot,Faithfulness,Answer Relevance,Context Precision,Độ trễ (giây),Tổng Tokens,Nguồn trích dẫn (Docs Cited),Công cụ đã dùng (Tools)
+1,Demo_Q01,demo,Quy chế nộp trễ bài tập môn AIPR quy định như thế nào?,"Quy chế nộp trễ bài tập môn AIPR được quy định tại Mục 4 (Section 4) của quy chế môn học [POLICY_AIPR]. Tuy nhiên, để trả lời chính xác và đầy đủ, tôi cần biết **số giờ nộp trễ** cụ thể mà bạn muốn tra cứu, vì mức phạt phụ thuộc vào khoảng thời gian trễ.
+
+Bạn có thể cho tôi biết bài tập đã nộp trễ bao nhiêu giờ không? (Ví dụ: 12 giờ, 30 giờ, 80 giờ...)
+
+Dựa trên thông tin từ công cụ, các mức phạt được chia như sau:
+- **≤ 24 giờ**: Trừ 10% điểm
+- **25 - 48 giờ**: Trừ 20% điểm
+- **49 - 72 giờ**: Trừ 30% điểm
+- **> 72 giờ**: Bài nộp bị từ chối (0 điểm) [POLICY_AIPR]
+
+Nếu bạn cung cấp số giờ trễ cụ thể, tôi sẽ tính chính xác mức điểm bị trừ cho bài tập của bạn.",0.5,0.85,1.0,3.34,2919,POLICY_AIPR,
+2,Demo_Q02,demo,Nộp trễ 48 giờ,"Theo quy chế môn AIPR (Mục 4) [POLICY_AIPR], khi nộp bài tập trễ **48 giờ**, mức phạt được áp dụng như sau:
+
+- **Khoảng thời gian trễ:** 25 - 48 giờ (Ngày 2)
+- **Mức phạt:** **Trừ 20%** tổng điểm của bài tập [POLICY_AIPR]
+
+Ví dụ: Nếu bài tập có điểm tối đa là 10, bạn sẽ bị trừ 2 điểm và nhận được 8 điểm (nếu làm đúng hoàn toàn).
+
+Bạn có cần hỗ trợ thêm về quy chế hay nội dung bài học nào khác không?",0.95,0.95,1.0,3.43,6295,POLICY_AIPR,check_late_submission_penalty

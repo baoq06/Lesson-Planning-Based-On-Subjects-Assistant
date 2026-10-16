@@ -22,9 +22,12 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 PROMPT_PATH = REPO_ROOT / "data" / "prompts" / "system_prompt.txt"
 
 LOGS_DIR = REPO_ROOT / "logs"
-LOGS_DIR.mkdir(parents=True, exist_ok=True)
 SESSION_TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
-RUN_LOG_PATH = LOGS_DIR / f"run_{SESSION_TIMESTAMP}.jsonl"
+# Tạo thư mục riêng cho từng session bên trong logs/
+CURRENT_SESSION_DIR = LOGS_DIR / f"session_{SESSION_TIMESTAMP}"
+CURRENT_SESSION_DIR.mkdir(parents=True, exist_ok=True)
+# File JSONL sẽ được lưu bên trong thư mục của session này
+RUN_LOG_PATH = CURRENT_SESSION_DIR / f"run_{SESSION_TIMESTAMP}.jsonl"
 
 SYSTEM_PROMPT = PROMPT_PATH.read_text(encoding="utf-8").strip()
 
@@ -162,7 +165,8 @@ async def run_agent_loop(
 
     server = StdioServerParameters(
         command=sys.executable,
-        args=["-m", "src.mcp.mcp_server"]
+        args=["-m", "src.mcp.mcp_server"],
+        env={**os.environ, "SESSION_LOG_DIR": str(CURRENT_SESSION_DIR)}
     )
 
     async with Client(server) as client:
@@ -360,14 +364,15 @@ if __name__ == "__main__":
 
     # Khi kết thúc 1 phiên demo: Xuất CSV và Đồ thị PNG tổng hợp toàn bộ các câu trong phiên
     if session_records:
-        demo_csv = LOGS_DIR / f"demo_run_{SESSION_TIMESTAMP}.csv"
-        demo_chart = LOGS_DIR / f"demo_run_{SESSION_TIMESTAMP}_chart.png"
-
+        demo_csv = CURRENT_SESSION_DIR / f"demo_run_{SESSION_TIMESTAMP}.csv"
+        demo_chart = CURRENT_SESSION_DIR / f"demo_run_{SESSION_TIMESTAMP}_chart.png"
         rprint("\n[bold cyan]── TỔNG KẾT PHIÊN LÀM VIỆC (DEMO SESSION) ──[/bold cyan]")
         export_evaluation_csv(demo_csv, session_records)
         generate_evaluation_chart(demo_chart, f"AIPR Interactive Demo Session Benchmark ({SESSION_TIMESTAMP})", session_records)
         rprint(f"[bold green]✓ Đã hoàn thành lưu phiên demo ({len(session_records)} câu hỏi):[/bold green]")
-        rprint(f"  • File CSV:   [cyan]{demo_csv}[/cyan]")
-        rprint(f"  • Đồ thị PNG: [cyan]{demo_chart}[/cyan]\n")
+        rprint(f"  • Thư mục Session: [cyan]{CURRENT_SESSION_DIR}[/cyan]")
+        rprint(f"  • File JSONL:      [cyan]{RUN_LOG_PATH}[/cyan]")
+        rprint(f"  • File CSV:        [cyan]{demo_csv}[/cyan]")
+        rprint(f"  • Đồ thị PNG:      [cyan]{demo_chart}[/cyan]\n")
     else:
         rprint("[yellow]Chưa có câu hỏi nào được thực hiện trong phiên này.[/yellow]")

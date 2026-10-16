@@ -1,0 +1,14 @@
+﻿STT,Mã câu/ID,Phân loại,Câu hỏi,Câu trả lời của Bot,Faithfulness,Answer Relevance,Context Precision,Độ trễ (giây),Tổng Tokens,Nguồn trích dẫn (Docs Cited),Công cụ đã dùng (Tools)
+1,Demo_Q01,demo,Cách tính điểm tổng kết cuối kỳ môn học AIPR?,"Theo quy chế môn học AIPR, điểm tổng kết cuối kỳ được tính dựa trên các thành phần sau:
+
+- **Điểm chuyên cần (Attendance):** 5%
+- **Điểm thực hành (Labs):** 15%
+- **Điểm kiểm tra giữa kỳ 1 (Test 1):** 15%
+- **Điểm kiểm tra giữa kỳ 2 (Test 2):** 15%
+- **Điểm đồ án cuối kỳ (Final Project):** 50%
+
+**Lưu ý quan trọng:**
+- Nếu tỷ lệ vắng mặt (absence rate) của sinh viên **vượt quá 20%**, sinh viên sẽ **bị loại** khỏi kỳ thi/trao đồ án cuối kỳ.
+- Quy chế **không quy định** ngưỡng điểm đạt (passing threshold) cụ thể (ví dụ: không có quy định điểm >= 5.0 là đạt).
+
+Bạn có muốn tôi tính thử điểm tổng kết dựa trên các thành phần cụ thể của bạn không?",0.5,0.95,1.0,3.25,2898,,
