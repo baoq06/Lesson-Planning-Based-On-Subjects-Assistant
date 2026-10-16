@@ -1,4 +1,5 @@
 import sys
+import re
 from typing import Any, Optional
 from dotenv import load_dotenv
 from rich import print as rprint
@@ -28,7 +29,7 @@ def call_llm(
     tools: Optional[list[dict[str, Any]]] = None,
     model: str = MODEL,
     temperature: float = 0.1,
-    max_retries: int = 3,
+    max_retries: int = 5,
     base_delay: float = 1.0,
     timeout: float = 30.0,
 ) -> Any:
@@ -71,8 +72,18 @@ def call_llm(
                 raise e
 
             if attempt < max_retries:
-                # Công thức chuẩn Week 2: delay = base * 2^attempt + jitter ngẫu nhiên
+                # Công thức chuẩn: delay = base * 2^attempt + jitter ngẫu nhiên
                 delay = base_delay * (2 ** attempt) + random.uniform(0.1, 1.0)
+
+                # Nếu là 429 RateLimitError, ưu tiên đọc thời gian chờ do Groq đề xuất
+                if isinstance(e, RateLimitError) or status_code == 429:
+                    match = re.search(r"try again in ([0-9.]+)s", str(e))
+                    if match:
+                        groq_wait = float(match.group(1)) + 0.5
+                        delay = max(delay, groq_wait)
+                    else:
+                        delay = max(delay, 4.0)
+
                 warn_msg = (
                     f"[RETRYABLE] [HTTP {status_code}] Gọi LLM thất bại (thử lần {attempt + 1}/{max_retries}). "
                     f"Đợi {delay:.2f}s trước khi thử lại... Lỗi: {e}"

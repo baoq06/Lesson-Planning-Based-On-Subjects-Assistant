@@ -108,18 +108,10 @@ def _eval_ast(node):
 
 @mcp.tool()
 def calculator(expression: str) -> str:
-    """Evaluate a mathematical expression and return the precise calculated result (READ-ONLY, changes nothing).
-
-    Use when exact numerical computations, grade weighting, percentages, or timeline additions
-    are required to eliminate LLM arithmetic calculation errors.
-    Do NOT call this tool for non-mathematical text or non-trivial Python logic.
-    Required information: a valid mathematical string expression containing numbers and standard operators (+, -, *, /, **, etc.).
-    If the expression is missing or incomplete, ASK the user to provide the exact numbers or formulas to compute.
-    After a successful call, use the returned numerical value directly in your response or subsequent calculations.
-    On failure returns a string starting with "Error:".
+    """Calculate exact math expressions (+, -, *, /, **). Use for grade weighting or percentages to avoid arithmetic errors. Exponent limited to 100.
 
     Args:
-        expression: A valid mathematical string to evaluate (e.g. '0.05 * 9 + 0.15 * 8.5', '24 * 3 + 12').
+        expression: Math string to evaluate (e.g. '0.05 * 9 + 0.15 * 8.5').
     """
     logger.info(f"Executing 'calculator' tool with expression: '{expression}'")
     try:
@@ -135,22 +127,13 @@ def calculator(expression: str) -> str:
 
 @mcp.tool()
 def search_lesson_content(query: str, mode: Literal["dense", "hybrid"] = "hybrid", top_k: int = 4, week: int = 0,) -> str:
-    """Search the AIPR lecture notes (Weeks 1-6) for passages relevant to a question (READ-ONLY, changes nothing).
-
-    Use this FIRST for any question about course content: concepts, code examples, techniques,
-    common mistakes. Answer ONLY from the returned passages and ALWAYS cite their doc_id (and week).
-    If "found" is false, the topic is NOT covered in the course: refuse politely and do NOT answer
-    from your own knowledge. Lecture notes for Weeks 7-8 are not available.
-    Do NOT use this tool for grading, late penalties or extension requests (use the dedicated tools).
-    Returns JSON with query, mode, found, best_relevance and hits (doc_id, chunk_id, week, score, text).
-    On failure returns a string starting with "Error:".
+    """Search AIPR lecture notes (Weeks 1-6) for course concepts, code, and techniques. Answer ONLY from returned passages and ALWAYS cite [LP_W0{week}]. If found=false, refuse politely.
 
     Args:
-        query: the student's question or key terms.
-        mode: "hybrid" (keywords + meaning, best for exact names like 'safe_substitute')
-            or "dense" (meaning only, best for naturally phrased questions).
-        top_k: number of passages to return (1-8).
-        week: 0 to search all weeks, or 1-6 to search only that week.
+        query: Search keywords or student question.
+        mode: 'hybrid' (keywords + meaning) or 'dense' (meaning only). Default 'hybrid'.
+        top_k: Number of passages (1-8, default 4).
+        week: 0 for all weeks, or 1-6 to filter.
     """
     logger.info(f"Executing 'search_lesson_content' query='{query}' mode={mode} top_k={top_k} week={week}")
     try:
@@ -203,20 +186,11 @@ def search_lesson_content(query: str, mode: Literal["dense", "hybrid"] = "hybrid
 
 @mcp.tool()
 def get_curriculum_week(week: int, full_content: bool = False) -> str:
-    """Read curriculum lecture notes, session structures, and learning objectives for a course week (READ-ONLY, changes nothing).
-
-    Use when a student asks what topics, concepts, or schedule are covered in Week X (Weeks 1 to 6).
-    Currently, lecture notes are available ONLY for Weeks 1 to 6.
-    Do NOT call this tool for weeks outside the 1 to 6 range (e.g. Week 7, Week 8, or Week 0).
-    Required information: the week number (1-6). The 'full_content' flag is optional (defaults to False).
-    If the student does not specify the week number, ASK them which week (1 to 6) they are asking about.
-    Keep 'full_content=False' for concise topic summaries; set 'full_content=True' ONLY when the student requests full code walkthroughs or deep notes.
-    After a successful call, answer the student's question clearly and ALWAYS cite the source document tag [LP_W0{week}].
-    On failure returns a string starting with "Error:".
+    """Get syllabus overview, topics, and learning objectives for a week (Weeks 1-6 only). Always cite [LP_W0{week}]. If week is not specified, ask the user first.
 
     Args:
-        week: The curriculum week number (must be an integer from 1 to 6).
-        full_content: False to retrieve a structured overview; True to read the entire raw markdown file.
+        week: Week number (integer 1 to 6).
+        full_content: False for structured summary; True for complete lecture notes.
     """
     logger.info(f"Executing 'get_curriculum_week' for week {week}, full_content={full_content}")
     if week < 1 or week > 6:
@@ -260,19 +234,10 @@ def get_curriculum_week(week: int, full_content: bool = False) -> str:
 
 @mcp.tool()
 def get_gotchas_and_best_practices(week: int) -> str:
-    """Extract common student mistakes, pitfalls, and best practices for a course week (READ-ONLY, changes nothing).
-    
-    Use when a student asks about common mistakes to avoid, tricky bugs, gotchas, or best practices
-    for assignments and labs in a specific week (Weeks 1 to 6).
-    Currently available ONLY for Weeks 1 to 6.
-    Do NOT call this tool for general curriculum overviews or for weeks outside the 1 to 6 range.
-    Required information: the week number (1-6).
-    If the week number is not specified, ASK the student which week they need common mistakes and gotchas for.
-    After a successful call, explain the mistakes and preventive solutions clearly to the student, and ALWAYS cite [LP_W0{week}].
-    On failure returns a string starting with "Error:".
+    """Extract common student mistakes, pitfalls, and best practices for Week 1-6. Always cite [LP_W0{week}]. If week is not specified, ask the user first.
 
     Args:
-        week: The curriculum week number (must be an integer from 1 to 6).
+        week: Week number (integer 1 to 6).
     """
     logger.info(f"Executing 'get_gotchas_and_best_practices' for week {week}")
     if week < 1 or week > 6:
@@ -310,24 +275,17 @@ def calculate_course_grade(
     final_project: float,
     absence_rate: float,
 ) -> str:
-    """Calculate the final AIPR course grade per course policy [POLICY_AIPR] (READ-ONLY, changes nothing).
-    Use when computing a student's final weighted course score or verifying policy compliance.
-    Per AIPR Course Policy Section 2 [POLICY_AIPR]: 
-    - Attendance (5%), Practical Labs (15%), Test 1 Midterm (15%), Test 2 (15%), Final Project & Oral Defense (50%).
-    - Note on passing threshold: The course policy does NOT specify a pass/fail threshold (e.g. >= 5.0).
-    - ATTENDANCE POLICY RULE [POLICY_AIPR]: Students with absence_rate > 20% are barred from the final exam / not eligible to defend the final project. The policy does NOT specify setting final grade to 0.0.
-    
-    CRITICAL INSTRUCTION FOR MISSING INPUTS:
-    - Required information: attendance, labs, test1, test2, final_project (all on a 0-10 scale), and absence_rate (0-100%).
-    - absence_rate does NOT have a default value. If the user does not provide absence_rate or any component grade, DO NOT call this tool and NEVER assume/invent values (such as assuming absence_rate is 0%). ASK the user to clarify first.
-    - On failure returns a string starting with "Error:".
+    """Compute AIPR weighted grade [POLICY_AIPR]: Attendance (5%), Labs (15%), Test 1 (15%), Test 2 (15%), Final Project (50%).
+    Rule: absence_rate > 20% bars student from final exam/defense. Policy does NOT specify passing threshold (no >=5.0 threshold).
+    All component scores (0-10) and absence_rate (0-100) are REQUIRED. If any is missing, ask the user first.
+
     Args:
-        attendance: Attendance component score on a 0-10 scale.
-        labs: Practical lab assignment score on a 0-10 scale.
-        test1: Midterm Test 1 score on a 0-10 scale.
-        test2: Test 2 score on a 0-10 scale.
-        final_project: Final Project & Oral Defense score on a 0-10 scale.
-        absence_rate: Student absence percentage (0.0 to 100.0). Required, no default.
+        attendance: Attendance score (0-10).
+        labs: Practical labs score (0-10).
+        test1: Midterm Test 1 score (0-10).
+        test2: Test 2 score (0-10).
+        final_project: Final Project score (0-10).
+        absence_rate: Absence percentage (0.0-100.0). No default.
     """
     logger.info(
         f"Executing 'calculate_course_grade' with attendance={attendance}, labs={labs}, "
@@ -390,22 +348,10 @@ def calculate_course_grade(
     
 @mcp.tool()
 def check_late_submission_penalty(hours_late: int) -> str:
-    """Calculate the penalty deduction percentage for an assignment submitted past the deadline (READ-ONLY, changes nothing).
+    """Check assignment late penalty per Section 4 [POLICY_AIPR]: <=24h (-10%), 25-48h (-20%), 49-72h (-30%), >72h (rejected / 0 pts). If hours_late is unknown, ask user first.
 
-    Use when a student or instructor asks about late penalties, deduction rates, or portal closing rules.
-    Per AIPR Course Policy Section 4:
-    - <= 0 hours late: 0% penalty (On time).
-    - 1 to 24 hours late (Day 1): Deduct 10% of total score.
-    - 25 to 48 hours late (Day 2): Deduct 20% of total score.
-    - 49 to 72 hours late (Day 3): Deduct 30% of total score.
-    - > 72 hours late: Submission rejected (0 points awarded, portal closed).
-    Do NOT call this tool when the student is asking for a medical deadline extension (use 'draft_template_submission' instead).
-    Required information: the number of hours late as an integer.
-    If the late duration is missing, ASK the user how many hours past the deadline the submission was made.
-    After a successful call, explain the exact penalty deduction percentage and the policy status to the student or instructor.
-    On failure returns a string starting with "Error:".
     Args:
-        hours_late: Number of hours elapsed past the official deadline (e.g. 5, 36, 80).
+        hours_late: Number of hours submitted past deadline (integer >= 0).
     """
     logger.info(f"Executing 'check_late_submission_penalty' for hours_late={hours_late}")
     try:
@@ -444,29 +390,16 @@ def check_late_submission_penalty(hours_late: int) -> str:
 
 @mcp.tool()
 def draft_template_submission(student_id: str, student_name: str, assignment: str, days_requested: int, reason: str, has_medical_proof: bool) -> str:
-    """Draft a deadline-extension request letter and SAVE it as a .txt file (this is only a DRAFT, not submitted).
-
-    Use when a student cannot submit an assignment on time because of a medical reason
-    (illness, accident, hospitalization...).
-    Per the course policy, the request must be sent BEFORE the deadline; if the student is already
-    past the deadline, warn them that the request may not be accepted.
-    Do NOT call this tool when the reason is not medical (e.g. overslept, forgot, did not notice...).
-    Required information: student ID, student name, assignment name, number of extension days,
-    reason, and a valid medical certificate (mandatory).
-    If any information is missing, ASK the student until everything is provided. NEVER invent information.
-    After a successful call, you MUST call read_draft with the same student_id to verify the draft,
-    and only then tell the student that this is a DRAFT and has NOT been submitted.
-    Calling this tool again with the same student_id OVERWRITES the previous draft.
-    On failure returns a string starting with "Error:".
+    """Draft and save a medical deadline-extension request (.txt file). Requires medical proof (mandatory).
+    IMPORTANT: After calling this tool, MUST immediately call 'read_draft' with student_id to verify the file before responding.
 
     Args:
-        student_id: student ID with exactly 8 digits, e.g. "24110001".
-        student_name: full name of the student writing the request.
-        assignment: name of the assignment to extend.
-        days_requested: number of extension days (1-5).
-        reason: short description of the medical reason.
-        has_medical_proof: True ONLY if the student confirms having a valid medical certificate.
-            NEVER assume True.
+        student_id: Exactly 8 digits (e.g. '24110001').
+        student_name: Full student name.
+        assignment: Assignment name (e.g. 'Lab 1').
+        days_requested: Number of days (1-5).
+        reason: Medical reason description.
+        has_medical_proof: True if student confirms having valid medical proof; False otherwise.
     """
     logger.info(f"Executing 'draft_template_submission' for student {student_id}")
     try:
@@ -523,18 +456,10 @@ def draft_template_submission(student_id: str, student_name: str, assignment: st
 
 @mcp.tool()
 def read_draft(student_id: str) -> str:
-    """Read back the saved extension-request draft of a student (READ-ONLY, changes nothing).
-
-    Use this RIGHT AFTER calling draft_template_submission to verify that the draft file
-    was actually created, and to show the letter content to the student.
-    Compare the returned "chars" with the "chars" reported by draft_template_submission:
-    if they are equal, this is the draft that was just written.
-    A draft does NOT mean the request has been submitted.
-    Returns JSON with path, chars, content. 
-    On failure returns a string starting with "Error:" (for example when no draft exists for this student yet).
+    """Read back a saved extension-request draft file to verify content (Write-then-Read pattern).
 
     Args:
-        student_id: the 8-digit student ID used when drafting the letter, e.g. "24110001".
+        student_id: The 8-digit student ID (e.g. '24110001').
     """
     logger.info(f"Executing 'read_draft' for student ID {student_id}")
     try:

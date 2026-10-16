@@ -306,6 +306,9 @@ def run_evaluation(testset_file: Path = TESTSET_PATH, limit: Optional[int] = Non
         }
         results.append(record)
 
+        if idx < len(cases):
+            time.sleep(2.0)
+
     # Tổng kết số liệu định lượng
     refusal_rate = (no_answer_correct / no_answer_total * 100) if no_answer_total > 0 else 100.0
     action_rate = (action_verified / action_total * 100) if action_total > 0 else 100.0
