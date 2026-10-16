@@ -1,6 +1,0 @@
-﻿ID,Type,Question,Tools_Called,Refusal_Correct,Faithfulness,Answer_Relevance,Context_Precision,Latency_Sec,Total_Tokens,Cited_Doc_IDs
-TC01,factual,"Trong @dataclass, vì sao không được viết `topics: list = []` mà phải dùng field(default_factory=list)?",search_lesson_content,N/A,1.0,1.0,1.0,17.17,6426,LP_W01
-TC02,factual,"Khi gọi LLM API, những lỗi nào nên retry và những lỗi nào không nên retry?",search_lesson_content,N/A,1.0,1.0,1.0,53.94,6925,LP_W02
-TC03,factual,Vì sao khi chunking tài liệu cần để các chunk gối đầu (overlap) lên nhau?,search_lesson_content,N/A,1.0,1.0,1.0,9.75,6670,LP_W03
-TC04,factual,Công thức tính điểm hybrid search trong bài giảng là gì và trọng số mặc định bao nhiêu?,search_lesson_content; search_lesson_content; search_lesson_content,N/A,0.0,1.0,0.5,127.18,16772,LP_W04
-TC05,factual,Chỉ số context_recall trong RAGAS đo điều gì?,search_lesson_content; search_lesson_content,N/A,1.0,1.0,1.0,89.2,11094,LP_W05

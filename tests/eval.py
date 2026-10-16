@@ -35,138 +35,18 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 REFUSAL_EXACT = "Xin lỗi, thông tin này không có trong tài liệu bài giảng và quy chế môn học AIPR."
 
+from src.rag.eval_metrics import evaluate_rag_triad, export_evaluation_csv, generate_evaluation_chart
+
 console = Console()
 
-def evaluate_faithfulness_llm(groq_client: Groq, question: str, context: str, answer: str) -> Optional[float]:
-    """Đánh giá Faithfulness (Tính trung thực): câu trả lời có hoàn toàn dựa trên dữ liệu tra cứu không?"""
-    if not context.strip():
-        if REFUSAL_EXACT.lower() in answer.lower():
-            return 1.0
-        return 0.5
-
-    prompt = f"""Bạn là Giám khảo đánh giá tính trung thực (Faithfulness) của hệ thống RAG/Agent.
-Nhiệm vụ: Hãy kiểm tra xem câu trả lời (Answer) có hoàn toàn bám sát thông tin thực tế được cung cấp trong ngữ cảnh tra cứu (Context) hay không.
-
-[Câu hỏi]: {question}
-
-[Ngữ cảnh từ công cụ/tài liệu]:
-{context[:2500]}
-
-[Câu trả lời của Agent]:
-{answer}
-
-Quy tắc chấm:
-- Điểm 1.0: Mọi thông tin và số liệu trong Answer đều được chứng minh trực tiếp từ Context, không tự bịa đặt.
-- Điểm 0.5: Trả lời phần lớn đúng nhưng có suy diễn nhẹ hoặc thiếu sót nhỏ.
-- Điểm 0.0: Bịa đặt, mâu thuẫn trực tiếp với Context hoặc tự ý trả lời kiến thức ngoài mà không có trong Context.
-
-Chỉ trả về DUY NHẤT một số thập phân (1.0, 0.5, hoặc 0.0), không viết thêm bất kỳ chữ nào khác.
-Điểm số:"""
-
-    try:
-        res = call_llm(
-            client=groq_client,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.0,
-            timeout=20.0
-        )
-        score_text = res.choices[0].message.content.strip()
-        match = re.search(r"(1\.0|0\.5|0\.0|1|0)", score_text)
-        if match:
-            return float(match.group(1))
-        return None
-    except Exception as e:
-        console.print(f"[dim red]Lỗi khi gọi LLM-as-judge faithfulness: {e}[/dim red]")
-        return None
-
-def evaluate_answer_relevance_llm(groq_client: Groq, question: str, answer: str) -> Optional[float]:
-    """Đánh giá Answer Relevance (Độ phù hợp): câu trả lời có đi thẳng vào trọng tâm câu hỏi không?"""
-    if not answer.strip():
-        return 0.0
-
-    if REFUSAL_EXACT.lower() in answer.lower():
-        return 1.0
-
-    prompt = f"""Bạn là Giám khảo đánh giá độ liên quan và phù hợp của câu trả lời (Answer Relevance) cho hệ thống AI.
-Nhiệm vụ: Hãy kiểm tra xem câu trả lời (Answer) có giải quyết đúng, trúng và trực tiếp câu hỏi (Question) của người dùng hay không (không xét tính đúng sai của dữ kiện, chỉ xét mức độ liên quan và tập trung vào câu hỏi).
-
-[Câu hỏi]: {question}
-
-[Câu trả lời của Agent]:
-{answer}
-
-Quy tắc chấm:
-- Điểm 1.0: Câu trả lời đi thẳng vào trọng tâm câu hỏi, giải quyết trực tiếp thắc mắc, không lan man.
-- Điểm 0.5: Trả lời đúng một phần trọng tâm hoặc có chứa nhiều thông tin thừa thãi không cần thiết.
-- Điểm 0.0: Hoàn toàn lạc đề, né tránh câu hỏi hoặc không liên quan gì đến câu hỏi.
-
-Chỉ trả về DUY NHẤT một số thập phân (1.0, 0.5, hoặc 0.0), không viết thêm bất kỳ chữ nào khác.
-Điểm số:"""
-
-    try:
-        res = call_llm(
-            client=groq_client,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.0,
-            timeout=20.0
-        )
-        score_text = res.choices[0].message.content.strip()
-        match = re.search(r"(1\.0|0\.5|0\.0|1|0)", score_text)
-        if match:
-            return float(match.group(1))
-        return None
-    except Exception as e:
-        console.print(f"[dim red]Lỗi khi gọi LLM-as-judge relevance: {e}[/dim red]")
-        return None
-
-def evaluate_context_precision_llm(groq_client: Groq, question: str, context: str, expected_answer: str = "") -> Optional[float]:
-    """Đánh giá Context Precision (Độ chính xác ngữ cảnh): ngữ cảnh tra cứu từ tools có thực sự hữu ích và trúng câu hỏi không?"""
-    if not context.strip():
-        return 1.0
-
-    prompt = f"""Bạn là Giám khảo đánh giá độ chính xác của ngữ cảnh truy xuất (Context Precision) trong hệ thống RAG/Agent.
-Nhiệm vụ: Hãy kiểm tra xem ngữ cảnh thu thập được từ các công cụ (Context) có thực sự chứa các dữ kiện hữu ích và liên quan trực tiếp đến câu hỏi (Question) hay không.
-
-[Câu hỏi]: {question}
-{f'[Ý trả lời mong đợi]: {expected_answer}' if expected_answer else ''}
-
-[Ngữ cảnh từ công cụ/tài liệu]:
-{context[:2500]}
-
-Quy tắc chấm:
-- Điểm 1.0: Ngữ cảnh chứa thông tin chính xác, thiết yếu để giải quyết câu hỏi, ít hoặc không có thông tin rác.
-- Điểm 0.5: Ngữ cảnh có chứa thông tin cần thiết nhưng bị lẫn nhiều dữ liệu nhiễu hoặc tài liệu chưa sát.
-- Điểm 0.0: Toàn bộ ngữ cảnh hoàn toàn không liên quan đến câu hỏi.
-
-Chỉ trả về DUY NHẤT một số thập phân (1.0, 0.5, hoặc 0.0), không viết thêm bất kỳ chữ nào khác.
-Điểm số:"""
-
-    try:
-        res = call_llm(
-            client=groq_client,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.0,
-            timeout=20.0
-        )
-        score_text = res.choices[0].message.content.strip()
-        match = re.search(r"(1\.0|0\.5|0\.0|1|0)", score_text)
-        if match:
-            return float(match.group(1))
-        return None
-    except Exception as e:
-        console.print(f"[dim red]Lỗi khi gọi LLM-as-judge context precision: {e}[/dim red]")
-        return None
-
-
-def save_eval_artifacts(
+def save_eval_checkpoint_json(
     out_json: Path,
-    out_csv: Path,
     run_id: str,
     run_timestamp: str,
     total_target: int,
     results: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    """Cập nhật tức thì kết quả đánh giá vào file JSON và CSV sau mỗi test case."""
+    """Cập nhật tức thì checkpoint JSON sau mỗi test case để phục vụ resume nếu bị gián đoạn."""
     no_answer_total = sum(1 for r in results if r.get("type") == "no_answer")
     no_answer_correct = sum(1 for r in results if r.get("type") == "no_answer" and r.get("refusal_correct") is True)
 
@@ -226,83 +106,11 @@ def save_eval_artifacts(
         "details": results
     }
 
-    # 1. Ghi file JSON
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump(summary_data, f, indent=2, ensure_ascii=False)
 
-    # 2. Ghi file CSV
-    with open(out_csv, "w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            "ID", "Type", "Question", "Tools_Called", "Refusal_Correct",
-            "Faithfulness", "Answer_Relevance", "Context_Precision",
-            "Latency_Sec", "Total_Tokens", "Cited_Doc_IDs"
-        ])
-        for r in results:
-            writer.writerow([
-                r["id"],
-                r["type"],
-                r["question"].replace("\n", " "),
-                "; ".join(r.get("tools_called", [])),
-                r["refusal_correct"] if r.get("refusal_correct") is not None else "N/A",
-                r["faithfulness"] if r.get("faithfulness") is not None else "N/A",
-                r["answer_relevance"] if r.get("answer_relevance") is not None else "N/A",
-                r["context_precision"] if r.get("context_precision") is not None else "N/A",
-                r.get("latency_sec", 0.0),
-                r.get("usage", {}).get("total_tokens", 0),
-                "; ".join(r.get("cited_doc_ids", [])),
-            ])
-
     return summary_data
 
-
-def generate_eval_charts(out_chart: Path, summary_data: dict[str, Any]) -> None:
-    """Vẽ đồ thị trực quan hóa kết quả đánh giá (RAG Triad + Latency)."""
-    details = summary_data.get("details", [])
-    if not details:
-        return
-
-    try:
-        case_ids = [r["id"] for r in details]
-        faiths = [r["faithfulness"] if r.get("faithfulness") is not None else 0.0 for r in details]
-        rels = [r["answer_relevance"] if r.get("answer_relevance") is not None else 0.0 for r in details]
-        precs = [r["context_precision"] if r.get("context_precision") is not None else 0.0 for r in details]
-        latencies = [r.get("latency_sec", 0.0) for r in details]
-
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
-        fig.suptitle(f"AIPR Evaluation Benchmark Report ({summary_data.get('run_id', 'run')})", fontsize=14, fontweight="bold")
-
-        x = list(range(len(case_ids)))
-        width = 0.25
-
-        # Subplot 1: RAG Triad scores
-        ax1.bar([p - width for p in x], faiths, width=width, label="Faithfulness", color="#2ecc71")
-        ax1.bar(x, rels, width=width, label="Answer Relevance", color="#3498db")
-        ax1.bar([p + width for p in x], precs, width=width, label="Context Precision", color="#9b59b6")
-        ax1.axhline(0.85, color="#e74c3c", linestyle="--", linewidth=1.2, label="Rubric Target (≥0.85 / ≥0.80)")
-        ax1.set_ylabel("Score (0.0 - 1.0)", fontweight="bold")
-        ax1.set_ylim(0, 1.15)
-        ax1.set_title("RAG Triad Metrics per Test Case", fontsize=11)
-        ax1.legend(loc="upper right")
-        ax1.grid(axis="y", linestyle=":", alpha=0.6)
-
-        # Subplot 2: Latency
-        ax2.plot(case_ids, latencies, marker="o", color="#e67e22", linewidth=2, label="Latency (seconds)")
-        ax2.axhline(15.0, color="#c0392b", linestyle=":", linewidth=1, label="Target (<15s)")
-        ax2.set_ylabel("Latency (sec)", fontweight="bold")
-        ax2.set_xlabel("Test Case ID", fontweight="bold")
-        ax2.set_title("Response Latency per Test Case", fontsize=11)
-        ax2.set_xticks(x)
-        ax2.set_xticklabels(case_ids, rotation=45)
-        ax2.legend(loc="upper right")
-        ax2.grid(True, linestyle=":", alpha=0.6)
-
-        plt.tight_layout()
-        plt.savefig(out_chart, dpi=200)
-        plt.close()
-        console.print(f"[bold green]✓ Đã vẽ biểu đồ đánh giá:[/bold green] [cyan]{out_chart.name}[/cyan]")
-    except Exception as e:
-        console.print(f"[dim red]Không thể vẽ đồ thị: {e}[/dim red]")
 
 
 def run_evaluation(
@@ -324,9 +132,9 @@ def run_evaluation(
 
     groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-    # Tự động phát hiện run chưa hoàn thành gần nhất để resume (rất tiện khi chạy make eval)
+    # Chỉ resume khi người dùng truyền cờ --resume
     resumed_file = None
-    if not force_new:
+    if resume:
         existing_json_files = sorted(LOGS_DIR.glob("eval_run_*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
         for jf in existing_json_files:
             try:
@@ -440,19 +248,18 @@ def run_evaluation(
                     citation_ok = False
                     break
 
-        # 5. Đánh giá LLM-as-judge (RAG Triad)
-        faith_score = None
-        relevance_score = None
-        precision_score = None
-
-        if q_type != "no_answer":
-            faith_score = evaluate_faithfulness_llm(groq_client, question, full_context, answer)
-            relevance_score = evaluate_answer_relevance_llm(groq_client, question, answer)
-            precision_score = evaluate_context_precision_llm(groq_client, question, full_context, expected_ans)
-        else:
-            faith_score = 1.0 if refusal_ok else 0.0
-            relevance_score = 1.0 if refusal_ok else 0.0
-            precision_score = 1.0
+        # 5. Đánh giá RAG Triad với thang điểm liên tục (LLM-as-a-judge)
+        triad = evaluate_rag_triad(
+            groq_client=groq_client,
+            question=question,
+            context=full_context,
+            answer=answer,
+            expected_answer=expected_ans,
+            is_no_answer=(q_type == "no_answer")
+        )
+        faith_score = triad["faithfulness"]
+        relevance_score = triad["answer_relevance"]
+        precision_score = triad["context_precision"]
 
         record = {
             "id": q_id,
@@ -476,9 +283,9 @@ def run_evaluation(
         results.append(record)
         completed_ids.add(q_id)
 
-        # CẬP NHẬT TỨC THÌ VÀO CẢ FILE JSON VÀ CSV SAU MỖI CÂU
-        summary_data = save_eval_artifacts(out_file, out_csv, run_id, run_timestamp, len(cases), results)
-        console.print(f"[dim green]✓ Đã cập nhật kết quả {q_id} vào {out_file.name} và {out_csv.name}[/dim green]")
+        # LƯU CHECKPOINT TỨC THÌ VÀO FILE JSON ĐỂ RESUME NẾU BỊ NGẮT
+        summary_data = save_eval_checkpoint_json(out_file, run_id, run_timestamp, len(cases), results)
+        console.print(f"[dim green]✓ Đã checkpoint kết quả {q_id} vào {out_file.name} (F: {faith_score:.2f}, R: {relevance_score:.2f}, P: {precision_score:.2f})[/dim green]")
 
         if idx < len(cases):
             time.sleep(2.0)
@@ -544,11 +351,12 @@ def run_evaluation(
 
     console.print(sum_table)
 
-    # Tự động vẽ đồ thị
+    # KHI XONG HẾT TESTSET: Xuất file CSV và vẽ biểu đồ PNG tổng hợp của toàn bộ testset
     out_chart = out_file.with_name(out_file.stem + "_chart.png")
-    generate_eval_charts(out_chart, summary_data)
+    export_evaluation_csv(out_csv, results)
+    generate_evaluation_chart(out_chart, f"AIPR Testset Evaluation Benchmark ({run_id.upper()})", results)
 
-    console.print(f"\n[bold green]✓ Hoàn thành đánh giá {run_id}.[/bold green]")
+    console.print(f"\n[bold green]✓ Hoàn thành đánh giá toàn bộ testset ({len(results)} câu) — {run_id}.[/bold green]")
     console.print(f"- JSON: [cyan]{out_file}[/cyan]")
     console.print(f"- CSV:  [cyan]{out_csv}[/cyan]")
     console.print(f"- PNG:  [cyan]{out_chart}[/cyan]\n")

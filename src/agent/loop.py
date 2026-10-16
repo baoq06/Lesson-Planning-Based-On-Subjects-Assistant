@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import time
 import asyncio
 from datetime import datetime
 from typing import Any, Optional
@@ -124,7 +125,10 @@ def log_question_run(
     question: str,
     steps: list[AgentStep],
     answer: str,
-    usage: dict[str, Any]
+    usage: dict[str, Any],
+    rag_triad: Optional[dict[str, float]] = None,
+    latency_sec: Optional[float] = None,
+    cited_docs: Optional[list[str]] = None,
 ) -> None:
     record = {
         "timestamp": datetime.now().isoformat(),
@@ -141,11 +145,19 @@ def log_question_run(
         ],
         "answer": answer,
         "usage": usage,
+        "rag_triad": rag_triad or {},
+        "latency_sec": latency_sec,
+        "cited_doc_ids": cited_docs or [],
     }
     with open(RUN_LOG_PATH, "a", encoding="utf-8") as f:
         f.write(json.dumps(record, indent=2, ensure_ascii=False) + "\n\n")
 
-async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Optional[list[dict[str, Any]]] = None) -> AgentResponse:
+async def run_agent_loop(
+    question: str, 
+    max_steps: int = MAX_STEPS, 
+    history: Optional[list[dict[str, Any]]] = None,
+    auto_log: bool = True
+) -> AgentResponse:
     groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"), max_retries=0)
 
     server = StdioServerParameters(
@@ -199,7 +211,8 @@ async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Opt
             if not msg.tool_calls:
                 final_answer = msg.content or "Không có câu trả lời."
                 rprint(f"[bold green]Final Answer:[/bold green]\n{final_answer}")
-                log_question_run(question, steps, final_answer, usage_stats)
+                if auto_log:
+                    log_question_run(question, steps, final_answer, usage_stats)
                 return AgentResponse(answer=final_answer, steps=steps, usage=usage_stats)
             
             thought = msg.content or f"Cần kích hoạt {len(msg.tool_calls)} công cụ."
@@ -253,23 +266,30 @@ async def run_agent_loop(question: str, max_steps: int = MAX_STEPS, history: Opt
 
         stop_warning = f"Dừng: Đã đạt giới hạn tối đa {max_steps} bước suy luận."
         rprint(f"[bold red]{stop_warning}[/bold red]")
-        log_question_run(question, steps, stop_warning, usage_stats)
+        if auto_log:
+            log_question_run(question, steps, stop_warning, usage_stats)
         return AgentResponse(answer=stop_warning, steps=steps, usage=usage_stats)
 
 def ask_agent(
     question: str, 
     max_steps: int = MAX_STEPS,
-    history: Optional[list[dict[str, Any]]] = None
+    history: Optional[list[dict[str, Any]]] = None,
+    auto_log: bool = True
 ) -> AgentResponse:
-    return asyncio.run(run_agent_loop(question=question, max_steps=max_steps, history=history))
+    return asyncio.run(run_agent_loop(question=question, max_steps=max_steps, history=history, auto_log=auto_log))
 
 if __name__ == "__main__":
+    from src.rag.eval_metrics import evaluate_rag_triad, export_evaluation_csv, generate_evaluation_chart
+    from rich.panel import Panel
+
     rprint("[bold green]====================================================[/bold green]")
     rprint("[bold green]   TRỢ LÝ BÀI GIẢNG & QUY CHẾ AIPR (INTERACTIVE CLI)[/bold green]")
     rprint("[bold green]====================================================[/bold green]")
     rprint("[dim]Gõ câu hỏi và nhấn Enter. Gõ 'exit' để thoát. Gõ 'clear' để xóa nhớ.[/dim]\n")
 
     conversation_history: list[dict[str, Any]] = []
+    session_records: list[dict[str, Any]] = []
+    groq_eval_client: Optional[Groq] = None
 
     while True:
         try:
@@ -277,19 +297,77 @@ if __name__ == "__main__":
             if not user_question:
                 continue
             if user_question.lower() in ["exit", "quit", "q"]:
-                rprint("[yellow]Tạm biệt bạn![/yellow]")
+                rprint("[yellow]Đang kết thúc phiên và xuất báo cáo đánh giá...[/yellow]")
                 break
             if user_question.lower() == "clear":
                 conversation_history.clear()
                 rprint("[yellow]Đã làm mới bộ nhớ hội thoại.[/yellow]")
                 continue
-            
-            response = ask_agent(user_question, history=conversation_history)
+
+            t0 = time.time()
+            response = ask_agent(user_question, history=conversation_history, auto_log=False)
+            elapsed = time.time() - t0
 
             if response.answer and not response.answer.startswith("Dừng:"):
                 conversation_history.append({"role": "user", "content": user_question})
                 conversation_history.append({"role": "assistant", "content": response.answer})
 
-        except KeyboardInterrupt:
-            rprint("\n[yellow]Đã ngắt chương trình. Hẹn gặp lại![/yellow]")
+            # Tính toán 3 chỉ số RAG Triad liên tục cho câu hỏi
+            context_text = "\n".join([str(s.observation) for s in response.steps if s.observation])
+            cited_docs = [
+                d for d in ["POLICY_AIPR", "LP_W01", "LP_W02", "LP_W03", "LP_W04", "LP_W05", "LP_W06"]
+                if d in (response.answer or "")
+            ]
+
+            if not groq_eval_client:
+                groq_eval_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+            triad = evaluate_rag_triad(
+                groq_client=groq_eval_client,
+                question=user_question,
+                context=context_text,
+                answer=response.answer or "",
+            )
+
+            # Xuất trực tiếp 3 chỉ số RAG Triad vào file log run_*.jsonl (không in ra terminal)
+            log_question_run(
+                question=user_question,
+                steps=response.steps,
+                answer=response.answer or "",
+                usage=response.usage if isinstance(response.usage, dict) else {},
+                rag_triad=triad,
+                latency_sec=round(elapsed, 2),
+                cited_docs=cited_docs,
+            )
+
+            session_records.append({
+                "id": f"Demo_Q{len(session_records)+1:02d}",
+                "type": "demo",
+                "question": user_question,
+                "answer": response.answer,
+                "faithfulness": triad["faithfulness"],
+                "answer_relevance": triad["answer_relevance"],
+                "context_precision": triad["context_precision"],
+                "latency_sec": round(elapsed, 2),
+                "usage": response.usage if isinstance(response.usage, dict) else {},
+                "cited_doc_ids": cited_docs,
+                "tools_called": [s.tool_call.name for s in response.steps if s.tool_call],
+            })
+
+        except (KeyboardInterrupt, EOFError):
+            rprint("\n[yellow]Đã nhận lệnh thoát phiên. Đang xuất báo cáo...[/yellow]")
             break
+
+    # Khi kết thúc 1 phiên demo: Xuất CSV và Đồ thị PNG tổng hợp toàn bộ các câu trong phiên
+    if session_records:
+        demo_csv = LOGS_DIR / f"demo_run_{SESSION_TIMESTAMP}.csv"
+        demo_chart = LOGS_DIR / f"demo_run_{SESSION_TIMESTAMP}_chart.png"
+
+        rprint("\n[bold cyan]── TỔNG KẾT PHIÊN LÀM VIỆC (DEMO SESSION) ──[/bold cyan]")
+        export_evaluation_csv(demo_csv, session_records)
+        generate_evaluation_chart(demo_chart, f"AIPR Interactive Demo Session Benchmark ({SESSION_TIMESTAMP})", session_records)
+        rprint(f"[bold green]✓ Đã hoàn thành lưu phiên demo ({len(session_records)} câu hỏi):[/bold green]")
+        rprint(f"  • File CSV:   [cyan]{demo_csv}[/cyan]")
+        rprint(f"  • Đồ thị PNG: [cyan]{demo_chart}[/cyan]\n")
+    else:
+        rprint("[yellow]Chưa có câu hỏi nào được thực hiện trong phiên này.[/yellow]")
