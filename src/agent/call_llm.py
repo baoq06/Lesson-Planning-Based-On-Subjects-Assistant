@@ -1,3 +1,4 @@
+import os
 import sys
 import re
 from typing import Any, Optional
@@ -19,9 +20,10 @@ from groq import (
     NotFoundError,
 )
 
+load_dotenv()
 logger = logging.getLogger("agent.llm")
 
-MODEL = "qwen/qwen3.8-27b"
+MODEL = os.getenv("LLM_MODEL", "qwen/qwen3.8-27b").strip()
 
 def call_llm(
     client: Groq,

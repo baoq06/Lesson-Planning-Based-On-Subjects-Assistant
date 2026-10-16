@@ -5,6 +5,14 @@ import asyncio
 from pathlib import Path
 from groq import Groq
 from dotenv import load_dotenv
+from typing import Optional
+
+if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
@@ -54,9 +62,9 @@ CRITIC_PROMPT_PATH = REPO_ROOT / "data" / "prompts" / "critic_prompt.txt"
 CRITIC_SYSTEM = CRITIC_PROMPT_PATH.read_text(encoding="utf-8").strip()
 
 class Team:
-    def __init__(self, groq_client: Groq, model: str = "qwen/qwen3.8-27b"):
+    def __init__(self, groq_client: Groq, model: Optional[str] = None):
         self.client = groq_client
-        self.model = model
+        self.model = model or os.getenv("LLM_MODEL", "qwen/qwen3.8-27b").strip()
 
     def _show(self, frm: str, to: str, label: str, block: str) -> None:
         if not WATCH:
@@ -133,11 +141,25 @@ class Team:
 async def main():
     client = Groq(api_key=os.getenv("GROQ_API_KEY"), max_retries=0)
     team = Team(groq_client=client)
-    
-    # Test with a prompt containing a policy trap
-    test_question = "Em nộp bài trễ 30 tiếng và xin gia hạn 10 ngày do ốm, MSSV của em là 12345."
+
+    if len(sys.argv) > 1:
+        test_question = " ".join(sys.argv[1:])
+    else:
+        print("=" * 60)
+        print("  HỆ THỐNG MULTI-AGENT (PRODUCER + CRITIC)")
+        print("=" * 60)
+        try:
+            user_input = input("\nNhập câu hỏi (hoặc nhấn Enter để chạy câu test bẫy quy chế mặc định): ").strip()
+            test_question = user_input if user_input else "Em nộp bài trễ 30 tiếng và xin gia hạn 10 ngày do ốm, MSSV của em là 12345."
+        except (KeyboardInterrupt, EOFError):
+            test_question = "Em nộp bài trễ 30 tiếng và xin gia hạn 10 ngày do ốm, MSSV của em là 12345."
+
+    print(f"\n>>> ĐANG CHẠY MULTI-AGENT CHO CÂU HỎI:\n\"{test_question}\"\n")
     final_answer, stats = await team.run(test_question)
-    print("\n[FINAL SHIPPED ANSWER]:\n", final_answer)
-    print("\n[AUDIT STATS]:", stats, audit_answer(final_answer))
+    print("\n" + "=" * 60)
+    print("  KẾT QUẢ CUỐI CÙNG SAU PHÊ DUYỆT (FINAL SHIPPED ANSWER):")
+    print("=" * 60)
+    print(final_answer)
+    print("\n[THỐNG KÊ AUDIT & REVISION]:", stats, audit_answer(final_answer))
 if __name__ == "__main__":
     asyncio.run(main())
