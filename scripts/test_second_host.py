@@ -34,7 +34,7 @@ async def main():
 
     # 1. Khởi tạo kết nối qua stdio tới MCP Server
     server_params = StdioServerParameters(
-        command="python",
+        command=sys.executable,
         args=["-m", "src.mcp.mcp_server"],
         cwd=str(REPO_ROOT)
     )

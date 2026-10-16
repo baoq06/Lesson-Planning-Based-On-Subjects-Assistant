@@ -1,0 +1,8 @@
+groq
+python-dotenv
+rich
+mcp
+rank_bm25
+numpy
+requests
+matplotlib
