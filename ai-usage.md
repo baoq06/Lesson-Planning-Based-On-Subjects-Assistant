@@ -33,7 +33,7 @@ I can explain every line of the code listed above.
 
 **How I used AI**
 
-1. **MCP Tools implementation & review (`calculator`, `get_curriculum_week`, `get_gotchas_and_best_practices`, `calculate_course_grade`, `check_late_submission_penalty`).** AI guided the safe design logic (e.g., safe AST evaluation for `calculator` instead of `eval()`, curriculum week mapping, and grade calculation/penalty rules following course policy). I wrote the tools myself, and AI reviewed the code, verified logic edge cases, and checked input/output schema validation.
+1. **MCP Tools implementation & review (`calculator`, `get_curriculum_week`, `get_gotchas_and_best_practices`, `calculate_course_grade`, `check_late_submission_penalty`).** AI guided the safe design logic (e.g., safe AST evaluation for `calculator` instead of `eval()`). I wrote the tools myself, and AI reviewed the code, verified logic edge cases, and checked input/output schema validation.
 2. **Multi-Agent pattern (`team_critic.py`).** Using the single-agent skeleton from `loop.py` and the lecture code samples, AI guided me on how to architect a two-role Critic-Refiner workflow (`Producer` and `Critic`) to evaluate answer factuality, verify document citations (`[POLICY_AIPR]`, `[LP_Wxx]`), and iteratively refine responses if ungrounded claims are detected.
 3. **Session Logging management.** AI guided how to structure session-isolated logs (`CURRENT_SESSION_DIR`, environment variable `SESSION_LOG_DIR`, and separate log files for the agent loop and MCP server per run timestamp). I implemented and integrated the logging setup into the pipeline myself.
 
