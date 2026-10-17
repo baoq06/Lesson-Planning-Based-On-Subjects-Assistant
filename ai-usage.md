@@ -1,5 +1,7 @@
 ## Mai Quốc Bảo (24110080, git: baoq06)
+
 **Tool:** Google Antigravity (Claude 3.7 Sonnet / Gemini 2.0 Flash), used in VS Code, October 2026.
+
 **How I used AI**
 1. **RAG Triad Evaluation & Session-Isolated Logging (`src/rag/eval_metrics.py`, `logs/`):**
    - AI guided the design of continuous LLM-as-a-judge scoring for the three RAG Triad metrics (`faithfulness`, `answer_relevance`, `context_precision`), replacing the discrete step scoring (1.0/0.5/0.0).
@@ -27,28 +29,27 @@ I can explain every line of the code listed above.
 
 **How I used AI**
 
-1. **MCP Tools implementation & review (`calculator`, `get_curriculum_week`, `get_gotchas_and_best_practices`, `calculate_course_grade`, `check_late_submission_penalty`).** AI guided the safe design logic (e.g., safe AST evaluation for `calculator` instead of `eval()`, curriculum week mapping, and grade calculation/penalty rules following course policy). I wrote the tools myself, and AI reviewed the code, verified logic edge cases, and checked input/output schema validation.
+1. **MCP Tools implementation & review (`calculator`, `get_curriculum_week`, `get_gotchas_and_best_practices`, `calculate_course_grade`, `check_late_submission_penalty`).** AI guided the safe design logic (e.g., safe AST evaluation for `calculator` instead of `eval()`). I wrote the tools myself, and AI reviewed the code, verified logic edge cases, and checked input/output schema validation.
 2. **Multi-Agent pattern (`team_critic.py`).** Using the single-agent skeleton from `loop.py` and the lecture code samples, AI guided me on how to architect a two-role Critic-Refiner workflow (`Producer` and `Critic`) to evaluate answer factuality, verify document citations (`[POLICY_AIPR]`, `[LP_Wxx]`), and iteratively refine responses if ungrounded claims are detected.
 3. **Session Logging management.** AI guided how to structure session-isolated logs (`CURRENT_SESSION_DIR`, environment variable `SESSION_LOG_DIR`, and separate log files for the agent loop and MCP server per run timestamp). I implemented and integrated the logging setup into the pipeline myself.
-4. **RAG pipeline components (`chunker.py`, `embedding.py`, `jina_embeddings.py`, `vector_store.py`).** Based on the lecture code samples, I implemented document chunking, text embedding integration with Jina, and vector store retrieval. AI reviewed my implementation.
-5. **Fixing bugs.** Using the `CHECKLIST_SUA_DO_AN.md` file, AI helped me to track the bugs and guided me to fix those. I implemented the changes.
 
 | Part | AI role | Written by |
 |---|---|---|
-| `calculator`, `get_curriculum_week`, `get_gotchas_and_best_practices`, `calculate_course_grade`, `check_late_submission_penalty` | Guided safe design (safe AST evaluation, exponent limits) and policy edge cases; reviewed code | Code by me, refined based on AI review |
-| `src/agent/team_critic.py` | Guided the Critic-Refiner multi-agent architecture and critic prompt design based on `loop.py` | Code by me, guided by AI |
-| Session Logging (`CURRENT_SESSION_DIR`, `logs/`) | Guided folder structuring by timestamp and passing `SESSION_LOG_DIR` to MCP server | Implemented by me, guided by AI |
-| `chunker.py`, `embedding.py`, `jina_embeddings.py`, `vector_store.py` | Reviewed the RAG pipeline components and verified implementation against lecture samples | Code by me based on class samples, reviewed by AI |
-| Bug fixes & `CHECKLIST_SUA_DO_AN.md` | Tracked checklist items and guided fixes for detected issues | Implemented by me |
+| MCP Tools (`calculator`, `get_curriculum_week`, `get_gotchas_and_best_practices`, `calculate_course_grade`, `check_late_submission_penalty`) | Guided safe design (safe AST evaluation, exponent limits), policy edge cases, and schema validation; reviewed code | Code by me, refined based on AI review |
+| Multi-Agent pattern (`src/agent/team_critic.py`, `src/schemas.py`) | Guided Critic-Refiner multi-agent architecture, critic prompt design, and Handoff Contracts (`ProducerHandoff`, `CriticReview`) | Code by me, guided by AI |
+| Session Logging (`CURRENT_SESSION_DIR`, `logs/`) | Guided timestamped folder structuring and passing `SESSION_LOG_DIR` to MCP server | Implemented by me, guided by AI |
 
-**Main prompts (examples):** "Làm sao để sửa tool calculator bỏ hàm eval() và dùng ast để an toàn hơn?", "Làm thế nào để giới hạn số mũ trong _eval_ast nhằm tránh tràn số hoặc treo máy?", "Dựa vào file loop.py và bài mẫu, hãy hướng dẫn tôi viết team_critic.py với 2 vai trò Producer và Critic", "Làm sao để cấu trúc folder log theo timestamp của từng session và đồng bộ SESSION_LOG_DIR qua MCP server?", "Review giúp tôi file chunker, embedding và vector_store tôi viết từ bài mẫu xem đã chuẩn chưa?"
+**Main prompts (examples):** 
+- *"Làm sao để sửa tool calculator bỏ hàm eval() và dùng ast để an toàn hơn?"*
+- *"Làm thế nào để giới hạn số mũ trong _eval_ast nhằm tránh tràn số hoặc treo máy?"*
+- *"Dựa vào file loop.py và bài mẫu, hãy hướng dẫn tôi viết team_critic.py với 2 vai trò Producer và Critic"*
+- *"Làm sao để cấu trúc folder log theo timestamp của từng session và đồng bộ SESSION_LOG_DIR qua MCP server?"*
 
 I can explain every line of the code listed above.
 
-# AI usage declaration
 ## Lý Trần Gia Khang (24110098, git: kangkzxw)
 
-**Tool:** Claude Code (Anthropic), used in VS Code, October 2026.
+**Tool:** Claude Code (Anthropic) and Antigravity (Google), used in VS Code, October 2026.
 
 **How I used AI**
 
@@ -68,7 +69,13 @@ I can explain every line of the code listed above.
 | `README.md` | Rewrote it to match the requirements | Written by AI, checked by me |
 | `tests/testset.jsonl` | Drafted questions, expected answers and expected documents | Drafted by AI, edited and checked by myself |
 
-**Main prompts (examples):** "Hãy hỗ trợ tôi trong việc tìm ra các tools cần thiết cho đồ án của tôi", "tại sao khúc này code tôi lại không hoạt động?", "kiểm tra xem phần testset của tôi sửa lại đã đúng chưa?", "hãy tìm giúp tôi các lỗi còn ẩn đọng trong code", "hãy sửa README cho tôi theo đúng yêu cầu đề bài", "kiểm tra và đối chiếu đồ án của tôi với checklist của tôi xem còn điều gì chưa được khắc phục hay không?"
+**Main prompts (examples):** 
+- *"Hãy hỗ trợ tôi trong việc tìm ra các tools cần thiết cho đồ án của tôi"*
+- *"Tại sao khúc này code tôi lại không hoạt động?"*
+- *"Kiểm tra xem phần testset của tôi sửa lại đã đúng chưa?"*
+- *"Hãy tìm giúp tôi các lỗi còn ẩn đọng trong code"* 
+- *"Hãy sửa README cho tôi theo đúng yêu cầu đề bài"* 
+- *"Kiểm tra và đối chiếu đồ án của tôi với checklist của tôi xem còn điều gì chưa được khắc phục hay không?"*
 
 I can explain every line of the code listed above.
 
