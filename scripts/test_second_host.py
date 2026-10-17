@@ -24,6 +24,15 @@ if str(REPO_ROOT) not in sys.path:
 
 from mcp import Client, StdioServerParameters
 
+def is_tool_success(res) -> bool:
+    if getattr(res, "isError", False):
+        return False
+    for content in res.content:
+        text = getattr(content, "text", "")
+        if text.strip().startswith("Error:") or "Error:" in text:
+            return False
+    return True
+
 async def main():
     rprint(Panel(
         "[bold cyan]KIỂM THỬ KẾT NỐI MCP SERVER TỪ HOST/CLIENT THỨ HAI[/bold cyan]\n"
@@ -55,29 +64,49 @@ async def main():
             table.add_row(t.name, desc[:80] + ("..." if len(desc) > 80 else ""))
         rprint(table)
 
-        # 3. Gọi thử Tool 1: calculator
+        all_passed = True
+
+        # Gọi thử Tool 1: calculator
         rprint("\n[yellow]2. Gọi thử Tool 1: 'calculator' với biểu thức '0.05 * 10 + 0.15 * 8.0 + 0.5 * 9.0'...[/yellow]")
         calc_res = await client.call_tool("calculator", {"expression": "0.05 * 10 + 0.15 * 8.0 + 0.5 * 9.0"})
-        rprint(f"[bold green]✓ Kết quả từ calculator:[/bold green] [bold white]{calc_res.content[0].text}[/bold white]")
+        if not is_tool_success(calc_res):
+            all_passed = False
+            rprint(f"[bold red]✗ Lỗi từ calculator:[/bold red] {calc_res.content[0].text}")
+        else:
+            rprint(f"[bold green]✓ Kết quả từ calculator:[/bold green] [bold white]{calc_res.content[0].text}[/bold white]")
 
-        # 4. Gọi thử Tool 2: get_curriculum_week
+        # Gọi thử Tool 2: get_curriculum_week
         rprint("\n[yellow]3. Gọi thử Tool 2: 'get_curriculum_week' cho Week 1...[/yellow]")
         week_res = await client.call_tool("get_curriculum_week", {"week": 1, "full_content": False})
-        text_preview = week_res.content[0].text[:250].replace("\n", " ")
-        rprint(f"[bold green]✓ Kết quả từ get_curriculum_week:[/bold green] [dim]{text_preview}...[/dim]")
+        if not is_tool_success(week_res):
+            all_passed = False
+            rprint(f"[bold red]✗ Lỗi từ get_curriculum_week:[/bold red] {week_res.content[0].text}")
+        else:
+            text_preview = week_res.content[0].text[:250].replace("\n", " ")
+            rprint(f"[bold green]✓ Kết quả từ get_curriculum_week:[/bold green] [dim]{text_preview}...[/dim]")
 
-        # 5. Gọi thử Tool 3: check_late_submission_penalty
+        # Gọi thử Tool 3: check_late_submission_penalty
         rprint("\n[yellow]4. Gọi thử Tool 3: 'check_late_submission_penalty' với hours_late=30...[/yellow]")
         late_res = await client.call_tool("check_late_submission_penalty", {"hours_late": 30})
-        late_preview = late_res.content[0].text.split("\n")[0]
-        rprint(f"[bold green]✓ Kết quả từ check_late_submission_penalty:[/bold green] [bold white]{late_preview}[/bold white]")
+        if not is_tool_success(late_res):
+            all_passed = False
+            rprint(f"[bold red]✗ Lỗi từ check_late_submission_penalty:[/bold red] {late_res.content[0].text}")
+        else:
+            late_preview = late_res.content[0].text.split("\n")[0]
+            rprint(f"[bold green]✓ Kết quả từ check_late_submission_penalty:[/bold green] [bold white]{late_preview}[/bold white]")
 
-    rprint(Panel(
-        "[bold green]KẾT QUẢ: 100% THÀNH CÔNG (PASS)[/bold green]\n"
-        "MCP Server đã phục vụ thành công Host Python thứ hai thông qua giao thức chuẩn Model Context Protocol (MCP).\n"
-        "Đạt trọn vẹn điểm cộng Interoperability (+1 điểm Rubric)!",
-        border_style="green"
-    ))
+        if all_passed and len(tools) > 0:
+            rprint(Panel(
+                "[bold green]KẾT QUẢ: THÀNH CÔNG (PASS)[/bold green]\n"
+                "MCP Server đã phục vụ thành công Host Python thứ hai thông qua giao thức chuẩn Model Context Protocol (MCP).",
+                border_style="green"
+            ))
+        else:
+            rprint(Panel(
+                "[bold red]KẾT QUẢ: THẤT BÀI (FAIL)[/bold red]\n"
+                "Một hoặc nhiều MCP tool trả về lỗi hoặc không phát hiện được công cụ nào.",
+                border_style="red"
+            ))
 
 if __name__ == "__main__":
     asyncio.run(main())

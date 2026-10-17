@@ -1,0 +1,7 @@
+2026-10-17 18:01:07,080 [INFO] [mcp_server]: Starting LessonPlanningAssistantServer on stdio transport...
+2026-10-17 18:04:44,837 [INFO] [mcp_server]: Starting LessonPlanningAssistantServer on stdio transport...
+2026-10-17 18:04:44,872 [INFO] [mcp_server]: Executing 'calculator' tool with expression: '0.05 * 10 + 0.15 * 8.0 + 0.5 * 9.0'
+2026-10-17 18:04:45,200 [INFO] [mcp_server]: Executing 'get_curriculum_week' for week 1, full_content=False
+2026-10-17 18:04:45,213 [INFO] [mcp_server]: Successfully read lecture notes for Week 1 (38681 characters).
+2026-10-17 18:04:45,220 [INFO] [mcp_server]: Executing 'check_late_submission_penalty' for hours_late=30
+2026-10-17 18:04:45,220 [INFO] [mcp_server]: Late penalty applied: -20% (Late by 25 to 48 hours (Day 2))
