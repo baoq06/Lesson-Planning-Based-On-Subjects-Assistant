@@ -1,24 +1,24 @@
 ## Mai Quốc Bảo (24110080, git: baoq06)
 **Tool:** Google Antigravity (Claude 3.7 Sonnet / Gemini 2.0 Flash), used in VS Code, October 2026.
 **How I used AI**
-1. **Đo lường RAG Triad & Logging theo Session (`src/rag/eval_metrics.py`, `logs/`):**
-   - AI hỗ trợ viết module chấm điểm liên tục cho 3 chỉ số RAG Triad (`faithfulness`, `answer_relevance`, `context_precision`) bằng LLM Judge, thay thế cách chấm điểm rời rạc (1.0/0.5/0.0).
-   - Tôi tự triển khai cấu trúc lưu log theo từng phiên làm việc riêng biệt (`CURRENT_SESSION_DIR`, `run_*.jsonl`, xuất đồ thị `.png` và file `.csv` khi kết thúc phiên `make demo`). AI kiểm tra và chỉ ra lỗi định dạng JSONL (bỏ `indent=2` để đảm bảo mỗi bản ghi là đúng 1 dòng).
-2. **Thực nghiệm so sánh Retrieval Configurations (`tests/compare_configs.py` - Điểm cộng Rubric +1):**
-   - Dựa trên phản hồi của giảng viên về lỗi "kết luận viết sẵn", AI hỗ trợ tôi thay thế toàn bộ nhận xét tĩnh bằng logic tính toán động theo số liệu thực tế đo được từ 8 testcase (Hit Rate, Độ liên quan Cosine, Độ trễ API Jina), đảm bảo tính trung thực thực nghiệm giữa Hybrid Search và Dense-only.
-   - Hỗ trợ thêm cờ `--resume` trong `tests/eval.py` để có thể chạy tiếp khi bị ngắt quãng mà không phải chạy lại từ đầu.
-3. **Kiểm thử độc lập MCP Server từ Host thứ hai (`scripts/test_second_host.py` - Điểm cộng Rubric +1):**
-   - AI hướng dẫn viết script đóng vai trò Host Python thứ hai độc lập hoàn toàn với vòng lặp ReAct, kết nối tới MCP Server qua stdio để discover danh sách tool và gọi thử 3 công cụ (`calculator`, `get_curriculum_week`, `check_late_submission_penalty`), kiểm tra trạng thái thành công/thất bại tự động.
+1. **RAG Triad Evaluation & Session-Isolated Logging (`src/rag/eval_metrics.py`, `logs/`):**
+   - AI guided the design of continuous LLM-as-a-judge scoring for the three RAG Triad metrics (`faithfulness`, `answer_relevance`, `context_precision`), replacing the discrete step scoring (1.0/0.5/0.0).
+   - I implemented the session-isolated logging structure (`CURRENT_SESSION_DIR`, `run_*.jsonl`, and automated generation of `.png` chart and `.csv` summary upon exiting the demo loop). AI reviewed the output format and identified the JSONL compliance bug (removing `indent=2` to ensure exactly one JSON record per line).
+2. **Quantitative Retrieval Configuration Comparison (`tests/compare_configs.py` - Rubric Bonus +1):**
+   - In response to the instructor's feedback regarding "pre-written conclusions", AI guided me in replacing all hardcoded qualitative statements with dynamic empirical logic computed directly from the benchmark runs across 8 test cases (Hit Rate, average Cosine Relevance, and Jina API Latency).
+   - AI also assisted in implementing the `--resume` flag logic in `tests/eval.py`, allowing incomplete test runs to seamlessly resume without re-running completed cases.
+3. **Independent Second Host Interoperability Testing (`scripts/test_second_host.py` - Rubric Bonus +1):**
+   - AI provided the architectural pattern for a standalone second Python client running outside the primary ReAct agent loop, connecting to the MCP Server over standard I/O (stdio) to dynamically discover tools and test executions (`calculator`, `get_curriculum_week`, and `check_late_submission_penalty`) with automated success/failure checks.
 | Part / Module | AI role | Written by |
 |---|---|---|
-| `tests/compare_configs.py` (+1 điểm) | Hướng dẫn công thức đánh giá động theo số liệu thực tế (bỏ kết luận viết sẵn) | Tôi viết code và chạy thực nghiệm |
-| `src/rag/eval_metrics.py` & `tests/eval.py` | Hỗ trợ prompt cho RAG Triad Judge liên tục, cờ `--resume` | Tôi tích hợp vào pipeline và xuất đồ thị/CSV |
-| `scripts/test_second_host.py` (+1 điểm) | Gợi ý cấu trúc Client MCP độc lập qua StdioServerParameters | Tôi viết code và kiểm chứng |
+| `tests/compare_configs.py` (+1 bonus) | Guided dynamic evaluation formulas based on empirical benchmark metrics (removed pre-written conclusions) | Implemented and benchmarked by me |
+| `src/rag/eval_metrics.py` & `tests/eval.py` | Assisted in prompting for continuous RAG Triad Judge and the `--resume` flag logic | Integrated into pipeline with CSV/chart generation by me |
+| `scripts/test_second_host.py` (+1 bonus) | Provided independent MCP client template via `StdioServerParameters` | Implemented and verified by me |
 **Main prompts (examples):**
-- *"File compare_configs.py bị thầy nhận xét lỗi kết luận viết sẵn mục 1.2, hãy hướng dẫn tôi sửa thành đánh giá động dựa trên kết quả đo thật của các testcase."*
-- *"File log của tôi có ghi USAGE nhưng bị báo không phải JSONL hợp lệ, lỗi do đâu và sửa như thế nào?"*
-- *"Viết script test_second_host.py độc lập để chứng minh MCP Server dùng được từ client thứ hai đạt điểm cộng Rubric."*
-- *"Làm sao để sửa eval.py mặc định chạy từ đầu, và chỉ chạy tiếp khi có tham số --resume?"*
+- *"The instructor commented that compare_configs.py had pre-written conclusions in section 1.2; guide me on how to rewrite it with dynamic evaluation based on actual benchmark metrics."*
+- *"My log records token usage, but the instructor flagged that it is not valid JSONL. What is the root cause and how do I fix it?"*
+- *"Write an independent test_second_host.py script to demonstrate MCP Server interoperability from a second Python client for rubric bonus points."*
+- *"How do I modify eval.py so it defaults to running from scratch and only resumes when the --resume flag is explicitly passed?"*
 I can explain every line of the code listed above.
 
 ## Lê Hải Đăng (24110087, git: Hai Dang)
