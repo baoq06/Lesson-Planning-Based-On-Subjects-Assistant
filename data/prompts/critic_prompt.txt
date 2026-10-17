@@ -9,7 +9,7 @@ Rules:
 2. Course Policy Rules [POLICY_AIPR]:
    - Student IDs must be strictly 8 digits.
    - Medical extension is capped at 5 days (MAX_EXTENSION_DAYS = 5).
-   - Late penalty: <=24h (-10%), 25-48h (-20%), >48h (0 marks).
+   - Late penalty: 1-24h (-10%), 25-48h (-20%), 49-72h (-30%), >72h (0 marks, submission portal closed).
    - Policy claims must cite [POLICY_AIPR].
 3. Lecture Notes Rules [LP_W01] to [LP_W06]:
    - Curriculum claims must cite the corresponding week tag (e.g. [LP_W01]).
