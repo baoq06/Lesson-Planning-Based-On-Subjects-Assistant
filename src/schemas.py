@@ -118,6 +118,23 @@ class AgentResponse:
     usage:  UsageStats = field(default_factory=dict)
 
 @dataclass
+# Handoff contract gói dữ liệu bàn giao từ Producer sang Critic
+class ProducerHandoff:
+    question: str
+    draft: str
+    evidence: str
+    revision_budget: int = 1
+
+    # chuyển contract thành prompt sạch cho Critic
+    def to_critic_prompt(self) -> str:
+        return(
+            f"REQUEST:\n{self.question}\n\n"
+            f"RAW EVIDENCE: \n{self.evidence if self.evidence.strip() else '(No tool evidence gathered)'}\n\n"
+            f"DRAFT:\n{self.draft}"
+        )
+
+
+@dataclass
 # Handoff contract kết quả đánh giá từ Critic Agent
 class CriticReview:
     verdict: Literal["PASS", "REVISE"]

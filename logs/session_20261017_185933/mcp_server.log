@@ -1,0 +1,7 @@
+2026-10-17 19:00:03,305 [INFO] [mcp_server]: Starting LessonPlanningAssistantServer on stdio transport...
+2026-10-17 19:00:04,881 [INFO] [mcp_server]: Executing 'calculate_course_grade' with attendance=0.0, labs=0.0, test1=0.0, test2=0.0, final_project=0.0, absence_rate=25.0%
+2026-10-17 19:00:04,881 [INFO] [mcp_server]: Student exceeded absence limit: absence_rate=25.0% > 20%
+2026-10-17 19:00:08,135 [INFO] [mcp_server]: Starting LessonPlanningAssistantServer on stdio transport...
+2026-10-17 19:00:26,960 [INFO] [mcp_server]: Executing 'calculator' tool with expression: '25 > 20'
+2026-10-17 19:00:26,961 [ERROR] [mcp_server]: Error: Failed to evaluate expression '25 > 20': Unsupported syntax: Compare
+2026-10-17 19:00:53,470 [INFO] [mcp_server]: Executing 'calculator' tool with expression: '25 - 20'
