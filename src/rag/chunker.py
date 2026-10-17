@@ -191,7 +191,7 @@ def semantic_chunking(
 # =====================================================================
 def chunk_document(
     doc: Document,
-    strategy: Literal["fixed", "recursive", "semantic"] = " recursive",
+    strategy: Literal["fixed", "recursive", "semantic"] = "recursive",
     **kwargs,
 ) -> list[DocumentChunk]:
     """Hàm giao diện chung: cho phép chọn chiến lược chunking tùy ý."""

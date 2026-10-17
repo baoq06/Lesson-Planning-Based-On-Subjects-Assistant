@@ -300,7 +300,7 @@ def calculate_course_grade(
     )
     try:
         grade_components = {
-            "Attendacne": attendance,
+            "Attendance": attendance,
             "Labs": labs,
             "Test 1": test1,
             "Test 2": test2,
@@ -316,7 +316,7 @@ def calculate_course_grade(
         if not (0.0 <= absence_rate <= 100.0):
             return (
                 f"Error: Invalid absence rate ({absence_rate}%). "
-                f"Absence rate must be form 0.0% to 100.0% [POLICY_AIPR]."
+                f"Absence rate must be from 0.0% to 100.0% [POLICY_AIPR]."
             )
 
         if absence_rate > 20.0:
@@ -324,7 +324,7 @@ def calculate_course_grade(
             return (
                 f" Attendance warning [POLICY_AIPR]:\n"
                 f"- Absence rate: {absence_rate:.1f}% (exceeds the limit 20%).\n"
-                f"- Current status: Banned from taking the final test / protecting the final project based on section 2 [POLICY_AIPR].\n"
+                f"- Current status: Banned from taking the final test / defending the final project based on section 2 [POLICY_AIPR].\n"
             )
 
         final_grade = (

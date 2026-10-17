@@ -100,14 +100,6 @@ class ToolCall:
     name: str
     arguments: dict[str, Any]
 
-#schema ToolResult: llm trả về
-@dataclass
-class ToolResult:
-    call_id:  str
-    tool_name: str
-    output: str
-    id_error: bool = False
-
 #schema AgentStep: 1 vòng lặp ReAct
 @dataclass
 class AgentStep:
@@ -128,7 +120,7 @@ class AgentResponse:
 @dataclass
 # Handoff contract kết quả đánh giá từ Critic Agent
 class CriticReview:
-    verdict: Literal["PASS", "FAIL"]
-    critque: str
+    verdict: Literal["PASS", "REVISE"]
+    critique: str
     issues: List[str] = field(default_factory=list)
     suggested_fix: Optional[str] = None
