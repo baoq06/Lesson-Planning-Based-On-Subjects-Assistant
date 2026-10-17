@@ -11,7 +11,7 @@ from typing import Optional, Literal
 from pathlib import Path
 from mcp.server.mcpserver import MCPServer
 from string import Template
-from src.schemas import DraftResult, SearchHit, SearchResult, ReadDraftResult, ExportPlanResult, TimelineItem
+from src.schemas import DraftResult, SearchHit, SearchResult, ReadDraftResult
 from src.rag.vector_store import VectorStore
 from src.rag.hybrid_retriever import HybridRetriever
 from src.rag.load_documents import load_all_course_documents

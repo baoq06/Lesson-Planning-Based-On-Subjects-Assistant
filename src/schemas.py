@@ -62,34 +62,12 @@ class SearchResult:
     best_relevance: float
     hits: list[SearchHit] = field(default_factory=list)
 
-#schema TimelineItem: cấu trúc cho từng mốc hoạt động trong buổi học
-class TimelineItem(TypedDict):
-    time: str
-    activity: str
-    detail: str
-
 # schema ReadDraftResult: kết quả của tool read_draft
 @dataclass
 class ReadDraftResult:
     path: str
     chars: int
     content: str
-# schema ExportPlanResult: kết quả trả về của tool export_lesson_plan
-@dataclass
-class ExportPlanResult:
-    status: str
-    week: int
-    title: str
-    json_path: str
-    md_path: str
-    note: str
-# schema UsageStats: thống kê token chuẩn hóa
-class UsageStats(TypedDict):
-    calls: int
-    prompt_tokens: int
-    completion_tokens: int
-    total_tokens: int
-    max_prompt: int
 
 # --- khối vòng lặp agent react & memory (viết tạm thời, có thể không xài)
 
