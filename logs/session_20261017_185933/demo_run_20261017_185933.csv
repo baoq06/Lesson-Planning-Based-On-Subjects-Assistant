@@ -1,6 +1,0 @@
-﻿STT,Mã câu/ID,Phân loại,Câu hỏi,Câu trả lời của Bot,Faithfulness,Answer Relevance,Context Precision,Độ trễ (giây),Tổng Tokens,Nguồn trích dẫn (Docs Cited),Công cụ đã dùng (Tools)
-1,Demo_Q01,demo,Sinh viên vắng 25% tổng số buổi học thì có được thi cuối kỳ không?,"Theo quy chế môn học AIPR, sinh viên có tỷ lệ vắng mặt **vượt quá 20%** sẽ bị cấm tham dự kỳ thi cuối kỳ / bảo vệ đồ án cuối kỳ [POLICY_AIPR].
-
-Với tỷ lệ vắng mặt **25%**, sinh viên **KHÔNG được phép thi cuối kỳ** [POLICY_AIPR].
-
-Đây là ngưỡng cứng theo quy chế [POLICY_AIPR].",0.0,1.0,0.0,84.13,9502,POLICY_AIPR,calculator; calculator

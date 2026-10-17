@@ -69,6 +69,14 @@ class ReadDraftResult:
     chars: int
     content: str
 
+# schema UsageStats: thống kê token chuẩn hóa
+class UsageStats(TypedDict):
+    calls: int
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+    max_prompt: int
+
 # --- khối vòng lặp agent react & memory (viết tạm thời, có thể không xài)
 
 # schema ToolCall: lệnh gọi tool do llm quyết

@@ -126,7 +126,7 @@ def semantic_chunking(
         return [DocumentChunk(content=text, chunk_id=chunk_id, doc_id=doc.doc_id, chunk_index=0, metadata=doc.metadata)]
 
     # 1. Batch embed toàn bộ các câu (1 lần gọi API duy nhất)
-    embeddings = batch_embed_text(sentences, task="retrieval.passage")
+    embeddings = batch_embed_text(sentences)
 
     # 2. Tính độ tương đồng giữa câu i và câu i+1
     similarities: list[float] = []

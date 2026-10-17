@@ -34,33 +34,20 @@ if str(REPO_ROOT) not in sys.path:
     
 from src.agent.loop import run_agent_loop
 from src.agent.call_llm import call_llm
-from src.schemas import AgentResponse, ProducerHandoff, CriticReview
+from src.schemas import AgentResponse
 
 load_dotenv()
 
-def parse_critic_review(text: str) -> CriticReview:
-    # Chuyển đổi text thô từ Critic LLM thành Handoff Contract CriticReview.
+def parse_verdict(text: str) -> tuple[str, int, bool]:
     raw = text or ""
-    issues = [line.strip() for line in flagged_claims(raw)]
+    unsupported = len(re.findall(r"SUPPORTED\s*:\s*no\b", raw, re.I))
     m = re.search(r"VERDICT\s*:\s*(PASS|REVISE)", raw, re.I)
-    
     if not m:
-        # Nếu Critic không xuất dòng VERDICT chuẩn -> Fail-closed thành REVISE
-        return CriticReview(
-            verdict="REVISE",
-            critique=raw,
-            issues=issues,
-            suggested_fix="Critic returned no clean VERDICT line (failing closed to REVISE)."
-        )
-    
+        return "REVISE", unsupported, True
     verdict = m.group(1).upper()
-    suggested_fix = "Revise draft to remove ungrounded claims." if issues else None
-    return CriticReview(
-        verdict=verdict,
-        critique=raw,
-        issues=issues,
-        suggested_fix=suggested_fix
-    )
+    if verdict == "PASS" and unsupported:
+        verdict = "REVISE"
+    return verdict, unsupported, False
 
 def flagged_claims(verdict_text: str) -> list[str]:
     return [
@@ -99,7 +86,7 @@ class Team:
         print(f"\n{'-' * 72}\n{frm} -> {to}   [{label}: {len(block)} chars]\n{'-' * 72}")
         print(block)
 
-    async def run(self, question: str, history: Optional[list[dict]] =  None) -> tuple[str, dict]:
+    async def run(self, question: str, history: Optional[list[dict]] = None) -> tuple[str, dict, AgentResponse]:
         producer_res: AgentResponse = await run_agent_loop(
             question=question,
             history=history,
@@ -113,15 +100,6 @@ class Team:
             for s in producer_res.steps if s.observation
         ]
         evidence = "\n".join(evidence_items)
-
-        # Đóng gói Handoff contract từ Producer
-        handoff = ProducerHandoff(
-          question=question,
-          draft=draft,
-          evidence=evidence,
-          revision_budget=REVISION_BUDGET
-      )
-
         self._show("producer", "critic", "DRAFT + EVIDENCE", f"DRAFT:\n{draft}\n\nEVIDENCE:\n{evidence}")
 
         stats = {"revisions": 0, "unsupported": 0, "parse_errors": 0, "verdicts": []}
@@ -129,11 +107,17 @@ class Team:
         if USE_CRITIC:
             budget = REVISION_BUDGET
             while True:
+                critic_prompt = (
+                    f"REQUEST:\n{question}\n\n"
+                    f"RAW EVIDENCE:\n{evidence if evidence.strip() else '(No tool evidence gathered)'}\n\n"
+                    f"DRAFT:\n{draft}"
+                )
+
                 resp = call_llm(
                     client=self.client,
                     messages=[
                         {"role": "system", "content": CRITIC_SYSTEM},
-                        {"role": "user", "content": handoff.to_critic_prompt()}
+                        {"role": "user", "content": critic_prompt}
                     ],
                     model=self.model,
                     temperature=0.0
@@ -141,31 +125,28 @@ class Team:
                 verdict_text = resp.choices[0].message.content.strip()
                 self._show("critic", "producer", "VERDICT", verdict_text)
 
-                review: CriticReview = parse_critic_review(verdict_text)
+                verdict, unsupported, parse_error = parse_verdict(verdict_text)
+                stats["verdicts"].append((verdict, unsupported))
+                stats["unsupported"] = unsupported
+                stats["parse_errors"] += int(parse_error)
 
-                stats["verdicts"].append((review.verdict, len(review.issues)))
-                stats["unsupported"] = len(review.issues)
-                if review.suggested_fix and "failing closed" in review.suggested_fix:
-                    stats["parse_errors"] += 1
-                    print(f"!! {review.suggested_fix}")
-
-                for line in review.issues:
-                  print(f"   flagged: {line}")
-              
-                # Kiểm tra điều kiện dừng dựa trên contract
-                if review.verdict == "PASS":
+                if parse_error:
+                    print("!! Critic returned no clean VERDICT line - failing closed (treated as REVISE)")
+                
+                for line in flagged_claims(verdict_text):
+                    print(f"   flagged: {line}")
+                if verdict == "PASS":
                     break
                 if budget <= 0:
                     print("!! Revision budget exhausted - shipping draft as stands")
                     break
 
-                # chuyển giao yêu cầu sửa đổi
                 budget -= 1
                 stats["revisions"] += 1
                 revised_task = (
                     f"{question}\n\n"
                     f"An independent critic reviewed your previous draft and flagged unsupported claims:\n"
-                    f"{review.critique}\n\n"
+                    f"{verdict_text}\n\n"
                     "Revise the answer so that EVERY claim is supported by course evidence "
                     "or explicitly marked as not covered. Do not fabricate facts."
                 )
@@ -176,9 +157,6 @@ class Team:
                     )
                 draft = revised_res.answer
                 last_res = revised_res
-
-                # Cập nhật lại draft trong contract cho vòng lặp tiếp theo nếu có
-                handoff.draft = draft
                 self._show("producer (revision)", "critic", "REVISED DRAFT", draft)
         else:
             print("!! CRITIC=0 - Draft ships unchecked (control mode)")
@@ -264,7 +242,7 @@ def main():
         except (KeyboardInterrupt, EOFError):
             print("\n\nĐã nhận lệnh thoát phiên. Đang xuất báo cáo...")
             break
-
+        
     # Khi kết thúc 1 phiên demo: Xuất CSV và Đồ thị PNG tổng hợp toàn bộ các câu trong phiên
     if session_records:
         demo_csv = CURRENT_SESSION_DIR / f"demo_run_{SESSION_TIMESTAMP}.csv"
