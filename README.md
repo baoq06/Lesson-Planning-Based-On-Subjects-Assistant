@@ -62,15 +62,15 @@ File `.env` đã nằm trong `.gitignore`, không commit key lên repo.
 
 ## 3. Các lệnh
 
-| Lệnh | Việc |
-|---|---|
-| `make setup` | Cài các thư viện cần thiết |
-| `make demo` | Mở trợ lý dạng hỏi–đáp trên terminal (`python -m src.agent.loop`) |
-| `make eval` | Chạy toàn bộ testset (`tests/testset.jsonl`, 18 câu), rồi so sánh 2 cấu hình hybrid vs dense |
-| `make eval ARGS="--resume"` | Chạy tiếp từ câu bị ngắt của lượt eval trước (ví dụ khi bị giới hạn tốc độ API) |
-| `python -m tests.eval --limit 2` | Chạy thử nhanh 2 câu đầu |
-| `python scripts/test_second_host.py` | Kết nối MCP server từ một client Python thứ hai (chứng minh tính tương thích) |
-| `python -m src.agent.team_critic` | Chạy mô hình Producer–Critic (agent soạn câu trả lời, critic kiểm tra bằng chứng) |
+| Lệnh | Lệnh Python tương đương | Mô tả / Công việc |
+|---|---|---|
+| `make setup` | `python -m pip install --upgrade pip && pip install -r requirements.txt` | Cài đặt toàn bộ thư viện cần thiết |
+| `make demo` | `python -m src.agent.loop` | Chạy chương trình tương tác trực tiếp qua terminal (Single Agent ReAct) |
+| `make multi` | `python -m src.agent.team_critic` | Chạy hệ thống Multi-Agent (Producer + Critic CLI) |
+| `make second_host` | `python scripts/test_second_host.py` | Kiểm thử MCP Server từ Host/Client thứ hai độc lập (chứng minh tính tương thích) |
+| `make eval` | `python -m tests.eval && python -m tests.compare_configs` | Đánh giá benchmark định lượng hệ thống (kèm so sánh 2 cấu hình Hybrid vs Dense) |
+| `make eval ARGS="--resume"` | `python -m tests.eval --resume && python -m tests.compare_configs` | Chạy tiếp từ câu bị ngắt của lượt eval trước (ví dụ khi gặp rate limit) |
+| `make eval ARGS="--limit 2"` | `python -m tests.eval --limit 2` | Chạy thử nghiệm nhanh với 2 câu đầu tiên |
 
 Mọi lệnh phải chạy ở **thư mục gốc của repo**.
 
