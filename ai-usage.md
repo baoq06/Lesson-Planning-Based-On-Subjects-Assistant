@@ -1,3 +1,50 @@
+## Mai Quốc Bảo (24110080, git: baoq06)
+**Tool:** Google Antigravity (Claude 3.7 Sonnet / Gemini 2.0 Flash), used in VS Code, October 2026.
+**How I used AI**
+1. **Đo lường RAG Triad & Logging theo Session (`src/rag/eval_metrics.py`, `logs/`):**
+   - AI hỗ trợ viết module chấm điểm liên tục cho 3 chỉ số RAG Triad (`faithfulness`, `answer_relevance`, `context_precision`) bằng LLM Judge, thay thế cách chấm điểm rời rạc (1.0/0.5/0.0).
+   - Tôi tự triển khai cấu trúc lưu log theo từng phiên làm việc riêng biệt (`CURRENT_SESSION_DIR`, `run_*.jsonl`, xuất đồ thị `.png` và file `.csv` khi kết thúc phiên `make demo`). AI kiểm tra và chỉ ra lỗi định dạng JSONL (bỏ `indent=2` để đảm bảo mỗi bản ghi là đúng 1 dòng).
+2. **Thực nghiệm so sánh Retrieval Configurations (`tests/compare_configs.py` - Điểm cộng Rubric +1):**
+   - Dựa trên phản hồi của giảng viên về lỗi "kết luận viết sẵn", AI hỗ trợ tôi thay thế toàn bộ nhận xét tĩnh bằng logic tính toán động theo số liệu thực tế đo được từ 8 testcase (Hit Rate, Độ liên quan Cosine, Độ trễ API Jina), đảm bảo tính trung thực thực nghiệm giữa Hybrid Search và Dense-only.
+   - Hỗ trợ thêm cờ `--resume` trong `tests/eval.py` để có thể chạy tiếp khi bị ngắt quãng mà không phải chạy lại từ đầu.
+3. **Kiểm thử độc lập MCP Server từ Host thứ hai (`scripts/test_second_host.py` - Điểm cộng Rubric +1):**
+   - AI hướng dẫn viết script đóng vai trò Host Python thứ hai độc lập hoàn toàn với vòng lặp ReAct, kết nối tới MCP Server qua stdio để discover danh sách tool và gọi thử 3 công cụ (`calculator`, `get_curriculum_week`, `check_late_submission_penalty`), kiểm tra trạng thái thành công/thất bại tự động.
+| Part / Module | AI role | Written by |
+|---|---|---|
+| `tests/compare_configs.py` (+1 điểm) | Hướng dẫn công thức đánh giá động theo số liệu thực tế (bỏ kết luận viết sẵn) | Tôi viết code và chạy thực nghiệm |
+| `src/rag/eval_metrics.py` & `tests/eval.py` | Hỗ trợ prompt cho RAG Triad Judge liên tục, cờ `--resume` | Tôi tích hợp vào pipeline và xuất đồ thị/CSV |
+| `scripts/test_second_host.py` (+1 điểm) | Gợi ý cấu trúc Client MCP độc lập qua StdioServerParameters | Tôi viết code và kiểm chứng |
+**Main prompts (examples):**
+- *"File compare_configs.py bị thầy nhận xét lỗi kết luận viết sẵn mục 1.2, hãy hướng dẫn tôi sửa thành đánh giá động dựa trên kết quả đo thật của các testcase."*
+- *"File log của tôi có ghi USAGE nhưng bị báo không phải JSONL hợp lệ, lỗi do đâu và sửa như thế nào?"*
+- *"Viết script test_second_host.py độc lập để chứng minh MCP Server dùng được từ client thứ hai đạt điểm cộng Rubric."*
+- *"Làm sao để sửa eval.py mặc định chạy từ đầu, và chỉ chạy tiếp khi có tham số --resume?"*
+I can explain every line of the code listed above.
+
+## Lê Hải Đăng (24110087, git: Hai Dang)
+
+**Tool:** Google Antigravity, used in VS Code, October 2026.
+
+**How I used AI**
+
+1. **MCP Tools implementation & review (`calculator`, `get_curriculum_week`, `get_gotchas_and_best_practices`, `calculate_course_grade`, `check_late_submission_penalty`).** AI guided the safe design logic (e.g., safe AST evaluation for `calculator` instead of `eval()`, curriculum week mapping, and grade calculation/penalty rules following course policy). I wrote the tools myself, and AI reviewed the code, verified logic edge cases, and checked input/output schema validation.
+2. **Multi-Agent pattern (`team_critic.py`).** Using the single-agent skeleton from `loop.py` and the lecture code samples, AI guided me on how to architect a two-role Critic-Refiner workflow (`Producer` and `Critic`) to evaluate answer factuality, verify document citations (`[POLICY_AIPR]`, `[LP_Wxx]`), and iteratively refine responses if ungrounded claims are detected.
+3. **Session Logging management.** AI guided how to structure session-isolated logs (`CURRENT_SESSION_DIR`, environment variable `SESSION_LOG_DIR`, and separate log files for the agent loop and MCP server per run timestamp). I implemented and integrated the logging setup into the pipeline myself.
+4. **RAG pipeline components (`chunker.py`, `embedding.py`, `jina_embeddings.py`, `vector_store.py`).** Based on the lecture code samples, I implemented document chunking, text embedding integration with Jina, and vector store retrieval. AI reviewed my implementation.
+5. **Fixing bugs.** Using the `CHECKLIST_SUA_DO_AN.md` file, AI helped me to track the bugs and guided me to fix those. I implemented the changes.
+
+| Part | AI role | Written by |
+|---|---|---|
+| `calculator`, `get_curriculum_week`, `get_gotchas_and_best_practices`, `calculate_course_grade`, `check_late_submission_penalty` | Guided safe design (safe AST evaluation, exponent limits) and policy edge cases; reviewed code | Code by me, refined based on AI review |
+| `src/agent/team_critic.py` | Guided the Critic-Refiner multi-agent architecture and critic prompt design based on `loop.py` | Code by me, guided by AI |
+| Session Logging (`CURRENT_SESSION_DIR`, `logs/`) | Guided folder structuring by timestamp and passing `SESSION_LOG_DIR` to MCP server | Implemented by me, guided by AI |
+| `chunker.py`, `embedding.py`, `jina_embeddings.py`, `vector_store.py` | Reviewed the RAG pipeline components and verified implementation against lecture samples | Code by me based on class samples, reviewed by AI |
+| Bug fixes & `CHECKLIST_SUA_DO_AN.md` | Tracked checklist items and guided fixes for detected issues | Implemented by me |
+
+**Main prompts (examples):** "Làm sao để sửa tool calculator bỏ hàm eval() và dùng ast để an toàn hơn?", "Làm thế nào để giới hạn số mũ trong _eval_ast nhằm tránh tràn số hoặc treo máy?", "Dựa vào file loop.py và bài mẫu, hãy hướng dẫn tôi viết team_critic.py với 2 vai trò Producer và Critic", "Làm sao để cấu trúc folder log theo timestamp của từng session và đồng bộ SESSION_LOG_DIR qua MCP server?", "Review giúp tôi file chunker, embedding và vector_store tôi viết từ bài mẫu xem đã chuẩn chưa?"
+
+I can explain every line of the code listed above.
+
 # AI usage declaration
 ## Lý Trần Gia Khang (24110098, git: kangkzxw)
 
@@ -25,26 +72,3 @@
 
 I can explain every line of the code listed above.
 
-## Lê Hải Đăng (24110087, git: Hai Dang)
-
-**Tool:** Google Antigravity, used in VS Code, October 2026.
-
-**How I used AI**
-
-1. **MCP Tools implementation & review (`calculator`, `get_curriculum_week`, `get_gotchas_and_best_practices`, `calculate_course_grade`, `check_late_submission_penalty`).** AI guided the safe design logic (e.g., safe AST evaluation for `calculator` instead of `eval()`, curriculum week mapping, and grade calculation/penalty rules following course policy). I wrote the tools myself, and AI reviewed the code, verified logic edge cases, and checked input/output schema validation.
-2. **Multi-Agent pattern (`team_critic.py`).** Using the single-agent skeleton from `loop.py` and the lecture code samples, AI guided me on how to architect a two-role Critic-Refiner workflow (`Producer` and `Critic`) to evaluate answer factuality, verify document citations (`[POLICY_AIPR]`, `[LP_Wxx]`), and iteratively refine responses if ungrounded claims are detected.
-3. **Session Logging management.** AI guided how to structure session-isolated logs (`CURRENT_SESSION_DIR`, environment variable `SESSION_LOG_DIR`, and separate log files for the agent loop and MCP server per run timestamp). I implemented and integrated the logging setup into the pipeline myself.
-4. **RAG pipeline components (`chunker.py`, `embedding.py`, `jina_embeddings.py`, `vector_store.py`).** Based on the lecture code samples, I implemented document chunking, text embedding integration with Jina, and vector store retrieval. AI reviewed my implementation.
-5. **Fixing bugs.** Using the `CHECKLIST_SUA_DO_AN.md` file, AI helped me to track the bugs and guided me to fix those. I implemented the changes.
-
-| Part | AI role | Written by |
-|---|---|---|
-| `calculator`, `get_curriculum_week`, `get_gotchas_and_best_practices`, `calculate_course_grade`, `check_late_submission_penalty` | Guided safe design (safe AST evaluation, exponent limits) and policy edge cases; reviewed code | Code by me, refined based on AI review |
-| `src/agent/team_critic.py` | Guided the Critic-Refiner multi-agent architecture and critic prompt design based on `loop.py` | Code by me, guided by AI |
-| Session Logging (`CURRENT_SESSION_DIR`, `logs/`) | Guided folder structuring by timestamp and passing `SESSION_LOG_DIR` to MCP server | Implemented by me, guided by AI |
-| `chunker.py`, `embedding.py`, `jina_embeddings.py`, `vector_store.py` | Reviewed the RAG pipeline components and verified implementation against lecture samples | Code by me based on class samples, reviewed by AI |
-| Bug fixes & `CHECKLIST_SUA_DO_AN.md` | Tracked checklist items and guided fixes for detected issues | Implemented by me |
-
-**Main prompts (examples):** "Làm sao để sửa tool calculator bỏ hàm eval() và dùng ast để an toàn hơn?", "Làm thế nào để giới hạn số mũ trong _eval_ast nhằm tránh tràn số hoặc treo máy?", "Dựa vào file loop.py và bài mẫu, hãy hướng dẫn tôi viết team_critic.py với 2 vai trò Producer và Critic", "Làm sao để cấu trúc folder log theo timestamp của từng session và đồng bộ SESSION_LOG_DIR qua MCP server?", "Review giúp tôi file chunker, embedding và vector_store tôi viết từ bài mẫu xem đã chuẩn chưa?"
-
-I can explain every line of the code listed above.
