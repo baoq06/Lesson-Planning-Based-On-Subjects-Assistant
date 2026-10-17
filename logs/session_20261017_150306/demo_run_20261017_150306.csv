@@ -1,0 +1,12 @@
+﻿STT,Mã câu/ID,Phân loại,Câu hỏi,Câu trả lời của Bot,Faithfulness,Answer Relevance,Context Precision,Độ trễ (giây),Tổng Tokens,Nguồn trích dẫn (Docs Cited),Công cụ đã dùng (Tools)
+1,Demo_Q01,demo,Nộp bài trễ quá 3 ngày có hậu quả gì?,"Theo chính sách môn học AIPR (Mục 4), nếu bạn nộp bài trễ **3 ngày (72 giờ)**, hậu quả là:
+
+- **Bị trừ 30% tổng điểm của bài tập** [POLICY_AIPR].
+
+Lưu ý thêm về các mốc nộp trễ để bạn tham khảo:
+- Trễ ≤ 24 giờ: trừ 10%
+- Trễ 25–48 giờ: trừ 20%
+- Trễ 49–72 giờ: trừ 30%
+- Trễ > 72 giờ: bài nộp sẽ bị từ chối (0 điểm) [POLICY_AIPR].
+
+Vì vậy, nếu trễ đúng 3 ngày bạn vẫn còn được tính điểm (trừ 30%), nhưng nếu trễ quá 3 ngày thì bài sẽ bị từ chối hoàn toàn.",0.5,0.95,1.0,6.17,5865,POLICY_AIPR,check_late_submission_penalty
