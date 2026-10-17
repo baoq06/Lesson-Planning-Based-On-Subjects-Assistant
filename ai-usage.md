@@ -51,7 +51,6 @@ I can explain every line of the code listed above.
 
 I can explain every line of the code listed above.
 
-# AI usage declaration
 ## Lý Trần Gia Khang (24110098, git: kangkzxw)
 
 **Tool:** Claude Code (Anthropic) and Antigravity (Google), used in VS Code, October 2026.
