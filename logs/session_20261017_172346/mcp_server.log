@@ -1,0 +1,10 @@
+2026-10-17 17:24:02,419 [INFO] [mcp_server]: Starting LessonPlanningAssistantServer on stdio transport...
+2026-10-17 17:24:03,773 [INFO] [mcp_server]: Executing 'search_lesson_content' query='chunking overlap lý do cần gối đầu chunk tài liệu' mode=hybrid top_k=4 week=0
+2026-10-17 17:24:04,635 [INFO] [mcp_server]: Loaded 958 chunks from cache.
+2026-10-17 17:24:07,639 [INFO] [mcp_server]: Successfully searched for query 'chunking overlap lý do cần gối đầu chunk tài liệu' and found 4 hits.
+2026-10-17 17:26:52,860 [INFO] [mcp_server]: Starting LessonPlanningAssistantServer on stdio transport...
+2026-10-17 17:26:54,198 [INFO] [mcp_server]: Executing 'draft_template_submission' for student 24110001
+2026-10-17 17:26:54,198 [INFO] [mcp_server]: Draft saved successfully to: C:\Lesson Planning Based On Subjects Assistant\data\drafts\draft_submission_24110001.txt (overwritten=True)
+2026-10-17 17:26:54,979 [INFO] [mcp_server]: Executing 'read_draft' for student ID 24110001
+2026-10-17 17:26:54,979 [INFO] [mcp_server]: Draft read successfully: C:\Lesson Planning Based On Subjects Assistant\data\drafts\draft_submission_24110001.txt (470 characters)
+2026-10-17 17:28:48,433 [INFO] [mcp_server]: Starting LessonPlanningAssistantServer on stdio transport...

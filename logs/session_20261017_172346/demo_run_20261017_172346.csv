@@ -1,0 +1,40 @@
+﻿STT,Mã câu/ID,Phân loại,Câu hỏi,Câu trả lời của Bot,Faithfulness,Answer Relevance,Context Precision,Độ trễ (giây),Tổng Tokens,Nguồn trích dẫn (Docs Cited),Công cụ đã dùng (Tools)
+1,Demo_Q01,demo,Vì sao khi chunking tài liệu cần để các chunk gối đầu (overlap) lên nhau?,"Khi chunking tài liệu, việc để các chunk **gối đầu (overlap)** lên nhau nhằm **tránh cắt một câu hoặc một ý tưởng đôi ở ranh giới giữa các chunk** [LP_W03].
+
+Cụ thể:
+
+- **Đảm bảo không mất thông tin tại ranh giới chunk:** Overlap giúp đảm bảo không có thông tin nào bị mất ở điểm nối giữa các chunk. Ví dụ, nếu một câu nằm từ vị trí 500 đến 520, nó sẽ xuất hiện trong cả chunk 0 lẫn chunk 1, nhờ đó câu không bị cắt đôi [LP_W03].
+
+- **Giữ tính liên tục cho LLM:** Nếu một câu trải dài từ ký tự 148 đến 155 trong một chunk 150 ký tự, phần của nó sẽ nằm trong chunk 0 (ký tự 148–150) và phần còn lại nằm trong chunk 1 (do overlap). Nếu không có overlap, câu sẽ bị cắt — và LLM chỉ nhìn thấy một nửa câu, làm giảm chất lượng truy hồi [LP_W03].
+
+Tóm lại, mục đích cốt lõi của overlap là **duy trì tính toàn vẹn và liên tục của nội dung** khi tài liệu bị chia nhỏ, thay vì để tăng số lượng chunk hay giảm dung lượng lưu trữ [LP_W03].",1.0,0.95,0.85,30.69,6825,LP_W03,search_lesson_content
+2,Demo_Q02,demo,"Em là Nguyễn Văn An, MSSV 24110001, bị ốm nằm viện, có giấy xác nhận y tế. Soạn giúp em đơn xin gia hạn bài Lab 1 thêm 3 ngày.","Đơn đã được soạn và lưu thành công. Dưới đây là nội dung:
+
+---
+
+**CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM**
+**ĐỘC LẬP - TỰ DO - HẠNH PHÚC**
+
+**ĐƠN XIN GIA HẠN NỘP BÀI**
+
+Kính gửi: Giảng viên môn Lập trình AI với Python (AIPR_24110FIE)
+
+Em tên là: Nguyễn Văn An (MSSV: 24110001).
+Em làm đơn này xin gia hạn nộp: **Lab 1**.
+Số ngày xin gia hạn: **3 ngày**.
+Lý do: Bị ốm nằm viện, có giấy xác nhận y tế
+Minh chứng đính kèm: Giấy xác nhận y tế
+
+Em cam kết thông tin trên là đúng sự thật.
+Em xin chân thành cảm ơn.
+
+Ngày: 2026-10-17
+Sinh viên ký tên,
+Nguyễn Văn An
+
+---
+
+⚠️ **Lưu ý quan trọng:** Đây chỉ là **bản nháp (draft)** đã được lưu vào file, **chưa được chính thức gửi đi**. Bạn cần kiểm tra lại thông tin và tự gửi đơn kèm giấy xác nhận y tế cho giảng viên theo quy định của môn học.
+
+Bạn có muốn tôi chỉnh sửa nội dung đơn không?",1.0,0.95,1.0,32.65,10888,,draft_template_submission; read_draft
+3,Demo_Q03,demo,Hướng dẫn em fine-tune một mô hình ngôn ngữ bằng LoRA.,"Xin lỗi, thông tin này không có trong tài liệu bài giảng và quy chế môn học AIPR.",1.0,1.0,1.0,2.5,3484,,
