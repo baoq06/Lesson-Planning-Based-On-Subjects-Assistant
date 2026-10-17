@@ -11,6 +11,7 @@
    - AI also assisted in implementing the `--resume` flag logic in `tests/eval.py`, allowing incomplete test runs to seamlessly resume without re-running completed cases.
 3. **Independent Second Host Interoperability Testing (`scripts/test_second_host.py` - Rubric Bonus +1):**
    - AI provided the architectural pattern for a standalone second Python client running outside the primary ReAct agent loop, connecting to the MCP Server over standard I/O (stdio) to dynamically discover tools and test executions (`calculator`, `get_curriculum_week`, and `check_late_submission_penalty`) with automated success/failure checks.
+
 | Part / Module | AI role | Written by |
 |---|---|---|
 | `tests/compare_configs.py` (+1 bonus) | Guided dynamic evaluation formulas based on empirical benchmark metrics (removed pre-written conclusions) | Implemented and benchmarked by me |
@@ -21,6 +22,7 @@
 - *"My log records token usage, but the instructor flagged that it is not valid JSONL. What is the root cause and how do I fix it?"*
 - *"Write an independent test_second_host.py script to demonstrate MCP Server interoperability from a second Python client for rubric bonus points."*
 - *"How do I modify eval.py so it defaults to running from scratch and only resumes when the --resume flag is explicitly passed?"*
+
 I can explain every line of the code listed above.
 
 ## Lê Hải Đăng (24110087, git: Hai Dang)
