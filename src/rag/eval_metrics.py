@@ -31,6 +31,19 @@ from src.agent.call_llm import call_llm
 
 console = Console(legacy_windows=False)
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+PROMPTS_FILE = REPO_ROOT / "data" / "prompts" / "eval_prompts.json"
+
+def _load_eval_prompts() -> dict[str, str]:
+    if PROMPTS_FILE.exists():
+        try:
+            return json.loads(PROMPTS_FILE.read_text(encoding="utf-8"))
+        except Exception as e:
+            console.print(f"[dim red]Lỗi đọc file eval_prompts.json: {e}[/dim red]")
+    return {}
+
+_EVAL_PROMPTS = _load_eval_prompts()
+
 REFUSAL_EXACT = "Xin lỗi, thông tin này không có trong tài liệu bài giảng và quy chế môn học AIPR."
 
 
@@ -44,28 +57,8 @@ def evaluate_faithfulness(groq_client: Groq, question: str, context: str, answer
             return 1.0
         return 0.5
 
-    prompt = f"""Bạn là Giám khảo đánh giá tính trung thực (Faithfulness) của hệ thống RAG/Agent.
-Nhiệm vụ: Hãy phân tích kỹ các ý/luận điểm trong [Câu trả lời] và đối chiếu với [Ngữ cảnh tra cứu].
-
-[Câu hỏi]: {question}
-
-[Ngữ cảnh tra cứu từ tài liệu/tools]:
-{context[:9000]}
-
-[Câu trả lời của Agent]:
-{answer}
-
-Quy tắc chấm điểm (Thang điểm số thực liên tục từ 0.00 đến 1.00):
-1. Phân rã câu trả lời thành các phát biểu/khẳng định thông tin chính.
-2. Kiểm tra từng phát biểu xem có được chứng minh bởi Ngữ cảnh tra cứu hay không:
-   - Điểm số = (Số lượng phát biểu được chứng minh bởi Ngữ cảnh) / (Tổng số phát biểu trong câu trả lời).
-   - Nếu 100% phát biểu đều có căn cứ trong Ngữ cảnh: Điểm 1.00.
-   - Nếu đa số có căn cứ nhưng có suy diễn nhẹ hoặc chi tiết nhỏ ngoài lề: Cho điểm từ 0.70 đến 0.95 tùy mức độ.
-   - Nếu trả lời đúng một nửa và tự bịa một nửa: Cho điểm quanh 0.50.
-   - Nếu hoàn toàn bịa đặt (hallucination) hoặc mâu thuẫn trực tiếp với Ngữ cảnh: Cho điểm dưới 0.20.
-
-Hãy tính toán cẩn thận và CHỈ TRẢ VỀ DUY NHẤT một số thập phân từ 0.00 đến 1.00 (ví dụ: 0.95 hoặc 0.85), không viết thêm chữ nào khác.
-Điểm số:"""
+    template = _EVAL_PROMPTS.get("faithfulness", "")
+    prompt = template.format(question=question, context=context[:9000], answer=answer)
 
     try:
         res = call_llm(
@@ -96,23 +89,8 @@ def evaluate_answer_relevance(groq_client: Groq, question: str, answer: str) -> 
     if REFUSAL_EXACT.lower() in answer.lower():
         return 1.0
 
-    prompt = f"""Bạn là Giám khảo đánh giá độ liên quan và phù hợp của câu trả lời (Answer Relevance) cho hệ thống AI.
-Nhiệm vụ: Hãy xem xét [Câu trả lời] có giải quyết trúng, đủ và trực tiếp [Câu hỏi] hay không (không xét tính đúng sai của dữ kiện, chỉ xét mức độ bám sát câu hỏi).
-
-[Câu hỏi]: {question}
-
-[Câu trả lời của Agent]:
-{answer}
-
-Quy tắc chấm điểm (Thang điểm số thực liên tục từ 0.00 đến 1.00):
-- 1.00: Đi thẳng vào trọng tâm, giải quyết hoàn hảo mọi khía cạnh của câu hỏi, cô đọng súc tích.
-- 0.80 - 0.95: Trả lời đúng trọng tâm nhưng có một chút thông tin thừa thãi hoặc thiếu sót một ý phụ không đáng kể.
-- 0.50 - 0.75: Chỉ giải quyết được một phần câu hỏi, hoặc chứa nhiều đoạn giải thích lan man, dài dòng.
-- 0.10 - 0.40: Lạc đề phần lớn, né tránh câu hỏi.
-- 0.00: Hoàn toàn không liên quan gì đến câu hỏi.
-
-Hãy tính toán và CHỈ TRẢ VỀ DUY NHẤT một số thập phân từ 0.00 đến 1.00 (ví dụ: 0.92 hoặc 0.85), không viết thêm chữ nào khác.
-Điểm số:"""
+    template = _EVAL_PROMPTS.get("answer_relevance", "")
+    prompt = template.format(question=question, answer=answer)
 
     try:
         res = call_llm(
@@ -145,24 +123,9 @@ def evaluate_context_precision(
     if not context.strip():
         return 1.0
 
-    prompt = f"""Bạn là Giám khảo đánh giá độ chính xác của ngữ cảnh truy xuất (Context Precision) trong hệ thống RAG/Agent.
-Nhiệm vụ: Hãy kiểm tra xem ngữ cảnh thu thập được từ các công cụ (Context) có thực sự chứa các dữ kiện hữu ích và liên quan trực tiếp đến [Câu hỏi] hay không.
-
-[Câu hỏi]: {question}
-{f'[Ý trả lời tham chiếu]: {expected_answer}' if expected_answer else ''}
-
-[Ngữ cảnh từ công cụ/tài liệu]:
-{context[:9000]}
-
-Quy tắc chấm điểm (Thang điểm số thực liên tục từ 0.00 đến 1.00):
-- 1.00: Ngữ cảnh cực kỳ tinh gọn, trúng đích, mọi chunk tài liệu lấy về đều thiết yếu và trực tiếp trả lời câu hỏi.
-- 0.80 - 0.95: Ngữ cảnh chứa thông tin chính xác cần thiết, có lẫn một ít thông tin ngữ cảnh phụ nhưng không gây nhiễu.
-- 0.50 - 0.75: Có chứa thông tin cần thiết nhưng bị lẫn nhiều dữ liệu không liên quan (khoảng 30-50% là thông tin thừa).
-- 0.20 - 0.45: Phần lớn ngữ cảnh là thông tin rác, chỉ có một vài câu/từ khóa liên quan lướt qua.
-- 0.00: Toàn bộ ngữ cảnh hoàn toàn không liên quan đến câu hỏi.
-
-Hãy tính toán và CHỈ TRẢ VỀ DUY NHẤT một số thập phân từ 0.00 đến 1.00 (ví dụ: 0.88 hoặc 0.80), không viết thêm chữ nào khác.
-Điểm số:"""
+    ref_info = f"\n[Ý trả lời tham chiếu]: {expected_answer}" if expected_answer else ""
+    template = _EVAL_PROMPTS.get("context_precision", "")
+    prompt = template.format(question=question, reference_info=ref_info, context=context[:9000])
 
     try:
         res = call_llm(
